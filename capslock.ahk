@@ -13,8 +13,8 @@ CapsLock & n::SendInput, {PgDn}
 CapsLock & BackSpace::SendInput, {End}+{Home}{BackSpace}
 <^<!F22::MsgBox F22
 <^<!F14::MsgBox F14
-<!F15::
-<#::MsgBox F15
+;<!F15::
+;<#::MsgBox F15
 !j::SendInput, ^{Left}
 !l::SendInput, ^{Right}
 !BackSpace::SendInput, ^+{Left}{Del}
