@@ -1,4 +1,4 @@
-Set-Theme Powerlevel9k
+Set-Theme Powerlevel10k-Lean
 Import-Module posh-git
 Import-Module oh-my-posh
 Import-Module "$($(Get-Item $(Get-Command scoop).Path).Directory.Parent.FullName)\modules\scoop-completion"
