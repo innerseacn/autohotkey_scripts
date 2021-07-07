@@ -13,4 +13,8 @@ SendMode Input  ; Recommended for new scripts due to its superior speed and reli
 ^!j::Send, ^{Down}
 ^!h::Send, ^{Left}
 ^!l::Send, ^{Right}
++^!k::Send, +^{Up}
++^!j::Send, +^{Down}
++^!h::Send, +^{Left}
++^!l::Send, +^{Right}
 #Enter::run C:\Users\InnerSea\scoop\apps\conemu\current\ConEmu64.exe
