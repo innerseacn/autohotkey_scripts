@@ -17,4 +17,5 @@ SendMode Input  ; Recommended for new scripts due to its superior speed and reli
 +^!j::Send, +^{Down}
 +^!h::Send, +^{Left}
 +^!l::Send, +^{Right}
-#Enter::run C:\Users\InnerSea\scoop\apps\wezterm\current\wezterm-gui.exe
+#F2::run C:\Users\InnerSea\scoop\apps\wezterm\current\wezterm-gui.exe
+!F2::run C:\Users\InnerSea\scoop\apps\emacs\current\bin\runemacs.exe -fs
