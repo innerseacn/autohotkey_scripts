@@ -11,9 +11,8 @@
  '(completion-styles '(basic partial-completion initials flex))
  '(cua-enable-cua-keys nil)
  '(cua-mode t nil (cua-base))
- ;; '(custom-enabled-themes '(wombat))
  '(custom-safe-themes
-   '("835868dcd17131ba8b9619d14c67c127aa18b90a82438c8613586331129dda63" default))
+   '("353ffc8e6b53a91ac87b7e86bebc6796877a0b76ddfc15793e4d7880976132ae" default))
  '(display-battery-mode t)
  '(display-line-numbers-type nil)
  '(display-time-24hr-format t)
@@ -25,8 +24,9 @@
  '(doom-modeline-icon t)
  '(doom-modeline-modal-icon nil)
  '(doom-modeline-mode t)
- '(ede-project-directories '("c:/Users/InnerSea/Downloads/testpj"))
+ '(evil-undo-system 'undo-redo)
  '(global-hl-line-mode t)
+ '(global-linum-mode t)
  '(horizontal-scroll-bar-mode nil)
  '(indicate-empty-lines nil)
  '(inhibit-startup-screen t)
@@ -85,19 +85,27 @@
 (require 'doom-modeline)
 (doom-modeline-mode t)
 (require 'doom-themes)
-(load-theme 'doom-one)
-;; ba
+(load-theme 'doom-tokyo-night)
+;; ayu
 ;; ocean-next
 ;; rouge
 ;; one
+;; monokai-mach
 ;; 
 ;; dracula
 ;; monokai-oct
 ;; moonlight
+;; palenight
+;; tokyo-night
 ;; 
 ;; gruv-box
 ;; mater-dark
 ;; monokai-cla
-;; zenburn
+;; monokai-sp
+;; old-hope
+;; tomorrow-night
 ;;
 ;; soucerer
+;; ir
+;; plain-dark
+;; wilmer
