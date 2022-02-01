@@ -51,7 +51,7 @@
             },
             "intenseTextStyle": "all",
             "snapOnInput": true,
-            "useAcrylic": true
+            "useAcrylic": false
         },
         "list": 
         [
