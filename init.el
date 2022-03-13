@@ -10,6 +10,7 @@
  '(completion-cycle-threshold 5)
  '(cua-enable-cua-keys nil)
  '(cua-enable-modeline-indications t)
+ '(delete-selection-mode t)
  '(display-battery-mode t)
  '(display-time-24hr-format t)
  '(display-time-day-and-date t)
@@ -20,7 +21,6 @@
  '(global-hl-line-mode t)
  '(history-length 25)
  '(horizontal-scroll-bar-mode nil)
- '(indicate-empty-lines nil)
  '(inhibit-startup-screen t)
  '(line-number-mode t)
  '(make-backup-files nil)
@@ -28,11 +28,11 @@
  '(mouse-wheel-progressive-speed nil)
  '(mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control))))
  '(org-catch-invisible-edits 'smart)
+ '(org-fontify-done-headline nil)
+ '(org-fontify-todo-headline nil)
  '(org-goto-auto-isearch nil)
  '(org-log-into-drawer t)
  '(org-table-header-line-p t)
- '(package-selected-packages
-   '(pyim embark-consult wgrep keycast consult embark marginalia orderless vertico company julia-mode doom-modeline doom-themes evil ##))
  '(read-quoted-char-radix 16)
  '(recentf-mode t)
  '(ring-bell-function 'ignore)
@@ -51,8 +51,7 @@
  '(visible-bell t)
  '(what-cursor-show-names t)
  '(winner-mode t)
- '(x-stretch-cursor t)
- )
+ '(x-stretch-cursor t))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -115,7 +114,8 @@
   (normal-top-level-add-subdirs-to-load-path))
 (require 'doom-themes)
 (load-theme 'doom-badger t)
-;; (require 'evil)
+
+(require 'evil)
 ;; (evil-mode t)
 ;; (evil-undo-system 'undo-redo)
 (require 'doom-modeline)
