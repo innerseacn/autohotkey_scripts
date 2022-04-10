@@ -1,0 +1,261 @@
+#+STARTUP: overview num
+
+* tangle libraries
+** get the full pathname of *THIS* org init file
+   When using :var header in code blocks, the tangled code doesn't just replace
+   text like a MACRO, but use a 'let()' block to set a variable, which is not
+   what we want.
+   So we use :noweb as below.
+
+   #+NAME: ORG-INIT-FILE
+   #+begin_src emacs-lisp
+     (buffer-file-name)
+   #+end_src
+
+* init.el
+  :PROPERTIES:
+  :VISIBILITY: children
+  :header-args: :tangle C:\Users\InnerSea\emacs.init\vanilla\init.el
+  :header-args+: :mkdirp yes
+  :header-args+: :comments link
+  :header-args+: :noweb tangle
+  :END:
+** file local variables (must at first)
+   #+BEGIN_SRC emacs-lisp :comments on
+     ;; -*- lexical-binding: t; -*-
+   #+END_SRC
+
+** build-in settings (with custom-set-variables)
+   #+BEGIN_SRC emacs-lisp
+     (custom-set-variables
+      '(auto-save-default nil)
+      '(column-number-mode t)
+      '(completion-cycle-threshold 5)
+      '(cua-enable-cua-keys nil)
+      '(cua-enable-modeline-indications t)
+      '(delete-selection-mode t)
+      '(display-battery-mode t)
+      '(display-time-24hr-format t)
+      '(display-time-day-and-date t)
+      '(display-time-format "%R %p %F")
+      '(display-time-mode t)
+      '(electric-pair-mode t)
+      '(global-auto-revert-mode nil)
+      '(global-hl-line-mode t)
+      '(history-length 25)
+      '(horizontal-scroll-bar-mode nil)
+      '(inhibit-startup-screen t)
+      '(line-number-mode t)
+      '(make-backup-files nil)
+      '(menu-bar-mode nil)
+      '(mouse-wheel-progressive-speed nil)
+      '(mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control))))
+      '(read-quoted-char-radix 16)
+      '(recentf-mode t)
+      '(ring-bell-function 'ignore)
+      '(save-place-mode t)
+      '(savehist-mode t)
+      '(scroll-bar-mode nil)
+      '(scroll-margin 3)
+      '(scroll-step 1)
+      '(set-mark-command-repeat-pop t)
+      '(show-paren-mode t)
+      '(show-trailing-whitespace t)
+      '(size-indication-mode t)
+      '(split-width-threshold 120)
+      '(tool-bar-mode nil)
+      '(use-dialog-box nil)
+      '(visible-bell t)
+      '(what-cursor-show-names t)
+      '(winner-mode t)
+      '(x-stretch-cursor t))
+   #+END_SRC
+   
+** face settings
+*** build-in face settings (with custom-set-faces)
+    #+BEGIN_SRC emacs-lisp
+      (custom-set-faces
+       '(trailing-whitespace ((t (:background "gray0")))))
+    #+END_SRC
+
+*** default & CJK font face settings
+    #+BEGIN_SRC emacs-lisp
+      (set-face-attribute 'default nil :font "JetBrainsMono NF 12")
+      (if (display-graphic-p)
+	  (dolist (charset '(kana han symbol cjk-misc bopomofo))
+	    (set-fontset-font (frame-parameter nil 'font) charset
+			      (font-spec :family "Sarasa Term SC" :size 24))))
+    #+END_SRC
+  
+** key bindings
+*** build-in function key bindings
+    #+BEGIN_SRC emacs-lisp
+      (global-set-key (kbd "C-x C-b") 'ibuffer)
+      (global-set-key (kbd "C-x k") 'kill-current-buffer)
+      (global-set-key (kbd "C-?") 'undo-redo)
+      (global-set-key (kbd "C-M-<backspace>") 'backward-kill-sexp)
+      (global-set-key (kbd "C-c l") 'org-store-link)
+      (global-set-key (kbd "C-c a") 'org-agenda)
+      (global-set-key (kbd "C-c c") 'org-capture)
+      (global-set-key (kbd "C-x f") 'recentf-open-files)
+      (global-set-key (kbd "C-x C-/") 'winner-undo)
+      (global-set-key (kbd "C-x C-?") 'winner-redo)
+      (global-set-key (kbd "<f5>") 'desktop-save)
+      (global-set-key (kbd "<f6>") 'desktop-read)
+      (global-set-key (kbd "C-<return>") 'cua-rectangle-mark-mode)
+      (global-set-key (kbd "C-M-<return>") 'cua-rectangle-mark-mode)
+      (global-set-key (kbd "C-x C-1") 'delete-windows-on)
+      (global-set-key (kbd "<f12>") 'delete-other-windows)
+      (global-set-key (kbd "C-x C-q") 'view-mode)
+      (global-set-key (kbd "C-x C-d") 'dired)
+    #+END_SRC
+
+*** custom function & key bindings
+    using :noweb to call ORG-INIT-FILE library.
+    
+    #+BEGIN_SRC emacs-lisp
+      (defun open-org-init-file()
+	(interactive)
+	(find-file "<<ORG-INIT-FILE()>>"))
+      (global-set-key (kbd "<f2>") 'open-org-init-file)
+    #+END_SRC
+
+** package settings
+*** package archives mirror settings
+    #+BEGIN_SRC emacs-lisp
+      (setq package-archives '(("gnu"   . "http://mirrors.bfsu.edu.cn/elpa/gnu/")
+			       ("melpa" . "http://mirrors.bfsu.edu.cn/elpa/melpa/")
+			       ("Org" . "http://mirrors.bfsu.edu.cn/elpa/org/")
+			       ("nongnu" . "http://mirrors.bfsu.edu.cn/elpa/nongnu/")))
+    #+END_SRC
+
+*** COMMENT org
+    #+BEGIN_SRC emacs-lisp
+      '(set-face-attribute 'org-table nil :font "Sarasa Term SC 12"))
+      '(org-catch-invisible-edits 'smart)
+      '(org-clock-idle-time 10)
+      '(org-goto-auto-isearch nil)
+      '(org-log-into-drawer t)
+      (org-confirm-babel-evaluate nil)
+    #+END_SRC
+
+*** dired
+#+BEGIN_SRC emacs-lisp
+    (add-hook 'dired-mode-hook
+	      (lambda ()
+		(define-key dired-mode-map
+		  (kbd "C-c C-x a")
+		  #'org-attach-dired-to-subtree)))
+#+END_SRC
+
+*** some snippet may be useful
+    #+BEGIN_SRC emacs-lisp
+      ;; custom-file config ====================================================================================================
+      ;; (setq custom-file (locate-user-emacs-file "custom-vars.el"))
+      ;; (load custom-file 'noerror 'nomessage)
+
+      ;; package config ========================================================================================================
+      ;; (push (expand-file-name "lisp" user-emacs-directory) load-path)
+      ;; (push (expand-file-name "elpa" user-emacs-directory) load-path)
+
+      ;; (setq package-check-signature nil)
+      ;; (require 'package)
+      ;; (unless (bound-and-true-p package--initialized)
+      ;;   (package-initialize))
+      ;; (unless package-archive-contents
+      ;;   (package-refresh-contents))
+      ;; (unless (package-installed-p 'evil)
+      ;;   (package-install 'evil))
+      (let ((default-directory (expand-file-name "elpa" user-emacs-directory)))
+	(normal-top-level-add-subdirs-to-load-path))
+    #+END_SRC
+
+*** doom-themes
+    - doom-badger
+    - doom-gruvbox
+    - doom-material-dark
+    - doom-monokai-machine
+    - doom-monokai-octagon
+    - doom-monokai-spectrum
+    - doom-moonlight
+    - doom-nord
+    - doom-oceanic-next
+    - doom-old-hope
+    - doom-wilmersdorf
+    #+BEGIN_SRC emacs-lisp
+      (require 'doom-themes)
+      (load-theme 'doom-badger t)
+    #+END_SRC
+
+*** consult
+    #+BEGIN_SRC emacs-lisp
+      (require 'consult)
+      (global-set-key (kbd "C-;") 'consult-line)
+      (global-set-key (kbd "C-,") 'consult-imenu)
+      (global-set-key (kbd "C-x b") 'consult-buffer)
+    #+END_SRC
+
+*** doom-modeline
+    #+BEGIN_SRC emacs-lisp
+      (require 'doom-modeline)
+      (doom-modeline-mode t)
+      ;; (doom-modeline-height 25)
+      ;; (doom-modeline-hud t)
+      ;; (doom-modeline-icon t)
+      ;; (doom-modeline-modal-icon nil)
+    #+END_SRC
+    
+*** company
+    #+BEGIN_SRC emacs-lisp
+      (require 'company)
+      (global-company-mode t)
+      (setq company-minimum-prefix-length 1)
+      (setq company-idle-delay 0)
+    #+END_SRC
+    
+*** vertico
+    #+BEGIN_SRC emacs-lisp
+      (require 'vertico)
+      (vertico-mode t)
+    #+END_SRC
+    
+*** orderless
+    #+BEGIN_SRC emacs-lisp
+      (require 'orderless)
+      (setq completion-styles '(orderless))
+    #+END_SRC
+    
+*** marginalia
+    #+BEGIN_SRC emacs-lisp
+      (require 'marginalia)
+      (marginalia-mode t)
+    #+END_SRC
+    
+*** embark
+    #+BEGIN_SRC emacs-lisp
+      (require 'embark)
+      (global-set-key (kbd "C-:") 'embark-act)
+      (setq prefix-help-command 'embark-prefix-help-command)
+    #+END_SRC
+    
+*** wgrep
+    #+BEGIN_SRC emacs-lisp
+      (require 'wgrep)
+      (setq wgrep-auto-save-buffer t)
+      (eval-after-load 'consult
+	'(eval-after-load 'embark
+	   '(progn
+	      (require 'embark-consult)
+	      (add-hook 'embark-collect-mode-hook #'consult-preview-at-point-mode))))
+      (define-key minibuffer-local-map (kbd "C-c C-e") 'embark-export-write)
+      (eval-after-load 'consult
+	(progn
+	  (setq
+	   consult-narrow-key "<"
+	   consult-line-numbers-widen t
+	   consult-async-min-input 2
+	   consult-async-refresh-delay  0.15
+	   consult-async-input-throttle 0.2
+	   consult-async-input-debounce 0.1)
+	  ))
+    #+END_SRC
