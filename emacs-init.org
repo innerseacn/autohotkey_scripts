@@ -129,6 +129,7 @@
 			       ("nongnu" . "http://mirrors.bfsu.edu.cn/elpa/nongnu/")))
     #+END_SRC
 
+*** COMMENT all the icons
 *** COMMENT org
     #+BEGIN_SRC emacs-lisp
       '(set-face-attribute 'org-table nil :font "Sarasa Term SC 12"))
