@@ -1,123 +1,104 @@
 {
-    "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
-    "blocks": [
-	{
-	    "alignment": "left",
-	    "segments": [
-		{
-		    "foreground": "white",
-		    "properties": {
-			"display_version": false,
-			"postfix": ")",
-			"prefix": "("
-		    },
-		    "style": "plain",
-		    "type": "python"
-		}
-	    ],
-	    "type": "prompt"
-	},
-	{
-	    "alignment": "left",
-	    "newline": true,
-	    "segments": [
-		{
-		    "type": "battery",
-		    "style": "plain",
-		    "foreground": "darkGray",
-		    "foreground_templates": [
-			"{{if eq \"Charging\" .State.String}}#40c4ff{{end}}",
-			"{{if eq \"Discharging\" .State.String}}#FFFB38{{end}}",
-			"{{if eq \"Full\" .State.String}}#33DD2D{{end}}"
-		    ],
-		    "properties": {
-			"discharging_icon": " ",
-			"charging_icon": "\uf1e6 ",
-			"charged_icon": "\uf58e ",
-			"prefix": "<darkGray>[</>",
-			"postfix": "%<darkGray>] </>"
-		    }
-		},
-		{
-		    "foreground": "lightBlue",
-		    "properties": {
-			"prefix": "",
-			"text": "#"
-		    },
-		    "style": "plain",
-		    "type": "text"
-		},
-		{
-		    "foreground": "red",
-		    "properties": {
-			"root_icon": "%"
-		    },
-		    "style": "plain",
-		    "type": "root"
-		},
-		{
-		    "properties": {
-			"prefix": "",
-			"template": "<cyan>{{ .UserName }}</> <darkGray>@</> <green>{{ .ComputerName }}</>"
-		    },
-		    "style": "plain",
-		    "type": "session"
-		},
-		{
-		    "foreground": "lightYellow",
-		    "properties": {
-			"prefix": "<darkGray>in </>",
-			"style": "full"
-		    },
-		    "style": "plain",
-		    "type": "path"
-		},
-		{
-		    "properties": {
-			"prefix": "<darkGray>on</> <white>git:</>",
-			"template": "{{ .HEAD }}"
-		    },
-		    "style": "plain",
-		    "type": "git"
-		},
-		{
-		    "foreground": "darkGray",
-		    "properties": {
-			"postfix": "]",
-			"prefix": "["
-		    },
-		    "style": "plain",
-		    "type": "time"
-		},
-		{
-		    "foreground": "red",
-		    "properties": {
-			"always_numeric": true,
-			"template": "C:{{ if gt .Code 0 }}{{ .Code }}{{ end }}"
-		    },
-		    "style": "plain",
-		    "type": "exit"
-		}
-	    ],
-	    "type": "prompt"
-	},
-	{
-	    "alignment": "left",
-	    "newline": true,
-	    "segments": [
-		{
-		    "foreground": "lightRed",
-		    "properties": {
-			"postfix": "",
-			"prefix": "",
-			"text": "$"
-		    },
-		    "style": "plain",
-		    "type": "text"
-		}
-	    ],
-	    "type": "prompt"
-	}
-    ],
-    "final_space": true
+  "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+  "blocks": [
+    {
+      "alignment": "left",
+      "segments": [
+        {
+          "foreground": "white",
+          "properties": {
+            "fetch_version": false
+          },
+          "style": "plain",
+          "template": "({{ if .Error }}{{ .Error }}{{ else }}{{ if .Venv }}{{ .Venv }} {{ end }}{{ .Full }}{{ end }})",
+          "type": "python"
+        }
+      ],
+      "type": "prompt"
+    },
+    {
+      "alignment": "left",
+      "newline": true,
+      "segments": [
+        {
+          "foreground": "darkGray",
+          "foreground_templates": [
+            "{{if eq \"Charging\" .State.String}}#40c4ff{{end}}",
+            "{{if eq \"Discharging\" .State.String}}#FFFB38{{end}}",
+            "{{if eq \"Full\" .State.String}}#33DD2D{{end}}"
+          ],
+          "properties": {
+            "charged_icon": "\uf58e ",
+            "charging_icon": "\uf1e6 ",
+            "discharging_icon": "\ue234 "
+          },
+          "style": "plain",
+          "template": "<darkGray>[</>{{ if not .Error }}{{ .Icon }}{{ .Percentage }}{{ end }}{{ .Error }}%<darkGray>] </>",
+          "type": "battery"
+        },
+        {
+          "foreground": "lightBlue",
+          "style": "plain",
+          "template": "# ",
+          "type": "text"
+        },
+        {
+          "foreground": "red",
+          "properties": {
+            "root_icon": "%"
+          },
+          "style": "plain",
+          "template": " \uf0e7 ",
+          "type": "root"
+        },
+        {
+          "style": "plain",
+          "template": "<cyan>{{ .UserName }}</> <darkGray>@</> <green>{{ .HostName }}</> ",
+          "type": "session"
+        },
+        {
+          "foreground": "lightYellow",
+          "properties": {
+            "style": "full"
+          },
+          "style": "plain",
+          "template": "<darkGray>in </>{{ .Path }} ",
+          "type": "path"
+        },
+        {
+          "style": "plain",
+          "template": "<darkGray>on</> <white>git:</>{{ .HEAD }} ",
+          "type": "git"
+        },
+        {
+          "foreground": "darkGray",
+          "style": "plain",
+          "template": "[{{ .CurrentDate | date .Format }}]",
+          "type": "time"
+        },
+        {
+          "foreground": "red",
+          "style": "plain",
+          "template": " C:{{ if gt .Code 0 }}{{ .Code }}{{ end }} ",
+          "type": "exit"
+        }
+      ],
+      "type": "prompt"
+    },
+    {
+      "alignment": "left",
+      "newline": true,
+      "segments": [
+        {
+          "foreground": "lightRed",
+          "style": "plain",
+          "template": "$",
+          "type": "text"
+        }
+      ],
+      "type": "prompt"
+    }
+  ],
+  "final_space": true,
+  "version": 2
 }
