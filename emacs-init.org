@@ -1,28 +1,30 @@
 #+STARTUP: overview num indent show2levels
+#+TODO: TODO(t) DONE
+#+TODO: VERBOSE-ON VERBOSE-OFF | 
 
-* tangle libraries
+*DO THIS FIRST*: Setting the tangle target directory at [[*buffer local variables (must be the last)][here]].
+
+* early-init.el
 :PROPERTIES:
-:VISIBILITY: folded
-:header-args: :results silent
+:header-args: :tangle (concat tangle-dir "early-init.el")
+:header-args+: :mkdirp yes
+:header-args+: :comments no
 :END:
-** get the full pathname of *THIS* org init file
-When using :var header in code blocks, the tangled code doesn't just replace
-text like a MACRO, but use a 'let()' block to set a variable, which is not
-what we want.
-So we use :noweb as below.
 
-#+NAME: ORG-INIT-FILE
-#+begin_src emacs-lisp
-  (buffer-file-name)
-#+end_src
+** /file local variables (must at first)/
+Don't change or move this block!!!
+
+#+BEGIN_SRC emacs-lisp :comments no
+  ;; -*- lexical-binding: t; -*-
+#+END_SRC
 
 * init.el
 :PROPERTIES:
-:header-args: :tangle C:\Users\InnerSea\emacs.init\vanilla\init.el
+:header-args: :tangle (concat tangle-dir "init.el")
 :header-args+: :mkdirp yes
-:header-args+: :comments link
-:header-args+: :noweb tangle
+:header-args+: :comments no
 :END:
+
 ** /file local variables (must at first)/
 Don't change or move this block!!!
 
@@ -39,6 +41,10 @@ Don't change or move this block!!!
    '(completion-cycle-threshold 5)
    '(cua-enable-cua-keys nil)
    '(cua-enable-modeline-indications t)
+   '(default-frame-alist
+      '((horizontal-scroll-bars)
+        (vertical-scroll-bars)
+        (fullscreen . fullboth)))
    '(delete-selection-mode t)
    '(describe-bindings-outline t)
    '(display-battery-mode t)
@@ -48,7 +54,8 @@ Don't change or move this block!!!
    '(display-time-mode t)
    '(electric-pair-mode t)
    ;; '(electric-quote-mode t)
-   '(global-auto-revert-mode nil)
+   '(global-auto-revert-mode t)
+   '(global-auto-revert-non-file-buffers t)
    '(global-goto-address-mode t)
    '(global-hl-line-mode t)
    '(help-enable-symbol-autoload t)
@@ -60,9 +67,8 @@ Don't change or move this block!!!
    '(line-number-mode t)
    '(make-backup-files nil)
    '(menu-bar-mode nil)
-   '(5mode-line-compact 'long)
+   '(mode-line-compact 'long)
    '(mouse-wheel-progressive-speed nil)
-   ;; '(mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control))))
    '(next-error-message-highlight 'keep)
    '(read-quoted-char-radix 16)
    '(recentf-mode t)
@@ -74,7 +80,7 @@ Don't change or move this block!!!
    '(scroll-margin 3)
    '(scroll-step 1)
    '(set-mark-command-repeat-pop t)
-   ;; '(show-paren-mode t)
+   '(shift-select-mode 'permanent)
    '(show-trailing-whitespace t)
    '(size-indication-mode t)
    '(split-width-threshold 120)
@@ -87,10 +93,6 @@ Don't change or move this block!!!
    '(winner-mode t)
    '(x-stretch-cursor t))
 #+END_SRC
-
-*** TODO auto-revert-mode & no-file-buffer option
-
-*** TODO 设置新frame默认全屏
 
 *** TODO modeline显示frame名称，或在minibuffer中显示
 
@@ -121,7 +123,6 @@ Don't change or move this block!!!
 #+BEGIN_SRC emacs-lisp
   (global-set-key (kbd "C-x C-b") 'ibuffer)
   (global-set-key (kbd "C-x k") 'kill-current-buffer)
-  ;; (global-set-key (kbd "C-?") 'undo-redo)
   (global-set-key (kbd "C-M-<backspace>") 'backward-kill-sexp)
   (global-set-key (kbd "C-c l") 'org-store-link)
   (global-set-key (kbd "C-c a") 'org-agenda)
@@ -131,7 +132,6 @@ Don't change or move this block!!!
   (global-set-key (kbd "C-x C-?") 'winner-redo)
   (global-set-key (kbd "<f5>") 'desktop-save)
   (global-set-key (kbd "<f6>") 'desktop-read)
-  (global-set-key (kbd "C-M-<return>") 'cua-rectangle-mark-mode)
   ;; (global-set-key (kbd "C-x C-1") 'delete-windows-on)
   (global-set-key (kbd "C-x C-q") 'view-mode)
   (global-set-key (kbd "C-x C-d") 'dired)
@@ -143,7 +143,7 @@ Don't change or move this block!!!
 *** custom function & key bindings
 using :noweb to call ORG-INIT-FILE library.
     
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :noweb yes
   (defun open-org-init-file()
     (interactive)
     (find-file "<<ORG-INIT-FILE()>>"))
@@ -195,7 +195,7 @@ S-s-<up><down><left><right>
 
 *** TODO fix the load path stuff
 
-*** package archives & load-path
+*** package initialize & load-path
 #+BEGIN_SRC emacs-lisp
   (let ((default-directory (expand-file-name "elpa" user-emacs-directory)))
     (normal-top-level-add-subdirs-to-load-path))
@@ -211,40 +211,36 @@ S-s-<up><down><left><right>
     (package-initialize))
   (unless package-archive-contents
     (package-refresh-contents))
+  (unless (package-installed-p 'use-package)
+    (package-install 'use-package))
 #+END_SRC
 
-*** use-package
-Choose one of the below, by setting the example block as "yes" or "no".
+*** VERBOSE-ON use-package
+"VERBOSE-ON" and "VERBOSE-OFF" are special SEQ_TODOs for choosing
+tangling code from the list of branches below. Use S-<left><right> on
+headline to switch.
 
-#+NAME: USE-PACKAGE-VERBOSE
-#+begin_example
-yes
-#+end_example
+1) ~with error catch & verbose~::
+   #+HEADER: :tangle (if (string= "VERBOSE-OFF" (org-get-todo-state)) "no" (concat tangle-dir "init.el"))
+   #+begin_src emacs-lisp
+       (eval-and-compile
+         ;; (add-to-list 'load-path "")
+         (require 'use-package)
+         (setq use-package-always-ensure t
+               use-package-always-defer t
+               use-package-verbose 'debug))
+   #+end_src
 
-**** with error catch & verbose
-#+begin_src emacs-lisp
-  (unless (package-installed-p 'use-package)
-    (package-install 'use-package))
-  (eval-when-compile
-    ;; (add-to-list 'load-path "")
-    (require 'use-package)
-    (setq use-package-always-ensure t
-          use-package-always-defer t
-          use-package-verbose 'debug))
-#+end_src
-
-**** quiet & fast
-#+begin_src emacs-lisp
-  (unless (package-installed-p 'use-package)
-    (package-install 'use-package))
-  (eval-when-compile
-    ;; (add-to-list 'load-path "")
-    (require 'use-package)
-    (setq use-package-always-ensure t
-          use-package-always-defer t
-          use-package-expand-minimally t))
-#+end_src
-
+2) ~quiet & fast~::
+   #+HEADER: :tangle (if (string= "VERBOSE-ON" (org-get-todo-state)) "no" (concat tangle-dir "init.el"))
+   #+begin_src emacs-lisp
+     (eval-when-compile
+       ;; (add-to-list 'load-path "")
+       (require 'use-package)
+       (setq use-package-always-ensure t
+             use-package-always-defer t
+             use-package-expand-minimally t))
+   #+end_src
 
 *** COMMENT all the icons
 *** COMMENT org
@@ -256,7 +252,6 @@ yes
   '(org-log-into-drawer t)
   (org-confirm-babel-evaluate nil)
 #+END_SRC
-
 *** dired
 #+BEGIN_SRC emacs-lisp
   (add-hook 'dired-mode-hook
@@ -267,21 +262,21 @@ yes
 #+END_SRC
 
 *** doom-themes
-  - doom-badger
-  - doom-gruvbox
-  - doom-material-dark
-  - doom-monokai-machine
-  - doom-monokai-octagon
-  - doom-monokai-spectrum
-  - doom-moonlight
-  - doom-nord
-  - doom-oceanic-next
-  - doom-old-hope
-  - doom-wilmersdorf
-    #+BEGIN_SRC emacs-lisp
-      (require 'doom-themes)
-      (load-theme 'doom-badger t)
-    #+END_SRC
+- doom-badger
+- doom-gruvbox
+- doom-material-dark
+- doom-monokai-machine
+- doom-monokai-octagon
+- doom-monokai-spectrum
+- doom-moonlight
+- doom-nord
+- doom-oceanic-next
+- doom-old-hope
+- doom-wilmersdorf
+  #+BEGIN_SRC emacs-lisp
+    (require 'doom-themes)
+    (load-theme 'doom-badger t)
+  #+END_SRC
 
 *** consult
 #+BEGIN_SRC emacs-lisp
@@ -358,3 +353,45 @@ yes
 #+END_SRC
 
 *** TODO dictionary functions
+
+
+* /buffer functions & variables/
+:PROPERTIES:
+:VISIBILITY: folded
+:header-args: :tangle no
+:header-args+: :results replace
+:END:
+** get the full pathname of *THIS* org init file
+When using :var header in code blocks, the tangled code doesn't just replace
+text like a MACRO, but use a 'let()' block to set a variable, which is not
+what we want.
+So we use :noweb as below.
+
+#+NAME: ORG-INIT-FILE
+#+begin_src emacs-lisp
+  (buffer-file-name)
+#+end_src
+
+#+RESULTS: ORG-INIT-FILE
+: c:/Users/InnerSea/pyprojs/autohotkey_scripts/emacs-init.org
+
+** confirm the VERBOSE-XXX tags for use-package
+#+NAME: confirm-verbose
+#+begin_src emacs-lisp
+    (defun confirm-verbose-tags (new-mark old-mark)
+      (cond ((string= old-mark "VERBOSE-ON") "VERBOSE-OFF")
+            ((string= old-mark "VERBOSE-OFF") "VERBOSE-ON")
+            (t nil)))
+    (add-hook 'org-todo-get-default-hook 'confirm-verbose-tags nil t)
+#+end_src
+
+#+RESULTS:
+| confirm-verbose-tags | t |
+
+** buffer local variables (must be the last)
+# Local Variables:
+# tangle-dir: "C:\\Users\\InnerSea\\emacs.init\\vanilla\\"
+# org-confirm-babel-evaluate: nil
+# org-todo-keyword-faces: (("VERBOSE-ON" . org-warning) ("VERBOSE-OFF" . org-warning))
+# eval: (org-babel-ref-resolve "confirm-verbose")
+# end:
