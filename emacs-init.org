@@ -301,7 +301,7 @@ headline to switch.
 #+BEGIN_SRC emacs-lisp
   (require 'company)
   (global-company-mode t)
-  (setq company-minimum-prefix-length 1)
+  (setq company-minimum-prefix-length 2)
   (setq company-idle-delay 0)
 #+END_SRC
     
@@ -375,23 +375,33 @@ So we use :noweb as below.
 #+RESULTS: ORG-INIT-FILE
 : c:/Users/InnerSea/pyprojs/autohotkey_scripts/emacs-init.org
 
-** confirm the VERBOSE-XXX tags for use-package
-#+NAME: confirm-verbose
+** confirm the branch tags for tangling
+#+NAME: confirm-branch
 #+begin_src emacs-lisp
-    (defun confirm-verbose-tags (new-mark old-mark)
-      (cond ((string= old-mark "VERBOSE-ON") "VERBOSE-OFF")
-            ((string= old-mark "VERBOSE-OFF") "VERBOSE-ON")
-            (t nil)))
-    (add-hook 'org-todo-get-default-hook 'confirm-verbose-tags nil t)
+  (setq-local branch-tags '(("VERBOSE-ON" . "VERBOSE-OFF")
+                            ("1" . "2"))
+              org-todo-keyword-faces nil)
+
+  (dolist (tag-pair branch-tags)
+    (add-to-list 'org-todo-keyword-faces (cons (car tag-pair) 'org-warning))
+    (add-to-list 'org-todo-keyword-faces (cons (cdr tag-pair) 'org-warning)))
+
+  (defun confirm-branch-tags (new-mark old-mark)
+    (while (and (setq tags (car branch-tags))
+                (not (setq return
+                           (cond ((string= old-mark (car tags)) (cdr tags))
+                                 ((string= old-mark (cdr tags)) (car tags))))))
+      (setq branch-tags (cdr branch-tags)))
+    return)
+  (add-hook 'org-todo-get-default-hook 'confirm-branch-tags nil t)
 #+end_src
 
-#+RESULTS:
-| confirm-verbose-tags | t |
+#+RESULTS: confirm-branch
+| confirm-branch-tags | t |
 
-** buffer local variables (must be the last)
+** /buffer local variables (must be the last)/
 # Local Variables:
 # tangle-dir: "C:\\Users\\InnerSea\\emacs.init\\vanilla\\"
 # org-confirm-babel-evaluate: nil
-# org-todo-keyword-faces: (("VERBOSE-ON" . org-warning) ("VERBOSE-OFF" . org-warning))
-# eval: (org-babel-ref-resolve "confirm-verbose")
+# eval: (org-babel-ref-resolve "confirm-branch")
 # end:
