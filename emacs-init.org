@@ -4,13 +4,17 @@
 
 *DO THIS FIRST*: Setting the tangle target directory at [[*buffer local variables (must be the last)][here]].
 
+If there's a special tag on the heading. Type S-<left><right> to
+switch code branches.
+
+Type C-c C-v t to tangle emacs init files.
+
 * early-init.el
 :PROPERTIES:
-:header-args: :tangle (concat tangle-dir "early-init.el")
+:header-args: :tangle (concat tangle-dir (car (org-get-outline-path t t)))
 :header-args+: :mkdirp yes
 :header-args+: :comments no
 :END:
-
 ** /file local variables (must at first)/
 Don't change or move this block!!!
 
@@ -20,11 +24,10 @@ Don't change or move this block!!!
 
 * init.el
 :PROPERTIES:
-:header-args: :tangle (concat tangle-dir "init.el")
+:header-args: :tangle (concat tangle-dir (car (org-get-outline-path t t)))
 :header-args+: :mkdirp yes
 :header-args+: :comments no
 :END:
-
 ** /file local variables (must at first)/
 Don't change or move this block!!!
 
@@ -32,7 +35,9 @@ Don't change or move this block!!!
   ;; -*- lexical-binding: t; -*-
 #+END_SRC
 
-** build-in settings (with custom-set-variables)
+** build-in settings
+Using custom-set-variables mechanism.
+
 #+BEGIN_SRC emacs-lisp
   (custom-set-variables
    '(auto-save-default nil)
@@ -103,7 +108,9 @@ Don't change or move this block!!!
 *** TODO 将上面的mode相关命令用usepackage重构，实现懒加载
 
 ** face settings
-*** build-in face settings (with custom-set-faces)
+*** build-in face settings
+Using custom-set-faces mechanism.
+
 #+BEGIN_SRC emacs-lisp
   (custom-set-faces
    '(trailing-whitespace ((t (:background "gray0")))))
@@ -121,12 +128,13 @@ Don't change or move this block!!!
 ** key bindings
 *** build-in function key bindings
 #+BEGIN_SRC emacs-lisp
-  (global-set-key (kbd "C-x C-b") 'ibuffer)
+  (global-set-key (kbd "C-x b") 'ibuffer)
   (global-set-key (kbd "C-x k") 'kill-current-buffer)
   (global-set-key (kbd "C-M-<backspace>") 'backward-kill-sexp)
   (global-set-key (kbd "C-c l") 'org-store-link)
   (global-set-key (kbd "C-c a") 'org-agenda)
   (global-set-key (kbd "C-c c") 'org-capture)
+  (global-set-key (kbd "C-c C-'") 'org-edit-special)
   (global-set-key (kbd "C-x f") 'recentf-open-files)
   (global-set-key (kbd "C-x C-/") 'winner-undo)
   (global-set-key (kbd "C-x C-?") 'winner-redo)
@@ -221,7 +229,7 @@ tangling code from the list of branches below. Use S-<left><right> on
 headline to switch.
 
 1) ~with error catch & verbose~::
-   #+HEADER: :tangle (if (string= "VERBOSE-OFF" (org-get-todo-state)) "no" (concat tangle-dir "init.el"))
+   #+HEADER: :tangle (if (string= "VERBOSE-OFF" (org-get-todo-state)) "no" (concat tangle-dir (car (org-get-outline-path t t))))
    #+begin_src emacs-lisp
        (eval-and-compile
          ;; (add-to-list 'load-path "")
@@ -232,7 +240,7 @@ headline to switch.
    #+end_src
 
 2) ~quiet & fast~::
-   #+HEADER: :tangle (if (string= "VERBOSE-ON" (org-get-todo-state)) "no" (concat tangle-dir "init.el"))
+   #+HEADER: :tangle (if (string= "VERBOSE-ON" (org-get-todo-state)) "no" (concat tangle-dir (car (org-get-outline-path t t))))
    #+begin_src emacs-lisp
      (eval-when-compile
        ;; (add-to-list 'load-path "")
@@ -250,7 +258,6 @@ headline to switch.
   '(org-clock-idle-time 10)
   '(org-goto-auto-isearch nil)
   '(org-log-into-drawer t)
-  (org-confirm-babel-evaluate nil)
 #+END_SRC
 *** dired
 #+BEGIN_SRC emacs-lisp
@@ -283,7 +290,7 @@ headline to switch.
   (require 'consult)
   (global-set-key (kbd "C-;") 'consult-line)
   (global-set-key (kbd "C-,") 'consult-imenu)
-  (global-set-key (kbd "C-x b") 'consult-buffer)
+  (global-set-key (kbd "C-x C-b") 'consult-buffer)
 #+END_SRC
 
 *** doom-modeline
@@ -375,25 +382,27 @@ So we use :noweb as below.
 #+RESULTS: ORG-INIT-FILE
 : c:/Users/InnerSea/pyprojs/autohotkey_scripts/emacs-init.org
 
-** confirm the branch tags for tangling
+** confirm the branch-tags for tangling
+A branch-tag is a set of TODO-tags indicating certain code blocks
+while tangling. This code keeps the tags from disappearing when using
+S-<left> or S-<right> to switch code branches.
+
 #+NAME: confirm-branch
 #+begin_src emacs-lisp
-  (setq-local branch-tags '(("VERBOSE-ON" . "VERBOSE-OFF")
-                            ("1" . "2"))
-              org-todo-keyword-faces nil)
+  (let ((branch-tags nil)
+    (tags nil)
+    (return nil))
+    (defun confirm-branch-tags (new-mark old-mark)
+      (setq branch-tags '(("VERBOSE-ON" . "VERBOSE-OFF")
+                          ("1" . "2")))
+      (while (and (setq tags (car branch-tags))
+                  (not (setq return
+                             (cond ((string= old-mark (car tags)) (cdr tags))
+                                   ((string= old-mark (cdr tags)) (car tags))))))
+        (setq branch-tags (cdr branch-tags)))
+      return)
 
-  (dolist (tag-pair branch-tags)
-    (add-to-list 'org-todo-keyword-faces (cons (car tag-pair) 'org-warning))
-    (add-to-list 'org-todo-keyword-faces (cons (cdr tag-pair) 'org-warning)))
-
-  (defun confirm-branch-tags (new-mark old-mark)
-    (while (and (setq tags (car branch-tags))
-                (not (setq return
-                           (cond ((string= old-mark (car tags)) (cdr tags))
-                                 ((string= old-mark (cdr tags)) (car tags))))))
-      (setq branch-tags (cdr branch-tags)))
-    return)
-  (add-hook 'org-todo-get-default-hook 'confirm-branch-tags nil t)
+    (add-hook 'org-todo-get-default-hook 'confirm-branch-tags nil t))
 #+end_src
 
 #+RESULTS: confirm-branch
@@ -403,5 +412,6 @@ So we use :noweb as below.
 # Local Variables:
 # tangle-dir: "C:\\Users\\InnerSea\\emacs.init\\vanilla\\"
 # org-confirm-babel-evaluate: nil
+# org-todo-keyword-faces: '(("TODO" . org-warning))
 # eval: (org-babel-ref-resolve "confirm-branch")
 # end:
