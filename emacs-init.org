@@ -47,7 +47,7 @@ Don't change or move this block!!!
   ;; -*- lexical-binding: t; -*-
 #+END_SRC
 
-** build-in settings
+** built-in settings
 Using custom-set-variables mechanism.
 
 #+BEGIN_SRC emacs-lisp
@@ -73,7 +73,7 @@ Using custom-set-variables mechanism.
    ;; '(electric-quote-mode t)
    '(global-auto-revert-mode t)
    '(global-auto-revert-non-file-buffers t)
-   '(global-display-line-numbers-mode t)
+   ;; '(global-display-line-numbers-mode t)
    '(global-goto-address-mode t)
    '(global-hl-line-mode t)
    '(help-enable-symbol-autoload t)
@@ -123,7 +123,7 @@ Using custom-set-variables mechanism.
 *** TODO 将上面的mode相关命令用usepackage重构，实现懒加载
 
 ** face settings
-*** build-in face settings
+*** built-in face settings
 Using custom-set-faces mechanism.
 
 #+BEGIN_SRC emacs-lisp
@@ -142,12 +142,12 @@ Using custom-set-faces mechanism.
 #+END_SRC
   
 ** key bindings
-*** build-in function key bindings
+*** built-in function key bindings
 #+BEGIN_SRC emacs-lisp
   (global-set-key (kbd "C-x b") 'ibuffer)
   (global-set-key (kbd "C-x k") 'kill-current-buffer)
-  (global-set-key (kbd "C-M-<backspace>") 'backward-kill-sexp)
-  (global-set-key (kbd "C-M-<return>") 'cua-rectangle-mark-mode)
+  (global-set-key (kbd "C-M-DEL") 'backward-kill-sexp)
+  (global-set-key (kbd "C-M-RET") 'cua-rectangle-mark-mode)
   (global-set-key (kbd "C-c l") 'org-store-link)
   (global-set-key (kbd "C-c a") 'org-agenda)
   (global-set-key (kbd "C-c c") 'org-capture)
@@ -234,7 +234,7 @@ tangling code from the list of branches below. Use S-<left><right> on
 headline to switch.
 
 1) ~with error catch & verbose~::
-   #+HEADER: :tangle (if (string= "VERBOSE-OFF" (org-get-todo-state)) "no" (concat tangle-dir (car (org-get-outline-path t t))))
+   #+HEADER: :tangle (if (string= "VERBOSE-ON" (org-get-todo-state)) (concat tangle-dir (car (org-get-outline-path t t))) "no")
    #+begin_src emacs-lisp
      (eval-and-compile
        ;; (add-to-list 'load-path "")
@@ -245,7 +245,7 @@ headline to switch.
    #+end_src
 
 2) ~quiet & fast~::
-   #+HEADER: :tangle (if (string= "VERBOSE-ON" (org-get-todo-state)) "no" (concat tangle-dir (car (org-get-outline-path t t))))
+   #+HEADER: :tangle (if (string= "VERBOSE-OFF" (org-get-todo-state)) (concat tangle-dir (car (org-get-outline-path t t))) "no")
    #+begin_src emacs-lisp
      (eval-when-compile
        ;; (add-to-list 'load-path "")
@@ -255,21 +255,53 @@ headline to switch.
              use-package-expand-minimally t))
    #+end_src
    
+*** built-in packages
+Don't forget to use ~:ensure nil~ code for built-in packages.
+
+**** savehist
+Persist history over Emacs restarts. Vertico sorts by history position.
+
+All configurations are in =Savehist= customize group, no change here.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package savehist
+    :ensure nil
+    :init
+    (savehist-mode))
+#+END_SRC
+
+**** TODO display-line-numbers
+do we need line numbers?
+**** TODO COMMENT recentf
+#+begin_src emacs-lisp
+  (use-package recentf
+    :defer nil
+    :config (recentf-mode t)
+    :bind ("C-x f" . recentf-open-files)
+    :custom
+    :custom-face
+    )
+#+end_src
+
+**** TODO org
+bind org-src-mode-map #'org-edit-src-exit C-c C-'
+
+bind org-show-entry or make TAB cycle after "..."
+
 *** doom-themes
 After code is a list of good looking themes, use one of them.
 
 #+BEGIN_SRC emacs-lisp
   (use-package doom-themes
-    :defer nil
     :custom
     (doom-themes-enable-bold t)
     (doom-themes-enable-italic t)
-    :config
+    :init
     (load-theme 'doom-badger t)
     (doom-themes-org-config))
 #+END_SRC
 
-- =good doom-themes list=::
+**** COMMENT good doom-themes list
   - doom-badger
   - doom-gruvbox
   - doom-material-dark
@@ -296,6 +328,8 @@ After code is a list of good looking themes, use one of them.
 #+END_EXAMPLE
 
 *** doom-modeline
+Modeline derived from DOOM emacs.
+
 #+BEGIN_SRC emacs-lisp
   (use-package doom-modeline
     :hook (after-init . doom-modeline-mode)
@@ -322,7 +356,7 @@ After code is a list of good looking themes, use one of them.
   (setq doom-modeline-hud nil)
   ;; The limit of the window width.
   ;; If `window-width' is smaller than the limit, some information won't be
-  ;; displayed. It can be an integer or a float number. `nil' means no limit."
+  ;; displayed. It can be an integer or a float number. `nil' means no limit.
   (setq doom-modeline-window-width-limit 0.25)
   ;; How to detect the project root.
   ;; nil means to use `default-directory'.
@@ -443,8 +477,6 @@ After code is a list of good looking themes, use one of them.
 
 *** TODO solaire-mode.
 
-*** TODO prescient
-
 *** TODO helpful
 *** vertico, orderless & marginalia
 **** vertico
@@ -453,9 +485,7 @@ based on the default completion system.
 
 #+BEGIN_SRC emacs-lisp
   (use-package vertico
-    :defer nil
-    :init
-    (vertico-mode t))
+    :init (vertico-mode))
 #+END_SRC
 
 ***** COMMENT config example
@@ -473,15 +503,92 @@ based on the default completion system.
 (setq vertico-cycle t)
 #+end_example
 
-**** savehist
-Persist history over Emacs restarts. Vertico sorts by history position.
+**** vertico extensions
+Comment out if you don't want the extension.
 
-#+BEGIN_SRC emacs-lisp
-  (use-package savehist
-    :defer nil
-    :init
-    (savehist-mode))
-#+END_SRC
+***** vertico-directory
+Provides Ido-like navigation commands.
+
+#+begin_src emacs-lisp
+  (use-package vertico-directory
+    :after vertico
+    :ensure nil
+    :bind (:map vertico-map
+                ("RET" . vertico-directory-enter)
+                ("DEL" . vertico-directory-delete-char)
+                ("M-DEL" . vertico-directory-delete-word))
+    :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
+#+end_src
+
+***** COMMENT vertico-indexed
+Prefixes candidates with indices and allows you to select with prefix
+arguments.
+
+Use C-<number> RET to execute, C-<number> TAB to insert.
+
+#+begin_src emacs-lisp
+  (use-package vertico-indexed
+    :after vertico
+    :ensure nil
+    :init (vertico-indexed-mode))
+#+end_src
+
+***** COMMENT vertico-mouse
+Adds mouse support.
+
+#+begin_src emacs-lisp
+  (use-package vertico-mouse
+    :after vertico
+    :ensure nil
+    :init (vertico-mouse-mode))
+#+end_src
+
+***** vertico-multiform
+This package is a Vertico extension for fine tuning the Vertico
+display and other minibuffer modes per command or completion category.
+
+#+begin_src emacs-lisp
+  (use-package vertico-multiform
+    :after vertico
+    :ensure nil
+    :init (vertico-multiform-mode)
+    :bind (:map vertico-map
+                ("M-G" . vertico-multiform-grid)))
+#+end_src
+
+***** vertico-quick
+Select using Avy-style quick keys.
+
+#+begin_src emacs-lisp
+  (use-package vertico-quick
+    :after vertico
+    :ensure nil
+    :custom
+    (vertico-quick1 "asdfg") ;Single level quick keys.
+    (vertico-quick2 "jklh") ;Two level quick keys.
+    :bind (:map vertico-map
+                ("M-i" . vertico-quick-exit)
+                ("C-M-i" . vertico-quick-insert)))
+#+end_src
+
+***** vertico-repeat
+Enables repetition of Vertico sessions via the `vertico-repeat',
+`vertico-repeat-last' and `vertico-repeat-select' commands.
+
+It is necessary to register a minibuffer setup hook, which saves the
+Vertico state for repetition.
+
+In order to save the history across Emacs sessions, enable
+`savehist-mode' and add `vertico-repeat-history' to
+`savehist-additional-variables'.
+
+#+begin_src emacs-lisp
+  (use-package vertico-repeat
+    :after vertico
+    :ensure nil
+    :bind ("M-R" . vertico-repeat)
+    :hook (minibuffer-setup . vertico-repeat-save))
+#+end_src
 
 **** TODO orderless
 #+BEGIN_SRC emacs-lisp
@@ -497,9 +604,22 @@ Persist history over Emacs restarts. Vertico sorts by history position.
 #+END_SRC
     
 **** marginalia
+Marginalia can add annotations to be displayed with the completion
+candidates.
+
+There's no need to bind #'marginalia-cycle, not useful.
+
 #+BEGIN_SRC emacs-lisp
-  (require 'marginalia)
-  (marginalia-mode t)
+  (use-package marginalia
+    :init
+    (marginalia-mode))
+#+END_SRC
+    
+**** TODO embark
+#+BEGIN_SRC emacs-lisp
+  (require 'embark)
+  (global-set-key (kbd "C-:") 'embark-act)
+  (setq prefix-help-command 'embark-prefix-help-command)
 #+END_SRC
     
 *** consult
@@ -510,18 +630,50 @@ Persist history over Emacs restarts. Vertico sorts by history position.
   (global-set-key (kbd "C-x C-b") 'consult-buffer)
 #+END_SRC
 
-*** TODO COMMENT recentf
-#+begin_src emacs-lisp
-  (use-package recentf
-    :defer nil
-    :config (recentf-mode t)
-    :bind ("C-x f" . recentf-open-files)
-    :custom
-    :custom-face
-    )
-#+end_src
+考虑下面的配置
+#+begin_example emacs-lisp
+;;  (setq vertico-multiform-commands
+;;          '((consult-line buffer)
+;;            (consult-imenu reverse buffer)
+;;            (execute-extended-command flat)))
+;;
+;;    (setq vertico-multiform-categories
+;;          '((file buffer grid)
+;;            (imenu (:not indexed mouse))
+;;            (symbol (vertico-sort-function . vertico-sort-alpha))))
+;;
+;;    (vertico-multiform-mode)
 
-*** TODO minibuffer modeline or tab bar
+;; Enable vertico-multiform
+(vertico-multiform-mode)
+
+;; Configure the display per command.
+;; Use a buffer with indices for imenu
+;; and a flat (Ido-like) menu for M-x.
+(setq vertico-multiform-commands
+      '((consult-imenu buffer indexed)
+        (execute-extended-command unobtrusive)))
+
+;; Configure the display per completion category.
+;; Use the grid display for files and a buffer
+;; for the consult-grep commands.
+(setq vertico-multiform-categories
+      '((file grid)
+        (consult-grep buffer)))
+
+        ;; Configure `consult-outline' as a scaled down TOC in a separate buffer
+(setq vertico-multiform-commands
+      `((consult-outline buffer ,(lambda (_) (text-scale-set -1)))))
+
+      ;; Configure the buffer display and the buffer display action
+(setq vertico-multiform-categories
+      '((consult-grep
+         buffer
+         (vertico-buffer-display-action . (display-buffer-same-window)))))
+
+;; Disable preview for consult-grep commands
+(consult-customize consult-ripgrep consult-git-grep consult-grep :preview-key nil)
+#+end_example
 
 *** TODO auto fill mode
 *** TODO awesome-try
@@ -532,15 +684,8 @@ Persist history over Emacs restarts. Vertico sorts by history position.
   (setq company-minimum-prefix-length 2)
   (setq company-idle-delay 0)
 #+END_SRC
-    
-*** embark
-#+BEGIN_SRC emacs-lisp
-  (require 'embark)
-  (global-set-key (kbd "C-:") 'embark-act)
-  (setq prefix-help-command 'embark-prefix-help-command)
-#+END_SRC
-    
-*** wgrep
+*** TODO corfu
+*** TODO wgrep
 #+BEGIN_SRC emacs-lisp
   (require 'wgrep)
   (setq wgrep-auto-save-buffer t)
@@ -562,7 +707,35 @@ Persist history over Emacs restarts. Vertico sorts by history position.
       ))
 #+END_SRC
 
+*** TODO direddred
+
+*** TODO crux
+
+*** TODO eglot
+
+*** TODO flycheck
+
 *** TODO dictionary functions
+
+*** TODO winum | switch-window | ace-window
+
+*** TODO iedit
+
+*** TODO xah-fly-keys | ergoemacs-mode | hydra | meow
+
+*** TODO git gutter & git timemachine
+
+*** TODO auto-yasnippets
+
+*** TODO libe-py-plugin
+
+*** TODO dump-jump
+
+*** TODO emmet-mode
+
+*** TODO expand-region & multiple cursors
+
+*** TODO avy
 * COMMENT backup snippets for future
 :PROPERTIES:
 :VISIBILITY: folded
