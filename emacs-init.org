@@ -1,6 +1,8 @@
 #+STARTUP: overview num indent show2levels
 #+TODO: TODO(t) DONE
-#+TODO: VERBOSE-ON VERBOSE-OFF | 
+#+TODO: VERBOSE-ON VERBOSE-OFF |
+#+TODO: BASIC SUPER |
+#+TODO: CORFU COMPANY |
 
 * *READ THIS FIRST*
 :PROPERTIES:
@@ -19,6 +21,11 @@
   switch code branches.
 
 - Type C-c C-v t to tangle emacs init files.
+
+- There are special SEQ_TODOs for choosing tangling code from the list
+  of branches under 1) 2) etc+. Use S-<left><right> on headline to switch.
+
+
 
 
 * early-init.el
@@ -144,7 +151,7 @@ Using custom-set-faces mechanism.
 ** key bindings
 *** built-in function key bindings
 #+BEGIN_SRC emacs-lisp
-  (global-set-key (kbd "C-x b") 'ibuffer)
+  (global-set-key (kbd "C-x C-b") 'ibuffer)
   (global-set-key (kbd "C-x k") 'kill-current-buffer)
   (global-set-key (kbd "C-M-DEL") 'backward-kill-sexp)
   (global-set-key (kbd "C-M-RET") 'cua-rectangle-mark-mode)
@@ -161,9 +168,8 @@ Using custom-set-faces mechanism.
   (global-set-key (kbd "C-x C-d") 'dired)
   (global-set-key (kbd "C-h C-k") 'describe-keymap)
   (global-set-key (kbd "C-c h") 'org-hide-entry)
+  (global-set-key (kbd "C-c s") 'org-show-entry)
 #+END_SRC
-*** TODO 模式键绑定到相应的模式map
-
 *** custom function & key bindings
 using :noweb to call ORG-INIT-FILE library.
     
@@ -173,38 +179,6 @@ using :noweb to call ORG-INIT-FILE library.
     (find-file "<<ORG-INIT-FILE()>>"))
   (global-set-key (kbd "<f2>") 'open-org-init-file)
 #+END_SRC
-
-*** TODO windmove-mode keybindings (default, delete, display, swap)
-default no bindings set, uncomment to apply.
-need redesign to use direct keybinding as such functions are very slow.
-
-**** COMMENT windmove-default-keybindings
-S-<up><down><left><right>
-
-#+begin_src emacs-lisp
-  (windmove-default-keybindings)
-#+end_src
-
-**** COMMENT windmove-delete-default-keybindings
-C-x S-<up><down><left><right>
-
-#+begin_src emacs-lisp
-  (windmove-delete-default-keybindings)
-#+end_src
-
-**** COMMENT windmove-display-default-keybindings
-M-S-<up><down><left><right>
-
-#+begin_src emacs-lisp
-  (windmove-display-default-keybindings)
-#+end_src
-
-**** COMMENT windmove-swap-states-default-keybindings
-S-s-<up><down><left><right>
-
-#+begin_src emacs-lisp
-  (windmove-swap-states-default-keybindings)
-#+end_src
 
 ** package settings
 *** TODO fix the load path stuff
@@ -229,11 +203,7 @@ S-s-<up><down><left><right>
 #+END_SRC
 
 *** VERBOSE-ON use-package
-"VERBOSE-ON" and "VERBOSE-OFF" are special SEQ_TODOs for choosing
-tangling code from the list of branches below. Use S-<left><right> on
-headline to switch.
-
-1) ~with error catch & verbose~::
+1) ~verbose-on with error catch & verbose~::
    #+HEADER: :tangle (if (string= "VERBOSE-ON" (org-get-todo-state)) (concat tangle-dir (car (org-get-outline-path t t))) "no")
    #+begin_src emacs-lisp
      (eval-and-compile
@@ -244,7 +214,7 @@ headline to switch.
              use-package-verbose 'debug))
    #+end_src
 
-2) ~quiet & fast~::
+2) ~verbose-off quiet & fast~::
    #+HEADER: :tangle (if (string= "VERBOSE-OFF" (org-get-todo-state)) (concat tangle-dir (car (org-get-outline-path t t))) "no")
    #+begin_src emacs-lisp
      (eval-when-compile
@@ -257,30 +227,24 @@ headline to switch.
    
 *** built-in packages
 Don't forget to use ~:ensure nil~ code for built-in packages.
-
 **** savehist
 Persist history over Emacs restarts. Vertico sorts by history position.
 
 All configurations are in =Savehist= customize group, no change here.
 
 #+BEGIN_SRC emacs-lisp
-  (use-package savehist
-    :ensure nil
-    :init
-    (savehist-mode))
+  (use-package savehist :init (savehist-mode))
 #+END_SRC
+
+**** TODO auto fill mode
 
 **** TODO display-line-numbers
 do we need line numbers?
-**** TODO COMMENT recentf
+**** recentf
 #+begin_src emacs-lisp
   (use-package recentf
-    :defer nil
-    :config (recentf-mode t)
-    :bind ("C-x f" . recentf-open-files)
-    :custom
-    :custom-face
-    )
+    :init (recentf-mode t)
+    :bind ("C-x f" . recentf-open-files))
 #+end_src
 
 **** TODO org
@@ -288,9 +252,9 @@ bind org-src-mode-map #'org-edit-src-exit C-c C-'
 
 bind org-show-entry or make TAB cycle after "..."
 
-*** doom-themes
+*** appearances
+**** theme
 After code is a list of good looking themes, use one of them.
-
 #+BEGIN_SRC emacs-lisp
   (use-package doom-themes
     :custom
@@ -301,7 +265,7 @@ After code is a list of good looking themes, use one of them.
     (doom-themes-org-config))
 #+END_SRC
 
-**** COMMENT good doom-themes list
+***** COMMENT good doom-themes list
   - doom-badger
   - doom-gruvbox
   - doom-material-dark
@@ -314,7 +278,7 @@ After code is a list of good looking themes, use one of them.
   - doom-old-hope
   - doom-wilmersdorf
 
-**** COMMENT doom-themes config example
+***** COMMENT doom-themes config example
 #+BEGIN_EXAMPLE emacs-lisp
   ;; Enable flashing mode-line on errors
   (doom-themes-visual-bell-config)
@@ -327,9 +291,8 @@ After code is a list of good looking themes, use one of them.
   (doom-themes-org-config))
 #+END_EXAMPLE
 
-*** doom-modeline
+**** modeline
 Modeline derived from DOOM emacs.
-
 #+BEGIN_SRC emacs-lisp
   (use-package doom-modeline
     :hook (after-init . doom-modeline-mode)
@@ -340,7 +303,7 @@ Modeline derived from DOOM emacs.
     (doom-modeline-irc nil))
 #+END_SRC
 
-**** COMMENT doom-modeline config example
+***** COMMENT doom-modeline config example
 #+BEGIN_EXAMPLE emacs-lisp
   ;; If non-nil, cause imenu to see `doom-modeline' declarations.
   ;; This is done by adjusting `lisp-imenu-generic-expression' to
@@ -475,17 +438,15 @@ Modeline derived from DOOM emacs.
   (setq doom-modeline-after-update-env-hook nil)
 #+END_EXAMPLE
 
-*** TODO solaire-mode.
+**** TODO solaire-mode.
 
-*** TODO helpful
-*** @minad package set
+**** TODO helpful
+*** minibuffer & complete
 **** vertico
 Vertico provides a performant and minimalistic vertical completion UI
 based on the default completion system.
-
 #+BEGIN_SRC emacs-lisp
-  (use-package vertico
-    :init (vertico-mode))
+  (use-package vertico :init (vertico-mode))
 #+END_SRC
 
 ***** COMMENT config example
@@ -508,7 +469,6 @@ Comment out if you don't want the extension.
 
 ***** vertico-directory
 Provides Ido-like navigation commands.
-
 #+begin_src emacs-lisp
   (use-package vertico-directory
     :after vertico
@@ -520,7 +480,7 @@ Provides Ido-like navigation commands.
     :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
 #+end_src
 
-***** COMMENT vertico-indexed
+***** vertico-indexed
 Prefixes candidates with indices and allows you to select with prefix
 arguments.
 
@@ -535,7 +495,6 @@ Use C-<number> RET to execute, C-<number> TAB to insert.
 
 ***** COMMENT vertico-mouse
 Adds mouse support.
-
 #+begin_src emacs-lisp
   (use-package vertico-mouse
     :after vertico
@@ -546,7 +505,6 @@ Adds mouse support.
 ***** vertico-multiform
 This package is a Vertico extension for fine tuning the Vertico
 display and other minibuffer modes per command or completion category.
-
 #+begin_src emacs-lisp
   (use-package vertico-multiform
     :after vertico
@@ -556,9 +514,8 @@ display and other minibuffer modes per command or completion category.
                 ("M-G" . vertico-multiform-grid)))
 #+end_src
 
-***** vertico-quick
+***** COMMENT vertico-quick
 Select using Avy-style quick keys.
-
 #+begin_src emacs-lisp
   (use-package vertico-quick
     :after vertico
@@ -590,98 +547,109 @@ In order to save the history across Emacs sessions, enable
     :hook (minibuffer-setup . vertico-repeat-save))
 #+end_src
 
-**** orderless
+**** BASIC orderless
 This package provides an orderless completion style that divides the
 pattern into space-separated components, and matches candidates that
 match all of the components in any order.
 
 See document of =completion-styles-alist= for details.
 
-Now using @minad's configuration.
+1) ~basic config~::
+   #+HEADER: :tangle (if (string= "BASIC" (org-get-todo-state)) (concat tangle-dir (car (org-get-outline-path t t))) "no")
+   #+begin_src emacs-lisp
+     (use-package orderless
+       :custom
+       (completion-styles '(orderless basic))
+       (completion-category-defaults nil)
+       (completion-category-overrides '((file (styles . (partial-completion initials)))))
+       (orderless-matching-styles '(orderless-initialism orderless-literal orderless-regexp)))
+   #+end_src
 
-#+BEGIN_SRC emacs-lisp
-  (use-package orderless
-    :demand t
-    :config
-    (defvar +orderless-dispatch-alist
-      '((?% . char-fold-to-regexp)
-        (?! . orderless-without-literal)
-        (?`. orderless-initialism)
-        (?= . orderless-literal)
-        (?~ . orderless-flex)))
+2) ~super config by minad~::
+   #+HEADER: :tangle (if (string= "SUPER" (org-get-todo-state)) (concat tangle-dir (car (org-get-outline-path t t))) "no")
+   #+BEGIN_SRC emacs-lisp
+     (use-package orderless
+       :demand t
+       :config
+       (defvar +orderless-dispatch-alist
+         '((?% . char-fold-to-regexp)
+           (?! . orderless-without-literal)
+           (?`. orderless-initialism)
+           (?= . orderless-literal)
+           (?~ . orderless-flex)))
 
-    ;; Recognizes the following patterns:
-    ;; * ~flex flex~
-    ;; * =literal literal=
-    ;; * %char-fold char-fold%
-    ;; * `initialism initialism`
-    ;; * !without-literal without-literal!
-    ;; * .ext (file extension)
-    ;; * regexp$ (regexp matching at end)
-    (defun +orderless-dispatch (pattern index _total)
-      (cond
-       ;; Ensure that $ works with Consult commands, which add disambiguation suffixes
-       ((string-suffix-p "$" pattern)
-        `(orderless-regexp . ,(concat (substring pattern 0 -1) "[\x200000-\x300000]*$")))
-       ;; File extensions
-       ((and
-         ;; Completing filename or eshell
-         (or minibuffer-completing-file-name
-             (derived-mode-p 'eshell-mode))
-         ;; File extension
-         (string-match-p "\\`\\.." pattern))
-        `(orderless-regexp . ,(concat "\\." (substring pattern 1) "[\x200000-\x300000]*$")))
-       ;; Ignore single !
-       ((string= "!" pattern) `(orderless-literal . ""))
-       ;; Prefix and suffix
-       ((if-let (x (assq (aref pattern 0) +orderless-dispatch-alist))
-            (cons (cdr x) (substring pattern 1))
-          (when-let (x (assq (aref pattern (1- (length pattern))) +orderless-dispatch-alist))
-            (cons (cdr x) (substring pattern 0 -1)))))))
+       ;; Recognizes the following patterns:
+       ;; * ~flex flex~
+       ;; * =literal literal=
+       ;; * %char-fold char-fold%
+       ;; * `initialism initialism`
+       ;; * !without-literal without-literal!
+       ;; * .ext (file extension)
+       ;; * regexp$ (regexp matching at end)
+       (defun +orderless-dispatch (pattern index _total)
+         (cond
+          ;; Ensure that $ works with Consult commands, which add disambiguation suffixes
+          ((string-suffix-p "$" pattern)
+           `(orderless-regexp . ,(concat (substring pattern 0 -1) "[\x200000-\x300000]*$")))
+          ;; File extensions
+          ((and
+            ;; Completing filename or eshell
+            (or minibuffer-completing-file-name
+                (derived-mode-p 'eshell-mode))
+            ;; File extension
+            (string-match-p "\\`\\.." pattern))
+           `(orderless-regexp . ,(concat "\\." (substring pattern 1) "[\x200000-\x300000]*$")))
+          ;; Ignore single !
+          ((string= "!" pattern) `(orderless-literal . ""))
+          ;; Prefix and suffix
+          ((if-let (x (assq (aref pattern 0) +orderless-dispatch-alist))
+               (cons (cdr x) (substring pattern 1))
+             (when-let (x (assq (aref pattern (1- (length pattern))) +orderless-dispatch-alist))
+               (cons (cdr x) (substring pattern 0 -1)))))))
 
-    ;; Define orderless style with initialism by default
-    (orderless-define-completion-style +orderless-with-initialism
-      (orderless-matching-styles '(orderless-initialism orderless-literal orderless-regexp)))
+       ;; Define orderless style with initialism by default
+       (orderless-define-completion-style +orderless-with-initialism
+         (orderless-matching-styles '(orderless-initialism orderless-literal orderless-regexp)))
 
-    ;; You may want to combine the `orderless` style with `substring` and/or `basic`.
-    ;; There are many details to consider, but the following configurations all work well.
-    ;; Personally I (@minad) use option 3 currently. Also note that you may want to configure
-    ;; special styles for special completion categories, e.g., partial-completion for files.
-    ;;
-    ;; 1. (setq completion-styles '(orderless))
-    ;; This configuration results in a very coherent completion experience,
-    ;; since orderless is used always and exclusively. But it may not work
-    ;; in all scenarios. Prefix expansion with TAB is not possible.
-    ;;
-    ;; 2. (setq completion-styles '(substring orderless))
-    ;; By trying substring before orderless, TAB expansion is possible.
-    ;; The downside is that you can observe the switch from substring to orderless
-    ;; during completion, less coherent.
-    ;;
-    ;; 3. (setq completion-styles '(orderless basic))
-    ;; Certain dynamic completion tables (completion-table-dynamic)
-    ;; do not work properly with orderless. One can add basic as a fallback.
-    ;; Basic will only be used when orderless fails, which happens only for
-    ;; these special tables.
-    ;;
-    ;; 4. (setq completion-styles '(substring orderless basic))
-    ;; Combine substring, orderless and basic.
-    ;;
-    (setq completion-styles '(orderless basic)
-          completion-category-defaults nil
-        ;;; Enable partial-completion for files.
-        ;;; Either give orderless precedence or partial-completion.
-        ;;; Note that completion-category-overrides is not really an override,
-        ;;; but rather prepended to the default completion-styles.
-          ;; completion-category-overrides '((file (styles orderless partial-completion))) ;; orderless is tried first
-          completion-category-overrides '((file (styles partial-completion initials)) ;; partial-completion is tried first
-                                          ;; enable initialism by default for symbols
-                                          (command (styles +orderless-with-initialism))
-                                          (variable (styles +orderless-with-initialism))
-                                          (symbol (styles +orderless-with-initialism)))
-          orderless-component-separator #'orderless-escapable-split-on-space ;; allow escaping space with backslash!
-          orderless-style-dispatchers '(+orderless-dispatch)))
-#+END_SRC
+       ;; You may want to combine the `orderless` style with `substring` and/or `basic`.
+       ;; There are many details to consider, but the following configurations all work well.
+       ;; Personally I (@minad) use option 3 currently. Also note that you may want to configure
+       ;; special styles for special completion categories, e.g., partial-completion for files.
+       ;;
+       ;; 1. (setq completion-styles '(orderless))
+       ;; This configuration results in a very coherent completion experience,
+       ;; since orderless is used always and exclusively. But it may not work
+       ;; in all scenarios. Prefix expansion with TAB is not possible.
+       ;;
+       ;; 2. (setq completion-styles '(substring orderless))
+       ;; By trying substring before orderless, TAB expansion is possible.
+       ;; The downside is that you can observe the switch from substring to orderless
+       ;; during completion, less coherent.
+       ;;
+       ;; 3. (setq completion-styles '(orderless basic))
+       ;; Certain dynamic completion tables (completion-table-dynamic)
+       ;; do not work properly with orderless. One can add basic as a fallback.
+       ;; Basic will only be used when orderless fails, which happens only for
+       ;; these special tables.
+       ;;
+       ;; 4. (setq completion-styles '(substring orderless basic))
+       ;; Combine substring, orderless and basic.
+       ;;
+       (setq completion-styles '(orderless basic)
+             completion-category-defaults nil
+           ;;; Enable partial-completion for files.
+           ;;; Either give orderless precedence or partial-completion.
+           ;;; Note that completion-category-overrides is not really an override,
+           ;;; but rather prepended to the default completion-styles.
+             ;; completion-category-overrides '((file (styles orderless partial-completion))) ;; orderless is tried first
+             completion-category-overrides '((file (styles partial-completion initials)) ;; partial-completion is tried first
+                                             ;; enable initialism by default for symbols
+                                             (command (styles +orderless-with-initialism))
+                                             (variable (styles +orderless-with-initialism))
+                                             (symbol (styles +orderless-with-initialism)))
+             orderless-component-separator #'orderless-escapable-split-on-space ;; allow escaping space with backslash!
+             orderless-style-dispatchers '(+orderless-dispatch)))
+   #+END_SRC
 
 ***** Component matching styles
 Each component of a pattern can match in any of several matching
@@ -745,13 +713,81 @@ There's no need to bind #'marginalia-cycle, not useful.
   (use-package marginalia :init (marginalia-mode))
 #+END_SRC
     
-**** TODO corfu
+**** COMPANY corfu | company
+1) ~Corfu enhances completion at point with a small completion popup~::
+   #+HEADER: :tangle (if (string= "CORFU" (org-get-todo-state)) (concat tangle-dir (car (org-get-outline-path t t))) "no")
+   #+begin_src emacs-lisp
+     (use-package corfu
+       :custom
+       (corfu-auto t)
+       (corfu-auto-delay 0)
+       :custom-face
+       (corfu-current ((t (:background "#22282c"))))
+       :init (global-corfu-mode))
+   #+end_src
+
+2) ~Company is a modular text completion framework for GNU Emacs~::
+   #+HEADER: :tangle (if (string= "COMPANY" (org-get-todo-state)) (concat tangle-dir (car (org-get-outline-path t t))) "no")
+   #+begin_src emacs-lisp
+     (use-package company
+       :custom
+       (company-minimum-prefix-length 3)
+       (company-idle-delay (lambda () (if (company-in-string-or-comment) nil 0)))
+       ;; (company-selection-wrap-around t)
+       ;; (company-global-modes '(not erc-mode message-mode eshell-mode))
+       ;; (company-require-match nil)
+       :hook (after-init . global-company-mode))
+       #+end_src
+
+***** COMMENT corfu example
+#+begin_example emacs-lisp
+  (use-package corfu
+    ;; Optional customizations
+    :custom
+    (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
+    (corfu-auto t)                 ;; Enable auto completion
+    ;; (corfu-separator ?\s)          ;; Orderless field separator
+    ;; (corfu-quit-at-boundary nil)   ;; Never quit at completion boundary
+    ;; (corfu-quit-no-match nil)      ;; Never quit, even if there is no match
+    ;; (corfu-preview-current nil)    ;; Disable current candidate preview
+    ;; (corfu-preselect-first nil)    ;; Disable candidate preselection
+    ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
+    ;; (corfu-echo-documentation nil) ;; Disable documentation in the echo area
+    ;; (corfu-scroll-margin 5)        ;; Use scroll margin
+
+    ;; Enable Corfu only for certain modes.
+    ;; :hook ((prog-mode . corfu-mode)
+    ;;        (shell-mode . corfu-mode)
+    ;;        (eshell-mode . corfu-mode))
+
+    ;; Recommended: Enable Corfu globally.
+    ;; This is recommended since Dabbrev can be used globally (M-/).
+    ;; See also `corfu-excluded-modes'.
+    :init
+    (global-corfu-mode))
+
+  ;; A few more useful configurations...
+  (use-package emacs
+    :init
+    ;; TAB cycle if there are only few candidates
+    (setq completion-cycle-threshold 3)
+
+    ;; Emacs 28: Hide commands in M-x which do not apply to the current mode.
+    ;; Corfu commands are hidden, since they are not supposed to be used via M-x.
+    ;; (setq read-extended-command-predicate
+    ;;       #'command-completion-default-include-p)
+
+    ;; Enable indentation+completion using the TAB key.
+    ;; `completion-at-point' is often bound to M-TAB.
+    (setq tab-always-indent 'complete))
+    #+end_example
+
 **** TODO consult
 #+BEGIN_SRC emacs-lisp
   (require 'consult)
   (global-set-key (kbd "C-;") 'consult-line)
   (global-set-key (kbd "C-,") 'consult-imenu)
-  (global-set-key (kbd "C-x C-b") 'consult-buffer)
+  (global-set-key (kbd "C-x b") 'consult-buffer)
 #+END_SRC
 
 考虑下面的配置
@@ -814,9 +850,17 @@ There's no need to bind #'marginalia-cycle, not useful.
   (global-set-key (kbd "C-:") 'embark-act)
   (setq prefix-help-command 'embark-prefix-help-command)
 #+END_SRC
-    
-*** TODO auto fill mode
-*** TODO awesome-try
+**** TODO awesome-try
+*** edit enhencement
+**** whole-line-or-region
+Operate on current line if region undefined.
+#+begin_src emacs-lisp
+  (use-package whole-line-or-region
+    :init
+    (whole-line-or-region-global-mode)
+    ;; (define-key whole-line-or-region-local-mode-map [remap comment-dwim] nil)
+    )
+#+end_src
 *** TODO wgrep
 #+BEGIN_SRC emacs-lisp
   (require 'wgrep)
@@ -845,7 +889,7 @@ There's no need to bind #'marginalia-cycle, not useful.
 
 *** TODO eglot
 
-*** TODO flycheck
+*** TODO flymake | flycheck
 
 *** TODO dictionary functions
 
@@ -893,6 +937,38 @@ There's no need to bind #'marginalia-cycle, not useful.
                 #'org-attach-dired-to-subtree)))
 #+END_SRC
 
+** COMMENT windmove-mode keybindings (default, delete, display, swap)
+default no bindings set, uncomment to apply.
+need redesign to use direct keybinding as such functions are very slow.
+
+*** COMMENT windmove-default-keybindings
+S-<up><down><left><right>
+
+#+begin_src emacs-lisp
+  (windmove-default-keybindings)
+#+end_src
+
+*** COMMENT windmove-delete-default-keybindings
+C-x S-<up><down><left><right>
+
+#+begin_src emacs-lisp
+  (windmove-delete-default-keybindings)
+#+end_src
+
+*** COMMENT windmove-display-default-keybindings
+M-S-<up><down><left><right>
+
+#+begin_src emacs-lisp
+  (windmove-display-default-keybindings)
+#+end_src
+
+*** COMMENT windmove-swap-states-default-keybindings
+S-s-<up><down><left><right>
+
+#+begin_src emacs-lisp
+  (windmove-swap-states-default-keybindings)
+#+end_src
+
 * /buffer functions & variables/
 :PROPERTIES:
 :VISIBILITY: folded
@@ -920,20 +996,21 @@ S-<left> or S-<right> to switch code branches.
 
 #+NAME: confirm-branch
 #+begin_src emacs-lisp
-  (let ((branch-tags nil)
-    (tags nil)
-    (return nil))
-    (defun confirm-branch-tags (new-mark old-mark)
-      (setq branch-tags '(("VERBOSE-ON" . "VERBOSE-OFF")
-                          ("1" . "2")))
-      (while (and (setq tags (car branch-tags))
-                  (not (setq return
-                             (cond ((string= old-mark (car tags)) (cdr tags))
-                                   ((string= old-mark (cdr tags)) (car tags))))))
-        (setq branch-tags (cdr branch-tags)))
-      return)
+    (let ((branch-tags nil)
+      (tags nil)
+      (return nil))
+      (defun confirm-branch-tags (new-mark old-mark)
+        (setq branch-tags '(("VERBOSE-ON" . "VERBOSE-OFF")
+                            ("BASIC" . "SUPER")
+                            ("CORFU" . "COMPANY")))
+        (while (and (setq tags (car branch-tags))
+                    (not (setq return
+                               (cond ((string= old-mark (car tags)) (cdr tags))
+                                     ((string= old-mark (cdr tags)) (car tags))))))
+          (setq branch-tags (cdr branch-tags)))
+        return)
 
-    (add-hook 'org-todo-get-default-hook 'confirm-branch-tags nil t))
+      (add-hook 'org-todo-get-default-hook 'confirm-branch-tags nil t))
 #+end_src
 
 #+RESULTS: confirm-branch
@@ -944,6 +1021,6 @@ S-<left> or S-<right> to switch code branches.
 # org-num-skip-unnumbered: t
 # tangle-dir: "C:\\Users\\InnerSea\\emacs.init\\vanilla\\"
 # org-confirm-babel-evaluate: nil
-# org-todo-keyword-faces: '(("TODO" . org-warning))
+# org-todo-keyword-faces: (("TODO" . org-dispatcher-highlight))
 # eval: (org-babel-ref-resolve "confirm-branch")
 # end:
