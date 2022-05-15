@@ -9,23 +9,21 @@
 :UNNUMBERED: t
 :END:
 
-- *DO THIS FIRST*: Setting the tangle target directory at [[*buffer local variables (must be the last)][here]].
+1. *DO THIS FIRST*: Setting the tangle target directory at [[*buffer local variables (must be the last)][here]].
 
-- Type M-x all-the-icons-install-fonts RET and follow the instructions
-  to get a better UI looking.
+2. Type M-x all-the-icons-install-fonts RET and follow the instructions
+   to get a better UI looking.
 
-- This init file uses =JetBrainsMono NF= & =Sarasa Term SC= fonts,
-  install them first.
+3. This init file uses =JetBrainsMono NF= & =Sarasa Term SC= fonts,
+   install them first.
 
-- If there's a special tag on the heading. Type S-<left><right> to
-  switch code branches.
+4. If there's a special tag on the heading. Type S-<left><right> to
+   switch code branches.
 
-- Type C-c C-v t to tangle emacs init files.
+5. Type C-c C-v t to tangle emacs init files.
 
-- There are special SEQ_TODOs for choosing tangling code from the list
-  of branches under 1) 2) etc+. Use S-<left><right> on headline to switch.
-
-
+6. There are special SEQ_TODOs for choosing tangling code from the list
+   of branches under 1) 2) etc+. Use S-<left><right> on headline to switch.
 
 
 * early-init.el
@@ -36,7 +34,6 @@
 :END:
 ** /file local variables (must at first)/
 Don't change or move this block!!!
-
 #+BEGIN_SRC emacs-lisp :comments no
   ;; -*- lexical-binding: t; -*-
 #+END_SRC
@@ -49,75 +46,44 @@ Don't change or move this block!!!
 :END:
 ** /file local variables (must at first)/
 Don't change or move this block!!!
-
 #+BEGIN_SRC emacs-lisp :comments no
   ;; -*- lexical-binding: t; -*-
 #+END_SRC
 
 ** built-in settings
 Using custom-set-variables mechanism.
-
 #+BEGIN_SRC emacs-lisp
   (custom-set-variables
    '(auto-save-default nil)
    '(abbrev-suggest t)
-   '(column-number-mode t)
    '(completion-cycle-threshold 5)
-   '(cua-enable-cua-keys nil)
-   '(cua-enable-modeline-indications t)
    '(default-frame-alist
       '((horizontal-scroll-bars)
         (vertical-scroll-bars)
         (fullscreen . fullboth)))
-   '(delete-selection-mode t)
    '(describe-bindings-outline t)
-   '(display-battery-mode t)
-   '(display-time-24hr-format t)
-   '(display-time-day-and-date t)
-   '(display-time-format "%R %p %F")
-   '(display-time-mode t)
-   '(electric-pair-mode t)
-   ;; '(electric-quote-mode t)
-   '(global-auto-revert-mode t)
-   '(global-auto-revert-non-file-buffers t)
-   ;; '(global-display-line-numbers-mode t)
-   '(global-goto-address-mode t)
-   '(global-hl-line-mode t)
    '(help-enable-symbol-autoload t)
    '(history-length 25)
-   '(horizontal-scroll-bar-mode nil)
    '(inhibit-startup-screen t)
    '(isearch-allow-motion t)
    '(kill-buffer-delete-auto-save-files t)
-   '(line-number-mode t)
    '(make-backup-files nil)
-   '(menu-bar-mode nil)
    '(mode-line-compact 'long)
    '(mouse-wheel-progressive-speed nil)
    '(next-error-message-highlight 'keep)
-   '(org-catch-invisible-edits 'smart)
-   '(org-clock-idle-time 10)
-   '(org-goto-auto-isearch nil)
-   '(org-log-into-drawer t)
    '(read-quoted-char-radix 16)
-   '(repeat-mode t)
    '(ring-bell-function 'ignore)
-   '(save-place-mode t)
-   '(scroll-bar-mode nil)
    '(scroll-margin 3)
    '(scroll-step 1)
    '(set-mark-command-repeat-pop t)
    '(shift-select-mode 'permanent)
    '(show-trailing-whitespace t)
-   '(size-indication-mode t)
    '(split-width-threshold 120)
    '(tab-bar-new-tab-choice 'bookmark-bmenu-get-buffer)
-   '(tool-bar-mode nil)
    '(use-dialog-box nil)
    '(use-short-answers t)
    '(visible-bell t)
    '(what-cursor-show-names t)
-   '(winner-mode t)
    '(x-stretch-cursor t))
 #+END_SRC
 
@@ -127,15 +93,11 @@ Using custom-set-variables mechanism.
 
 *** TODO 尝试使用etags-xref-prefer-current-file选项
 
-*** TODO 将上面的mode相关命令用usepackage重构，实现懒加载
-
 ** face settings
 *** built-in face settings
 Using custom-set-faces mechanism.
-
 #+BEGIN_SRC emacs-lisp
   (custom-set-faces
-   '(org-table ((t (:family "Sarasa Term SC"))))
    '(trailing-whitespace ((t (:background "gray0")))))
 #+END_SRC
 
@@ -153,26 +115,20 @@ Using custom-set-faces mechanism.
 #+BEGIN_SRC emacs-lisp
   (global-set-key (kbd "C-x C-b") 'ibuffer)
   (global-set-key (kbd "C-x k") 'kill-current-buffer)
-  (global-set-key (kbd "C-M-DEL") 'backward-kill-sexp)
-  (global-set-key (kbd "C-M-RET") 'cua-rectangle-mark-mode)
-  (global-set-key (kbd "C-c l") 'org-store-link)
-  (global-set-key (kbd "C-c a") 'org-agenda)
-  (global-set-key (kbd "C-c c") 'org-capture)
-  (global-set-key (kbd "C-c C-'") 'org-edit-special)
-  (global-set-key (kbd "C-x C-/") 'winner-undo)
-  (global-set-key (kbd "C-x C-?") 'winner-redo)
+  (global-set-key (kbd "C-M-<backspace>") 'backward-kill-sexp)
   (global-set-key (kbd "<f5>") 'desktop-save)
   (global-set-key (kbd "<f6>") 'desktop-read)
   ;; (global-set-key (kbd "C-x C-1") 'delete-windows-on)
   (global-set-key (kbd "C-x C-q") 'view-mode)
   (global-set-key (kbd "C-x C-d") 'dired)
   (global-set-key (kbd "C-h C-k") 'describe-keymap)
-  (global-set-key (kbd "C-c h") 'org-hide-entry)
-  (global-set-key (kbd "C-c s") 'org-show-entry)
+  (global-set-key (kbd "M-o") 'other-window)
+  (global-set-key (kbd "M-F") 'forward-to-word)
+  (global-set-key (kbd "M-B") 'backward-to-word)
 #+END_SRC
+
 *** custom function & key bindings
 using :noweb to call ORG-INIT-FILE library.
-    
 #+BEGIN_SRC emacs-lisp :noweb yes
   (defun open-org-init-file()
     (interactive)
@@ -227,30 +183,98 @@ using :noweb to call ORG-INIT-FILE library.
    
 *** built-in packages
 Don't forget to use ~:ensure nil~ code for built-in packages.
-**** savehist
-Persist history over Emacs restarts. Vertico sorts by history position.
+**** default on built-in packages
+#+begin_src emacs-lisp
+  (use-package emacs
+    :ensure nil
+    :init
+    (column-number-mode t)
+    (delete-selection-mode t)
+    (display-battery-mode t)
+    (electric-pair-mode t)
+    ;; (electric-quote-mode t)
+    ;; (global-display-line-numbers-mode t)
+    (global-goto-address-mode t)
+    (global-hl-line-mode t)
+    (horizontal-scroll-bar-mode 0)
+    (line-number-mode t)
+    (menu-bar-mode 0)
+    (save-place-mode t)
+    (savehist-mode t)
+    (scroll-bar-mode 0)
+    (size-indication-mode t)
+    (tool-bar-mode 0))
+#+end_src
 
-All configurations are in =Savehist= customize group, no change here.
+**** COMMENT autorevert
+#+begin_src emacs-lisp
+  (use-package autorevert
+    :ensure nil
+    :custom (global-auto-revert-non-file-buffers t))
+    :init (global-auto-revert-mode t)
+#+end_src
 
-#+BEGIN_SRC emacs-lisp
-  (use-package savehist :init (savehist-mode))
-#+END_SRC
+**** cua
+#+begin_src emacs-lisp
+  (use-package cua-rect
+    :ensure nil
+    :custom
+    (cua-enable-cua-keys nil)
+    (cua-enable-modeline-indications t)
+    :bind ("C-M-<return>" . cua-rectangle-mark-mode))
+#+end_src
 
-**** TODO auto fill mode
+**** time
+   #+begin_src emacs-lisp
+       (use-package time
+         :ensure nil
+         :after doom-modeline
+     :custom (display-time-24hr-format t)
+        (display-time-day-and-date t)
+        (display-time-format "%R %p %F")
+     :init   (display-time-mode t))
+#+end_src
 
-**** TODO display-line-numbers
-do we need line numbers?
+**** org
+#+begin_src emacs-lisp
+  (use-package org
+    :ensure nil
+    :custom
+    (org-catch-invisible-edits 'smart)
+    (org-clock-idle-time 10)
+    (org-goto-auto-isearch nil)
+    (org-log-into-drawer t)
+    :custom-face
+    (org-table ((t (:family "Sarasa Term SC"))))
+    :bind(
+          ("C-c l" . org-store-link)
+          ("C-c a" . org-agenda)
+          ("C-c c" . org-capture)
+          :map org-mode-map
+          ("C-c s" . org-show-entry)
+          ("C-c h" . org-hide-entry)
+          ("C-c C-'" . org-edit-special)
+          ("C-c C-;" . org-toggle-comment)
+          :map org-src-mode-map
+          ("C-c C-'" . org-edit-src-exit)))
+#+end_src
+
 **** recentf
 #+begin_src emacs-lisp
   (use-package recentf
+    :ensure nil
     :init (recentf-mode t)
     :bind ("C-x f" . recentf-open-files))
 #+end_src
 
-**** TODO org
-bind org-src-mode-map #'org-edit-src-exit C-c C-'
-
-bind org-show-entry or make TAB cycle after "..."
+**** winner
+#+begin_src emacs-lisp
+  (use-package winner
+    :ensure nil
+    :init (winner-mode)
+    :bind (("C-x C-/" . winner-undo)
+           ("C-x C-?" . winner-redo)))
+#+end_src
 
 *** appearances
 **** theme
@@ -438,9 +462,18 @@ Modeline derived from DOOM emacs.
   (setq doom-modeline-after-update-env-hook nil)
 #+END_EXAMPLE
 
-**** TODO solaire-mode.
+**** TODO awesome-try
 
 **** TODO helpful
+
+**** TODO org-modern
+
+**** TODO goggles
+
+**** TODO ace-popup-menu
+**** TODO avy
+**** TODO emacs-dashboard
+
 *** minibuffer & complete
 **** vertico
 Vertico provides a performant and minimalistic vertical completion UI
@@ -493,7 +526,7 @@ Use C-<number> RET to execute, C-<number> TAB to insert.
     :init (vertico-indexed-mode))
 #+end_src
 
-***** COMMENT vertico-mouse
+***** vertico-mouse
 Adds mouse support.
 #+begin_src emacs-lisp
   (use-package vertico-mouse
@@ -713,7 +746,7 @@ There's no need to bind #'marginalia-cycle, not useful.
   (use-package marginalia :init (marginalia-mode))
 #+END_SRC
     
-**** COMPANY corfu | company
+**** CORFU corfu | company
 1) ~Corfu enhances completion at point with a small completion popup~::
    #+HEADER: :tangle (if (string= "CORFU" (org-get-todo-state)) (concat tangle-dir (car (org-get-outline-path t t))) "no")
    #+begin_src emacs-lisp
@@ -721,6 +754,7 @@ There's no need to bind #'marginalia-cycle, not useful.
        :custom
        (corfu-auto t)
        (corfu-auto-delay 0)
+       (corfu-auto-prefix 2)
        :custom-face
        (corfu-current ((t (:background "#22282c"))))
        :init (global-corfu-mode))
@@ -731,7 +765,7 @@ There's no need to bind #'marginalia-cycle, not useful.
    #+begin_src emacs-lisp
      (use-package company
        :custom
-       (company-minimum-prefix-length 3)
+       (company-minimum-prefix-length 2)
        (company-idle-delay (lambda () (if (company-in-string-or-comment) nil 0)))
        ;; (company-selection-wrap-around t)
        ;; (company-global-modes '(not erc-mode message-mode eshell-mode))
@@ -781,6 +815,8 @@ There's no need to bind #'marginalia-cycle, not useful.
     ;; `completion-at-point' is often bound to M-TAB.
     (setq tab-always-indent 'complete))
     #+end_example
+
+**** TODO cape
 
 **** TODO consult
 #+BEGIN_SRC emacs-lisp
@@ -844,13 +880,14 @@ There's no need to bind #'marginalia-cycle, not useful.
 (consult-customize consult-ripgrep consult-git-grep consult-grep :preview-key nil)
 #+end_example
 
+**** TODO tempel
+
 **** TODO embark
 #+BEGIN_SRC emacs-lisp
   (require 'embark)
   (global-set-key (kbd "C-:") 'embark-act)
   (setq prefix-help-command 'embark-prefix-help-command)
 #+END_SRC
-**** TODO awesome-try
 *** edit enhencement
 **** whole-line-or-region
 Operate on current line if region undefined.
@@ -911,14 +948,16 @@ Operate on current line if region undefined.
 
 *** TODO expand-region & multiple cursors
 
-*** TODO avy
+*** TODO workgroups2
+
+*** TODO paradox
 * COMMENT backup snippets for future
 :PROPERTIES:
 :VISIBILITY: folded
 :header-args: :tangle no
 :header-args+: :results replace
 :END:
-** COMMENT /some snippet may be useful/
+** /some snippet may be useful/
 #+BEGIN_SRC emacs-lisp
   ;; (setq custom-file (locate-user-emacs-file "custom-vars.el"))
   ;; (load custom-file 'noerror 'nomessage)
@@ -937,7 +976,7 @@ Operate on current line if region undefined.
                 #'org-attach-dired-to-subtree)))
 #+END_SRC
 
-** COMMENT windmove-mode keybindings (default, delete, display, swap)
+** windmove-mode keybindings (default, delete, display, swap)
 default no bindings set, uncomment to apply.
 need redesign to use direct keybinding as such functions are very slow.
 
@@ -968,6 +1007,28 @@ S-s-<up><down><left><right>
 #+begin_src emacs-lisp
   (windmove-swap-states-default-keybindings)
 #+end_src
+
+** solaire-mode
+Solaire-mode is an aesthetic plugin designed to visually distinguish
+"real" buffers from "unreal" buffers by giving the latter a slightly
+different -- often darker -- background.
+
+*Tried, it's ugly.*
+
+#+begin_src emacs-lisp
+  (use-package solaire-mode
+    :after doom-themes
+    :init (solaire-global-mode))
+#+end_src
+
+*** config snippets
+#+begin_example emacs-lisp
+(dolist (face '(mode-line mode-line-inactive))
+  (setf (alist-get face solaire-mode-remap-modeline) nil))
+
+(add-to-list 'solaire-mode-themes-to-face-swap 'doom-vibrant)
+(add-to-list 'solaire-mode-themes-to-face-swap "^doom-")
+#+end_example
 
 * /buffer functions & variables/
 :PROPERTIES:
