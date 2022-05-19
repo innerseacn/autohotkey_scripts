@@ -87,11 +87,11 @@ Using custom-set-variables mechanism.
    '(x-stretch-cursor t))
 #+END_SRC
 
-*** TODO modelineœ‘ æframe√˚≥∆£¨ªÚ‘⁄minibuffer÷–œ‘ æ
+*** TODO modelineÊòæÁ§∫frameÂêçÁß∞ÔºåÊàñÂú®minibuffer‰∏≠ÊòæÁ§∫
 
-*** TODO ≤‚ ‘eldoc-documentation-strategy…Ë÷√µƒ◊Óº—∑Ω∑®£¨ªÚ π”√∆‰À˚∑Ω Ω£®»Álsp-mode£©
+*** TODO ÊµãËØïeldoc-documentation-strategyËÆæÁΩÆÁöÑÊúÄ‰Ω≥ÊñπÊ≥ïÔºåÊàñ‰ΩøÁî®ÂÖ∂‰ªñÊñπÂºèÔºàÂ¶Çlsp-modeÔºâ
 
-*** TODO ≥¢ ‘ π”√etags-xref-prefer-current-file—°œÓ
+*** TODO Â∞ùËØï‰ΩøÁî®etags-xref-prefer-current-fileÈÄâÈ°π
 
 ** face settings
 *** built-in face settings
@@ -244,6 +244,8 @@ Don't forget to use ~:ensure nil~ code for built-in packages.
     (org-clock-idle-time 10)
     (org-goto-auto-isearch nil)
     (org-log-into-drawer t)
+    (org-special-ctrl-a/e t)
+    ;; (org-ellipsis "‚Ä¶")
     :custom-face
     (org-table ((t (:family "Sarasa Term SC"))))
     :bind(
@@ -462,13 +464,26 @@ Modeline derived from DOOM emacs.
   (setq doom-modeline-after-update-env-hook nil)
 #+END_EXAMPLE
 
-**** TODO awesome-try
+**** TODO awesome-try like code
 
-**** TODO helpful
+**** COMMENT helpful
+Helpful is an alternative to the built-in Emacs help that provides
+much more contextual information.
+#+begin_src emacs-lisp
+  (use-package helpful
+    :bind (("C-h f" . helpful-callable)
+           ("C-h v" . helpful-variable)
+           ("C-h s" . helpful-symbol)
+           ("C-h x" . helpful-command)
+           ("C-h ." . helpful-at-point)))
+#+end_src
 
-**** TODO org-modern
-
-**** TODO goggles
+**** goggles
+#+begin_src emacs-lisp
+  (use-package goggles
+    :hook ((prog-mode text-mode) . goggles-mode)
+    :custom (goggles-pulse t)) ;; set to nil to disable pulsing
+#+end_src
 
 **** TODO ace-popup-menu
 **** TODO avy
@@ -699,7 +714,7 @@ define new matching styles. The predefined ones are:
 
 - =orderless-without-literal= the component is a treated as a literal
   string that must not occur in the candidate.  Note that nothing is
-  highlighted for this matching style. You probably don°Øt want to use
+  highlighted for this matching style. You probably don‚Äôt want to use
   this style directly in orderless-matching-styles but with a style
   dispatcher instead. There is an example in the section on style
   dispatchers.
@@ -720,11 +735,11 @@ define new matching styles. The predefined ones are:
   match foo-bar but not foo-qux-bar.
 
 - =orderless-strict-leading-initialism= like strict-initialism but
-  require the first initial to match the candidate°Øs first word.  For
+  require the first initial to match the candidate‚Äôs first word.  For
   example bb would match bar-baz but not foo-bar-baz.
 
 - =orderless-strict-full-initialism= like strict-initialism but require
-  the first initial to match the candidate°Øs first word and the last
+  the first initial to match the candidate‚Äôs first word and the last
   initial to be at the final word.  For example fbb would match
   foo-bar-baz but not foo-bar-baz-qux.
 
@@ -757,7 +772,7 @@ There's no need to bind #'marginalia-cycle, not useful.
        (corfu-auto-prefix 2)
        :custom-face
        (corfu-current ((t (:background "#22282c"))))
-       :init (global-corfu-mode))
+       :hook (after-init . global-corfu-mode))
    #+end_src
 
 2) ~Company is a modular text completion framework for GNU Emacs~::
@@ -766,7 +781,7 @@ There's no need to bind #'marginalia-cycle, not useful.
      (use-package company
        :custom
        (company-minimum-prefix-length 2)
-       (company-idle-delay (lambda () (if (company-in-string-or-comment) nil 0)))
+       ;; (company-idle-delay (lambda () (if (company-in-string-or-comment) nil 0)))
        ;; (company-selection-wrap-around t)
        ;; (company-global-modes '(not erc-mode message-mode eshell-mode))
        ;; (company-require-match nil)
@@ -816,7 +831,106 @@ There's no need to bind #'marginalia-cycle, not useful.
     (setq tab-always-indent 'complete))
     #+end_example
 
-**** TODO cape
+**** cape
+Cape provides a bunch of Completion At Point Extensions which can be
+used in combination with my Corfu completion UI or the default
+completion UI.
+#+begin_src emacs-lisp
+  (use-package cape
+    ;; :bind (("M-p p" . completion-at-point) ;; capf
+    ;;        ("M-p t" . complete-tag)        ;; etags
+    ;;        ("M-p d" . cape-dabbrev)        ;; or dabbrev-completion
+    ;;        ("M-p h" . cape-history)
+    ;;        ("M-p f" . cape-file)
+    ;;        ("M-p k" . cape-keyword)
+    ;;        ("M-p s" . cape-symbol)
+    ;;        ("M-p a" . cape-abbrev)
+    ;;        ("M-p i" . cape-ispell)
+    ;;        ("M-p l" . cape-line)
+    ;;        ("M-p w" . cape-dict)
+    ;;        ("M-p \\" . cape-tex)
+    ;;        ("M-p &" . cape-sgml)
+    ;;        ("M-p r" . cape-rfc1345))
+    :init
+    ;; Add `completion-at-point-functions', used by `completion-at-point'.
+    (add-to-list 'completion-at-point-functions #'cape-file)
+    (add-to-list 'completion-at-point-functions #'cape-dabbrev)
+    ;;(add-to-list 'completion-at-point-functions #'cape-history)
+    (add-to-list 'completion-at-point-functions #'cape-keyword)
+    ;;(add-to-list 'completion-at-point-functions #'cape-tex)
+    ;;(add-to-list 'completion-at-point-functions #'cape-sgml)
+    ;;(add-to-list 'completion-at-point-functions #'cape-rfc1345)
+    ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
+    ;;(add-to-list 'completion-at-point-functions #'cape-ispell)
+    ;;(add-to-list 'completion-at-point-functions #'cape-dict)
+    (add-to-list 'completion-at-point-functions #'cape-symbol)
+    ;;(add-to-list 'completion-at-point-functions #'cape-line)
+    )
+#+end_src
+
+***** cape examples
+#+begin_example emacs-lisp
+;; Use Company backends as Capfs.
+(setq-local completion-at-point-functions
+  (mapcar #'cape-company-to-capf
+    (list #'company-files #'company-ispell #'company-dabbrev)))
+
+(defvar emojis
+  '((":-D" . "üòÄ")
+    (";-)" . "üòâ")
+    (":-/" . "üòï")
+    (":-(" . "üôÅ")
+    (":-*" . "üòô")))
+
+(defun emoji-backend (action &optional arg &rest _)
+  (pcase action
+    ('prefix (and (memq (char-before) '(?: ?\;))
+                  (cons (string (char-before)) t)))
+    ('candidates (all-completions arg emojis))
+    ('annotation (concat " " (cdr (assoc arg emojis))))
+    ('post-completion
+     (let ((str (buffer-substring (- (point) 3) (point))))
+       (delete-region (- (point) 3) (point))
+     (insert (cdr (assoc str emojis)))))))
+
+;; Register emoji backend with `completion-at-point'
+(setq completion-at-point-functions
+      (list (cape-company-to-capf #'emoji-backend)))
+
+;; Register emoji backend with Company.
+(setq company-backends '(emoji-backend))
+
+;; Use the company-dabbrev and company-elisp backends together.
+(setq completion-at-point-functions
+      (list
+       (cape-company-to-capf
+        (apply-partially #'company--multi-backend-adapter
+                         '(company-dabbrev company-elisp)))))
+
+;; Merge the dabbrev, dict and keyword capfs, display candidates together.
+(setq-local completion-at-point-functions
+            (list (cape-super-capf #'cape-dabbrev #'cape-dict #'cape-keyword)))
+
+(setq-local completion-at-point-functions
+            (list (cape-capf-buster #'some-caching-capf)))
+#+end_example
+
+**** kind-icon
+Adds configurable icon or text-based completion prefixes based on the
+:company-kind property that many completion backends (such as lsp-mode
+and Emacs 28's elisp-mode) provide.
+#+begin_src emacs-lisp
+  (use-package kind-icon
+    :after corfu
+    :demand
+    :custom
+    (kind-icon-default-face 'corfu-default) ; to compute blended backgrounds correctly
+    (kind-icon-use-icons nil)
+    :config
+    (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
+#+end_src
+
+**** TODO corfu-english-helper
 
 **** TODO consult
 #+BEGIN_SRC emacs-lisp
@@ -826,7 +940,7 @@ There's no need to bind #'marginalia-cycle, not useful.
   (global-set-key (kbd "C-x b") 'consult-buffer)
 #+END_SRC
 
-øº¬«œ¬√Êµƒ≈‰÷√
+ËÄÉËôë‰∏ãÈù¢ÁöÑÈÖçÁΩÆ
 #+begin_example emacs-lisp
 ;; Use `consult-completion-in-region' if Vertico is enabled.
 ;; Otherwise use the default `completion--in-region' function.
@@ -888,6 +1002,7 @@ There's no need to bind #'marginalia-cycle, not useful.
   (global-set-key (kbd "C-:") 'embark-act)
   (setq prefix-help-command 'embark-prefix-help-command)
 #+END_SRC
+
 *** edit enhencement
 **** whole-line-or-region
 Operate on current line if region undefined.
@@ -1030,6 +1145,12 @@ different -- often darker -- background.
 (add-to-list 'solaire-mode-themes-to-face-swap "^doom-")
 #+end_example
 
+** org-modern
+#+begin_src emacs-lisp
+  (use-package org-modern
+    :after org
+    :init (global-org-modern-mode))
+#+end_src
 * /buffer functions & variables/
 :PROPERTIES:
 :VISIBILITY: folded
