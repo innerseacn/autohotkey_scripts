@@ -130,10 +130,10 @@ Using custom-set-faces mechanism.
 *** custom function & key bindings
 using :noweb to call ORG-INIT-FILE library.
 #+BEGIN_SRC emacs-lisp :noweb yes
-  (defun open-org-init-file()
+  (defun inn/open-org-init-file()
     (interactive)
     (find-file "<<ORG-INIT-FILE()>>"))
-  (global-set-key (kbd "<f2>") 'open-org-init-file)
+  (global-set-key (kbd "<f2>") 'inn/open-org-init-file)
 #+END_SRC
 
 ** package settings
@@ -478,16 +478,16 @@ much more contextual information.
            ("C-h ." . helpful-at-point)))
 #+end_src
 
-**** goggles
+**** COMMENT goggles
+Goggles highlights the modified region using pulse. Currently the
+commands undo, yank, kill and delete are supported.
 #+begin_src emacs-lisp
   (use-package goggles
     :hook ((prog-mode text-mode) . goggles-mode)
     :custom (goggles-pulse t)) ;; set to nil to disable pulsing
 #+end_src
 
-**** TODO ace-popup-menu
 **** TODO avy
-**** TODO emacs-dashboard
 
 *** minibuffer & complete
 **** vertico
@@ -514,7 +514,6 @@ based on the default completion system.
 
 **** vertico extensions
 Comment out if you don't want the extension.
-
 ***** vertico-directory
 Provides Ido-like navigation commands.
 #+begin_src emacs-lisp
@@ -557,7 +556,7 @@ display and other minibuffer modes per command or completion category.
   (use-package vertico-multiform
     :after vertico
     :ensure nil
-    :config (vertico-multiform-mode)
+    :init (vertico-multiform-mode)
     :bind (:map vertico-map
                 ("M-G" . vertico-multiform-grid)))
 #+end_src
@@ -602,102 +601,111 @@ match all of the components in any order.
 
 See document of =completion-styles-alist= for details.
 
-1) ~basic config~::
-   #+HEADER: :tangle (if (string= "BASIC" (org-get-todo-state)) (concat tangle-dir (car (org-get-outline-path t t))) "no")
-   #+begin_src emacs-lisp
-     (use-package orderless
-       :custom
-       (completion-styles '(orderless basic))
-       (completion-category-defaults nil)
-       (completion-category-overrides '((file (styles . (partial-completion initials)))))
-       (orderless-matching-styles '(orderless-initialism orderless-literal orderless-regexp)))
-   #+end_src
+   1) ~basic config~::
+      #+HEADER: :tangle (if (string= "BASIC" (org-get-todo-state)) (concat tangle-dir (car (org-get-outline-path t t))) "no")
+      #+begin_src emacs-lisp
+        (use-package orderless
+          :demand
+          :config
+          (orderless-define-completion-style +orderless-with-flex
+            (orderless-matching-styles '(orderless-flex orderless-literal orderless-regexp)))
+          :custom
+          ;; (orderless-matching-styles '(orderless-initialism orderless-literal orderless-regexp))
+          (completion-styles '(orderless basic))
+          (completion-category-defaults nil)
+          (completion-category-overrides '((file (styles partial-completion initials flex))
+                                           (command (styles +orderless-with-flex))
+                                           (variable (styles +orderless-with-flex))
+                                           (symbol (styles +orderless-with-flex))))
+          ;; allow escaping space with backslash!
+          (orderless-component-separator #'orderless-escapable-split-on-space))
+      #+end_src
 
-2) ~super config by minad~::
-   #+HEADER: :tangle (if (string= "SUPER" (org-get-todo-state)) (concat tangle-dir (car (org-get-outline-path t t))) "no")
-   #+BEGIN_SRC emacs-lisp
-     (use-package orderless
-       :demand t
-       :config
-       (defvar +orderless-dispatch-alist
-         '((?% . char-fold-to-regexp)
-           (?! . orderless-without-literal)
-           (?`. orderless-initialism)
-           (?= . orderless-literal)
-           (?~ . orderless-flex)))
+   2) ~super config by minad~::
+      #+HEADER: :tangle (if (string= "SUPER" (org-get-todo-state)) (concat tangle-dir (car (org-get-outline-path t t))) "no")
+      #+BEGIN_SRC emacs-lisp
+        (use-package orderless
+          :demand
+          :config
+          (defvar +orderless-dispatch-alist
+            '((?% . char-fold-to-regexp)
+              (?! . orderless-without-literal)
+              (?`. orderless-initialism)
+              (?= . orderless-literal)
+              (?~ . orderless-flex)))
 
-       ;; Recognizes the following patterns:
-       ;; * ~flex flex~
-       ;; * =literal literal=
-       ;; * %char-fold char-fold%
-       ;; * `initialism initialism`
-       ;; * !without-literal without-literal!
-       ;; * .ext (file extension)
-       ;; * regexp$ (regexp matching at end)
-       (defun +orderless-dispatch (pattern index _total)
-         (cond
-          ;; Ensure that $ works with Consult commands, which add disambiguation suffixes
-          ((string-suffix-p "$" pattern)
-           `(orderless-regexp . ,(concat (substring pattern 0 -1) "[\x200000-\x300000]*$")))
-          ;; File extensions
-          ((and
-            ;; Completing filename or eshell
-            (or minibuffer-completing-file-name
-                (derived-mode-p 'eshell-mode))
-            ;; File extension
-            (string-match-p "\\`\\.." pattern))
-           `(orderless-regexp . ,(concat "\\." (substring pattern 1) "[\x200000-\x300000]*$")))
-          ;; Ignore single !
-          ((string= "!" pattern) `(orderless-literal . ""))
-          ;; Prefix and suffix
-          ((if-let (x (assq (aref pattern 0) +orderless-dispatch-alist))
-               (cons (cdr x) (substring pattern 1))
-             (when-let (x (assq (aref pattern (1- (length pattern))) +orderless-dispatch-alist))
-               (cons (cdr x) (substring pattern 0 -1)))))))
+          ;; Recognizes the following patterns:
+          ;; * ~flex flex~
+          ;; * =literal literal=
+          ;; * %char-fold char-fold%
+          ;; * `initialism initialism`
+          ;; * !without-literal without-literal!
+          ;; * .ext (file extension)
+          ;; * regexp$ (regexp matching at end)
+          (defun +orderless-dispatch (pattern index _total)
+            (cond
+             ;; Ensure that $ works with Consult commands, which add disambiguation suffixes
+             ((string-suffix-p "$" pattern)
+              `(orderless-regexp . ,(concat (substring pattern 0 -1) "[\x200000-\x300000]*$")))
+             ;; File extensions
+             ((and
+               ;; Completing filename or eshell
+               (or minibuffer-completing-file-name
+                   (derived-mode-p 'eshell-mode))
+               ;; File extension
+               (string-match-p "\\`\\.." pattern))
+              `(orderless-regexp . ,(concat "\\." (substring pattern 1) "[\x200000-\x300000]*$")))
+             ;; Ignore single !
+             ((string= "!" pattern) `(orderless-literal . ""))
+             ;; Prefix and suffix
+             ((if-let (x (assq (aref pattern 0) +orderless-dispatch-alist))
+                  (cons (cdr x) (substring pattern 1))
+                (when-let (x (assq (aref pattern (1- (length pattern))) +orderless-dispatch-alist))
+                  (cons (cdr x) (substring pattern 0 -1)))))))
 
-       ;; Define orderless style with initialism by default
-       (orderless-define-completion-style +orderless-with-initialism
-         (orderless-matching-styles '(orderless-initialism orderless-literal orderless-regexp)))
+          ;; Define orderless style with initialism by default
+          (orderless-define-completion-style +orderless-with-initialism
+            (orderless-matching-styles '(orderless-initialism orderless-literal orderless-regexp)))
 
-       ;; You may want to combine the `orderless` style with `substring` and/or `basic`.
-       ;; There are many details to consider, but the following configurations all work well.
-       ;; Personally I (@minad) use option 3 currently. Also note that you may want to configure
-       ;; special styles for special completion categories, e.g., partial-completion for files.
-       ;;
-       ;; 1. (setq completion-styles '(orderless))
-       ;; This configuration results in a very coherent completion experience,
-       ;; since orderless is used always and exclusively. But it may not work
-       ;; in all scenarios. Prefix expansion with TAB is not possible.
-       ;;
-       ;; 2. (setq completion-styles '(substring orderless))
-       ;; By trying substring before orderless, TAB expansion is possible.
-       ;; The downside is that you can observe the switch from substring to orderless
-       ;; during completion, less coherent.
-       ;;
-       ;; 3. (setq completion-styles '(orderless basic))
-       ;; Certain dynamic completion tables (completion-table-dynamic)
-       ;; do not work properly with orderless. One can add basic as a fallback.
-       ;; Basic will only be used when orderless fails, which happens only for
-       ;; these special tables.
-       ;;
-       ;; 4. (setq completion-styles '(substring orderless basic))
-       ;; Combine substring, orderless and basic.
-       ;;
-       (setq completion-styles '(orderless basic)
-             completion-category-defaults nil
-           ;;; Enable partial-completion for files.
-           ;;; Either give orderless precedence or partial-completion.
-           ;;; Note that completion-category-overrides is not really an override,
-           ;;; but rather prepended to the default completion-styles.
-             ;; completion-category-overrides '((file (styles orderless partial-completion))) ;; orderless is tried first
-             completion-category-overrides '((file (styles partial-completion initials)) ;; partial-completion is tried first
-                                             ;; enable initialism by default for symbols
-                                             (command (styles +orderless-with-initialism))
-                                             (variable (styles +orderless-with-initialism))
-                                             (symbol (styles +orderless-with-initialism)))
-             orderless-component-separator #'orderless-escapable-split-on-space ;; allow escaping space with backslash!
-             orderless-style-dispatchers '(+orderless-dispatch)))
-   #+END_SRC
+          ;; You may want to combine the `orderless` style with `substring` and/or `basic`.
+          ;; There are many details to consider, but the following configurations all work well.
+          ;; Personally I (@minad) use option 3 currently. Also note that you may want to configure
+          ;; special styles for special completion categories, e.g., partial-completion for files.
+          ;;
+          ;; 1. (setq completion-styles '(orderless))
+          ;; This configuration results in a very coherent completion experience,
+          ;; since orderless is used always and exclusively. But it may not work
+          ;; in all scenarios. Prefix expansion with TAB is not possible.
+          ;;
+          ;; 2. (setq completion-styles '(substring orderless))
+          ;; By trying substring before orderless, TAB expansion is possible.
+          ;; The downside is that you can observe the switch from substring to orderless
+          ;; during completion, less coherent.
+          ;;
+          ;; 3. (setq completion-styles '(orderless basic))
+          ;; Certain dynamic completion tables (completion-table-dynamic)
+          ;; do not work properly with orderless. One can add basic as a fallback.
+          ;; Basic will only be used when orderless fails, which happens only for
+          ;; these special tables.
+          ;;
+          ;; 4. (setq completion-styles '(substring orderless basic))
+          ;; Combine substring, orderless and basic.
+          ;;
+          (setq completion-styles '(orderless basic)
+                completion-category-defaults nil
+              ;;; Enable partial-completion for files.
+              ;;; Either give orderless precedence or partial-completion.
+              ;;; Note that completion-category-overrides is not really an override,
+              ;;; but rather prepended to the default completion-styles.
+                ;; completion-category-overrides '((file (styles orderless partial-completion))) ;; orderless is tried first
+                completion-category-overrides '((file (styles partial-completion initials)) ;; partial-completion is tried first
+                                                ;; enable initialism by default for symbols
+                                                (command (styles +orderless-with-initialism))
+                                                (variable (styles +orderless-with-initialism))
+                                                (symbol (styles +orderless-with-initialism)))
+                orderless-component-separator #'orderless-escapable-split-on-space ;; allow escaping space with backslash!
+                orderless-style-dispatchers '(+orderless-dispatch)))
+      #+END_SRC
 
 ***** Component matching styles
 Each component of a pattern can match in any of several matching
@@ -772,7 +780,19 @@ There's no need to bind #'marginalia-cycle, not useful.
        (corfu-auto-prefix 2)
        :custom-face
        (corfu-current ((t (:background "#22282c"))))
-       :hook (after-init . global-corfu-mode))
+       :bind (:map corfu-map
+                   ("-" . corfu-insert-separator) ; Configure SPC for separator insertion
+                   ([remap next-line] . nil)
+                   ([remap previous-line] . nil))
+       :hook (after-init . global-corfu-mode)
+       :config
+       (corfu-indexed-mode 1) ; for indexed csndidate selection
+       (defun corfu-enable-in-minibuffer ()
+         "Enable Corfu in the minibuffer if `completion-at-point' is bound."
+         (when (where-is-internal #'completion-at-point (list (current-local-map)))
+           ;; (setq-local corfu-auto nil) ; Enable/disable auto completion
+           (corfu-mode 1)))
+       (add-hook 'minibuffer-setup-hook #'corfu-enable-in-minibuffer))
    #+end_src
 
 2) ~Company is a modular text completion framework for GNU Emacs~::
@@ -853,7 +873,7 @@ completion UI.
     ;;        ("M-p r" . cape-rfc1345))
     :init
     ;; Add `completion-at-point-functions', used by `completion-at-point'.
-    (add-to-list 'completion-at-point-functions #'cape-file)
+    (add-to-list 'completion-at-point-functions #'cape-fil)
     (add-to-list 'completion-at-point-functions #'cape-dabbrev)
     ;;(add-to-list 'completion-at-point-functions #'cape-history)
     (add-to-list 'completion-at-point-functions #'cape-keyword)
@@ -915,7 +935,7 @@ completion UI.
             (list (cape-capf-buster #'some-caching-capf)))
 #+end_example
 
-**** kind-icon
+**** COMMENT kind-icon
 Adds configurable icon or text-based completion prefixes based on the
 :company-kind property that many completion backends (such as lsp-mode
 and Emacs 28's elisp-mode) provide.
@@ -930,71 +950,130 @@ and Emacs 28's elisp-mode) provide.
     (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 #+end_src
 
-**** TODO corfu-english-helper
-
-**** TODO consult
+**** consult
+Consult provides practical commands based on the Emacs completion
+function completing-read.
 #+BEGIN_SRC emacs-lisp
-  (require 'consult)
-  (global-set-key (kbd "C-;") 'consult-line)
-  (global-set-key (kbd "C-,") 'consult-imenu)
-  (global-set-key (kbd "C-x b") 'consult-buffer)
+  (use-package consult
+    ;; Replace bindings. Lazily loaded due by `use-package'.
+    :bind (;; C-c bindings (mode-specific-map)
+           ;; ("C-c h" . consult-history)
+           ;; ("C-c m" . consult-mode-command)
+           ("C-c k" . consult-kmacro)
+           ;; C-x bindings (ctl-x-map)
+           ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complex-command
+           ("C-x b" . consult-buffer)                ;; orig. switch-to-buffer
+           ("C-x 4 b" . consult-buffer-other-window) ;; orig. switch-to-buffer-other-window
+           ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
+           ("C-x r b" . consult-bookmark)            ;; orig. bookmark-jump
+           ("C-x p b" . consult-project-buffer)      ;; orig. project-switch-to-buffer
+           ;; Custom M-# bindings for fast register access
+           ("M-#" . consult-register-load)
+           ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
+           ("C-M-#" . consult-register)
+           ;; Other custom bindings
+           ("M-y" . consult-yank-pop)                ;; orig. yank-pop
+           ("<help> a" . consult-apropos)            ;; orig. apropos-command
+           ;; M-g bindings (goto-map)
+           ("M-g e" . consult-compile-error)
+           ("M-g f" . consult-flymake)               ;; Alternative: consult-flycheck
+           ("M-g g" . consult-goto-line)             ;; orig. goto-line
+           ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
+           ("M-g o" . consult-outline)               ;; Alternative: consult-org-heading
+           ("M-g m" . consult-mark)
+           ("M-g k" . consult-global-mark)
+           ("M-g i" . consult-imenu)
+           ("M-g I" . consult-imenu-multi)
+           ;; M-s bindings (search-map)
+           ;; ("M-s d" . consult-find)
+           ;; ("M-s D" . consult-locate)
+           ;; ("M-s g" . consult-grep)
+           ;; ("M-s G" . consult-git-grep)
+           ("M-s g" . consult-git-grep)
+           ("M-s r" . consult-ripgrep)
+           ("M-s l" . consult-line)
+           ("M-s L" . consult-line-multi)
+           ("M-s m" . consult-multi-occur)
+           ("M-s k" . consult-keep-lines)
+           ("M-s u" . consult-focus-lines)
+           ;; Isearch integration
+           ("M-s e" . consult-isearch-history)
+           :map isearch-mode-map
+           ("M-e" . consult-isearch-history)         ;; orig. isearch-edit-string
+           ("M-s e" . consult-isearch-history)       ;; orig. isearch-edit-string
+           ("M-s l" . consult-line)                  ;; needed by consult-line to detect isearch
+           ("M-s L" . consult-line-multi)            ;; needed by consult-line to detect isearch
+           ;; Minibuffer history
+           :map minibuffer-local-map
+           ("M-s" . consult-history)                 ;; orig. next-matching-history-element
+           ("M-r" . consult-history))                ;; orig. previous-matching-history-element
+    ;; Enable automatic preview at point in the *Completions* buffer. This is
+    ;; relevant when you use the default completion UI.
+    :hook (completion-list-mode . consult-preview-at-point-mode)
+    ;; The :init configuration is always executed (Not lazy)
+    :init
+    ;; Optionally configure the register formatting. This improves the register
+    ;; preview for `consult-register', `consult-register-load',
+    ;; `consult-register-store' and the Emacs built-ins.
+    (setq register-preview-delay 0.5
+          register-preview-function #'consult-register-format)
+    ;; Optionally tweak the register preview window.
+    ;; This adds thin lines, sorting and hides the mode line of the window.
+    (advice-add #'register-preview :override #'consult-register-window)
+    ;; Use Consult to select xref locations with preview
+    (setq xref-show-xrefs-function #'consult-xref
+          xref-show-definitions-function #'consult-xref)
+    ;; Configure other variables and modes in the :config section,
+    ;; after lazily loading the package.
+    :config
+    ;; Optionally configure preview. The default value
+    ;; is 'any, such that any key triggers the preview.
+    ;; (setq consult-preview-key 'any)
+    ;; (setq consult-preview-key (kbd "M-."))
+    ;; (setq consult-preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
+    ;; For some commands and buffer sources it is useful to configure the
+    ;; :preview-key on a per-command basis using the `consult-customize' macro.
+    (consult-customize
+     consult-theme
+     :preview-key '(:debounce 0.2 any)
+     consult-ripgrep consult-git-grep consult-grep
+     consult-bookmark consult-recent-file consult-xref
+     consult--source-bookmark consult--source-recent-file
+     consult--source-project-recent-file
+     :preview-key (kbd "M-."))
+
+    (setq vertico-multiform-commands
+          '((consult-line buffer)
+            (consult-imenu buffer)
+            (consult-outline buffer)
+            (consult-imenu-multi buffer)
+            (consult-org-heading buffer)
+            (consult-ripgrep buffer)
+            (consult-git-grep buffer)
+            (consult-project-buffer buffer)
+            (consult-project-extra-find buffer)
+            (consult-project-extra-find-other-window buffer))))
 #+END_SRC
 
-考虑下面的配置
-#+begin_example emacs-lisp
-;; Use `consult-completion-in-region' if Vertico is enabled.
-;; Otherwise use the default `completion--in-region' function.
-(setq completion-in-region-function
-      (lambda (&rest args)
-        (apply (if vertico-mode
-                   #'consult-completion-in-region
-                 #'completion--in-region)
-               args)))
+**** consult extensions
+***** consult-project-extra
+Defines an endpoint for accessing different sources related to the
+common project workflow.
+#+begin_src emacs-lisp
+  (use-package consult-project-extra
+    :after consult
+    :bind (("C-x p f" . consult-project-extra-find)
+           ("C-x p o" . consult-project-extra-find-other-window)))
+    #+end_src
 
-;;  (setq vertico-multiform-commands
-;;          '((consult-line buffer)
-;;            (consult-imenu reverse buffer)
-;;            (execute-extended-command flat)))
-;;
-;;    (setq vertico-multiform-categories
-;;          '((file buffer grid)
-;;            (imenu (:not indexed mouse))
-;;            (symbol (vertico-sort-function . vertico-sort-alpha))))
-;;
-;;    (vertico-multiform-mode)
-
-;; Enable vertico-multiform
-(vertico-multiform-mode)
-
-;; Configure the display per command.
-;; Use a buffer with indices for imenu
-;; and a flat (Ido-like) menu for M-x.
-(setq vertico-multiform-commands
-      '((consult-imenu buffer indexed)
-        (execute-extended-command unobtrusive)))
-
-;; Configure the display per completion category.
-;; Use the grid display for files and a buffer
-;; for the consult-grep commands.
-(setq vertico-multiform-categories
-      '((file grid)
-        (consult-grep buffer)))
-
-        ;; Configure `consult-outline' as a scaled down TOC in a separate buffer
-(setq vertico-multiform-commands
-      `((consult-outline buffer ,(lambda (_) (text-scale-set -1)))))
-
-      ;; Configure the buffer display and the buffer display action
-(setq vertico-multiform-categories
-      '((consult-grep
-         buffer
-         (vertico-buffer-display-action . (display-buffer-same-window)))))
-
-;; Disable preview for consult-grep commands
-(consult-customize consult-ripgrep consult-git-grep consult-grep :preview-key nil)
-#+end_example
-
-**** TODO tempel
+***** consult-dir
+Consult-dir allows you to easily insert directory paths into the
+minibuffer prompt in Emacs.
+#+begin_src emacs-lisp
+  (use-package consult-dir
+    :bind (:map vertico-map
+                ("C-x C-d" . consult-dir)))
+#+end_src
 
 **** TODO embark
 #+BEGIN_SRC emacs-lisp
@@ -1002,6 +1081,8 @@ and Emacs 28's elisp-mode) provide.
   (global-set-key (kbd "C-:") 'embark-act)
   (setq prefix-help-command 'embark-prefix-help-command)
 #+END_SRC
+
+**** TODO tempel
 
 *** edit enhencement
 **** whole-line-or-region
@@ -1065,7 +1146,6 @@ Operate on current line if region undefined.
 
 *** TODO workgroups2
 
-*** TODO paradox
 * COMMENT backup snippets for future
 :PROPERTIES:
 :VISIBILITY: folded
@@ -1146,11 +1226,41 @@ different -- often darker -- background.
 #+end_example
 
 ** org-modern
+Not like it.
 #+begin_src emacs-lisp
   (use-package org-modern
     :after org
     :init (global-org-modern-mode))
 #+end_src
+** all-the-icons
+Somehow it just doesn't work.
+#+begin_src emacs-lisp
+  (use-package all-the-icons
+    :if (display-graphic-p)
+    :demand)
+#+end_src
+
+*** all-the-icons-completion
+#+begin_src emacs-lisp
+  (use-package all-the-icons-completion
+    :after (all-the-icons marginalia)
+    :hook (markdown-mode . all-the-icons-completion-marginalia-setup))
+#+end_src
+
+*** all-the-icons-dired
+#+begin_src emacs-lisp
+  (use-package all-the-icons-dired
+    :after all-the-icons
+    :hook (dired-mode . all-the-icons-dired-mode))
+#+end_src
+
+*** all-the-icons-ibuffer
+#+begin_src emacs-lisp
+  (use-package all-the-icons-ibuffer
+    :after all-the-icons
+    :hook (ibuffer-mode . all-the-icons-ibuffer-mode))
+#+end_src
+
 * /buffer functions & variables/
 :PROPERTIES:
 :VISIBILITY: folded
