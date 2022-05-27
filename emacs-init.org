@@ -53,38 +53,39 @@ Don't change or move this block!!!
 ** built-in settings
 Using custom-set-variables mechanism.
 #+BEGIN_SRC emacs-lisp
-  (custom-set-variables
-   '(auto-save-default nil)
-   '(abbrev-suggest t)
-   '(completion-cycle-threshold 5)
-   '(default-frame-alist
-      '((horizontal-scroll-bars)
-        (vertical-scroll-bars)
-        (fullscreen . fullboth)))
-   '(describe-bindings-outline t)
-   '(help-enable-symbol-autoload t)
-   '(history-length 25)
-   '(inhibit-startup-screen t)
-   '(isearch-allow-motion t)
-   '(kill-buffer-delete-auto-save-files t)
-   '(make-backup-files nil)
-   '(mode-line-compact 'long)
-   '(mouse-wheel-progressive-speed nil)
-   '(next-error-message-highlight 'keep)
-   '(read-quoted-char-radix 16)
-   '(ring-bell-function 'ignore)
-   '(scroll-margin 3)
-   '(scroll-step 1)
-   '(set-mark-command-repeat-pop t)
-   '(shift-select-mode 'permanent)
-   '(show-trailing-whitespace t)
-   '(split-width-threshold 120)
-   '(tab-bar-new-tab-choice 'bookmark-bmenu-get-buffer)
-   '(use-dialog-box nil)
-   '(use-short-answers t)
-   '(visible-bell t)
-   '(what-cursor-show-names t)
-   '(x-stretch-cursor t))
+    (custom-set-variables
+     '(auto-save-default nil)
+     '(abbrev-suggest t)
+     '(completion-cycle-threshold 5)
+     '(default-frame-alist
+        '((horizontal-scroll-bars)
+          (vertical-scroll-bars)
+          (fullscreen . fullboth)))
+     '(describe-bindings-outline t)
+     '(help-enable-symbol-autoload t)
+     '(history-length 25)
+     '(inhibit-startup-screen t)
+     '(isearch-allow-motion t)
+     '(kill-buffer-delete-auto-save-files t)
+     '(make-backup-files nil)
+     '(mode-line-compact 'long)
+     '(mouse-wheel-progressive-speed nil)
+     '(next-error-message-highlight 'keep)
+     '(read-quoted-char-radix 16)
+     '(ring-bell-function 'ignore)
+     '(scroll-margin 3)
+     '(scroll-step 1)
+     '(set-mark-command-repeat-pop t)
+     '(shift-select-mode 'permanent)
+     '(show-trailing-whitespace t)
+     '(split-width-threshold 120)
+     '(tab-bar-new-tab-choice 'bookmark-bmenu-get-buffer)
+     '(use-dialog-box nil)
+     '(use-short-answers t)
+     '(visible-bell t)
+     '(what-cursor-show-names t)
+     '(x-stretch-cursor t)
+     '(y-or-n-p-use-read-key t))
 #+END_SRC
 
 *** TODO modeline显示frame名称，或在minibuffer中显示
@@ -95,9 +96,10 @@ Using custom-set-variables mechanism.
 
 ** face settings
 *** built-in face settings
-Using custom-set-faces mechanism.
+Using custom-set-faces mechanism. Look nice in doom-badger theme.
 #+BEGIN_SRC emacs-lisp
   (custom-set-faces
+   '(highlight ((t (:background "SteelBlue4" :foreground "snow"))))
    '(trailing-whitespace ((t (:background "gray0")))))
 #+END_SRC
 
@@ -125,9 +127,10 @@ Using custom-set-faces mechanism.
   (global-set-key (kbd "M-o") 'other-window)
   (global-set-key (kbd "M-F") 'forward-to-word)
   (global-set-key (kbd "M-B") 'backward-to-word)
+  (global-set-key (kbd "C-x v p") 'vc-push)
 #+END_SRC
 
-*** custom function & key bindings
+*** open org init file
 using :noweb to call ORG-INIT-FILE library.
 #+BEGIN_SRC emacs-lisp :noweb yes
   (defun inn/open-org-init-file()
@@ -135,6 +138,28 @@ using :noweb to call ORG-INIT-FILE library.
     (find-file "<<ORG-INIT-FILE()>>"))
   (global-set-key (kbd "<f2>") 'inn/open-org-init-file)
 #+END_SRC
+
+*** echo date time & battery status
+#+begin_src emacs-lisp
+  (defun inn/echo-time-battery()
+    (interactive)
+    (setq battery-string
+          (let* ((data (and battery-status-function
+                            (functionp battery-status-function)
+                            (funcall battery-status-function)))
+                 (state (or (cdr (assoc 66 data)) "ERR"))
+                 (percentage (car (read-from-string (or (cdr (assq 112 data)) "ERR"))))
+                 (valid-percentage? (and (numberp percentage)
+                                         (>= percentage 0)
+                                         (<= percentage 100)))
+                 (icon (if valid-percentage? state "error"))
+                 (text (if valid-percentage? (format "%d%%%%" percentage) "")))
+            (concat " " text " battery-" icon)))
+    (setq time-string
+          (format-time-string "%F[%R]"))
+    (message (concat time-string battery-string)))
+  (global-set-key (kbd "C-c b") 'inn/echo-time-battery)
+#+end_src
 
 ** package settings
 *** TODO fix the load path stuff
@@ -464,8 +489,6 @@ Modeline derived from DOOM emacs.
   (setq doom-modeline-after-update-env-hook nil)
 #+END_EXAMPLE
 
-**** TODO awesome-try like code
-
 **** COMMENT helpful
 Helpful is an alternative to the built-in Emacs help that provides
 much more contextual information.
@@ -778,10 +801,11 @@ There's no need to bind #'marginalia-cycle, not useful.
        (corfu-auto t)
        (corfu-auto-delay 0)
        (corfu-auto-prefix 2)
+       (tab-always-indent 'complete)
        :custom-face
        (corfu-current ((t (:background "#22282c"))))
        :bind (:map corfu-map
-                   ("-" . corfu-insert-separator) ; Configure SPC for separator insertion
+                   ;; ("-" . corfu-insert-separator) ; Configure SPC for separator insertion
                    ([remap next-line] . nil)
                    ([remap previous-line] . nil))
        :hook (after-init . global-corfu-mode)
@@ -873,7 +897,7 @@ completion UI.
     ;;        ("M-p r" . cape-rfc1345))
     :init
     ;; Add `completion-at-point-functions', used by `completion-at-point'.
-    (add-to-list 'completion-at-point-functions #'cape-fil)
+    (add-to-list 'completion-at-point-functions #'cape-file)
     (add-to-list 'completion-at-point-functions #'cape-dabbrev)
     ;;(add-to-list 'completion-at-point-functions #'cape-history)
     (add-to-list 'completion-at-point-functions #'cape-keyword)
@@ -1042,17 +1066,18 @@ function completing-read.
      consult--source-project-recent-file
      :preview-key (kbd "M-."))
 
-    (setq vertico-multiform-commands
-          '((consult-line buffer)
-            (consult-imenu buffer)
-            (consult-outline buffer)
-            (consult-imenu-multi buffer)
-            (consult-org-heading buffer)
-            (consult-ripgrep buffer)
-            (consult-git-grep buffer)
-            (consult-project-buffer buffer)
-            (consult-project-extra-find buffer)
-            (consult-project-extra-find-other-window buffer))))
+    ;; (setq vertico-multiform-commands
+    ;;       '((consult-line buffer)
+    ;;         (consult-imenu buffer)
+    ;;         (consult-outline buffer)
+    ;;         (consult-imenu-multi buffer)
+    ;;         (consult-org-heading buffer)
+    ;;         (consult-ripgrep buffer)
+    ;;         (consult-git-grep buffer)
+    ;;         (consult-project-buffer buffer)
+    ;;         (consult-project-extra-find buffer)
+    ;;         (consult-project-extra-find-other-window buffer)))
+    )
 #+END_SRC
 
 **** consult extensions
@@ -1075,17 +1100,57 @@ minibuffer prompt in Emacs.
                 ("C-x C-d" . consult-dir)))
 #+end_src
 
-**** TODO embark
+**** embark
+Embark makes it easy to choose a command to run based on what is near
+point, both during a minibuffer completion session and in normal
+buffers.
 #+BEGIN_SRC emacs-lisp
-  (require 'embark)
-  (global-set-key (kbd "C-:") 'embark-act)
-  (setq prefix-help-command 'embark-prefix-help-command)
+  (use-package embark
+    :bind
+    (("C-." . embark-act)         ;; pick some comfortable binding
+     ("M-." . embark-dwim)        ;; good alternative: M-.
+     ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
+    :init
+    ;; Optionally replace the key help with a completing-read interface
+    (setq prefix-help-command #'embark-prefix-help-command)
+    :custom
+    (embark-quit-after-action nil)
+    ;; (embark-verbose-indicator-display-action '(display-buffer-in-side-window (side . left))) 
+    :config
+    ;; Hide the mode line of the Embark live/completions buffers
+    (add-to-list 'display-buffer-alist
+                 '("\\*Embark Actions\\*"
+                   display-buffer-in-side-window
+                   (side . left)
+                   (window-parameters (mode-line-format . none)))))
+#+END_SRC
+
+Consult users will also want the embark-consult package.
+#+BEGIN_SRC emacs-lisp
+  (use-package embark-consult
+    :after (embark consult)
+    :demand t ; only necessary if you have the hook below
+    ;; if you want to have consult previews as you move around an
+    ;; auto-updating embark collect buffer
+    :hook
+    (embark-collect-mode . consult-preview-at-point-mode))
+#+END_SRC
+
+**** COMMENT wgrep
+wgrep allows you to edit a grep buffer and apply those changes to the
+file buffer like sed interactively.
+#+BEGIN_SRC emacs-lisp
+  (use-package wgrep
+    :after (consult embark embark-consult)
+    :demand
+    :custom
+    (wgrep-auto-save-buffer t))
 #+END_SRC
 
 **** TODO tempel
 
 *** edit enhencement
-**** whole-line-or-region
+**** COMMENT whole-line-or-region
 Operate on current line if region undefined.
 #+begin_src emacs-lisp
   (use-package whole-line-or-region
@@ -1094,28 +1159,6 @@ Operate on current line if region undefined.
     ;; (define-key whole-line-or-region-local-mode-map [remap comment-dwim] nil)
     )
 #+end_src
-*** TODO wgrep
-#+BEGIN_SRC emacs-lisp
-  (require 'wgrep)
-  (setq wgrep-auto-save-buffer t)
-  (eval-after-load 'consult
-    '(eval-after-load 'embark
-       '(progn
-          (require 'embark-consult)
-          (add-hook 'embark-collect-mode-hook #'consult-preview-at-point-mode))))
-  (define-key minibuffer-local-map (kbd "C-c C-e") 'embark-export-write)
-  (eval-after-load 'consult
-    (progn
-      (setq
-       consult-narrow-key "<"
-       consult-line-numbers-widen t
-       consult-async-min-input 2
-       consult-async-refresh-delay  0.15
-       consult-async-input-throttle 0.2
-       consult-async-input-debounce 0.1)
-      ))
-#+END_SRC
-
 *** TODO direddred
 
 *** TODO crux
