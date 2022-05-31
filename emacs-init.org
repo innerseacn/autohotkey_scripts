@@ -37,6 +37,44 @@ Don't change or move this block!!!
 #+BEGIN_SRC emacs-lisp :comments no
   ;; -*- lexical-binding: t; -*-
 #+END_SRC
+** GC stuff [from tenon emacs]
+#+begin_src emacs-lisp
+  ;; For speed up the startup, please do NOT forget reset it to default
+  ;; after Emacs after-init-hook, or it may cause freezes.
+  (setq gc-cons-threshold most-positive-fixnum)
+  (add-hook 'after-init-hook #'(lambda () (setq gc-cons-threshold 800000)))
+#+end_src
+** [from tenon emacs]
+#+begin_src emacs-lisp
+  ;; Prevent unwanted runtime compilation for native-comp users
+  (setq native-comp-deferred-compilation nil)
+
+  ;; Package initialize occurs automatically, before `user-init-file' is loaded
+  ;; but after `early-init-file'. If you want to handle package initialization,
+  ;; you can prevent Emacs from doing it early by uncomment next line!
+  (setq package-enable-at-startup nil)
+
+  ;; Do not resize the frame at this early stage.
+  (setq frame-inhibit-implied-resize t)
+
+  ;; System default coding
+  ;; (set-language-environment 'utf-8)
+#+end_src
+
+** [from rational emacs]
+#+begin_src emacs-lisp
+  ;; Remove some unneeded UI elements (the user can turn back on anything they wish)
+  (setq inhibit-startup-message t
+        default-frame-alist
+        '((tool-bar-lines . 0)
+          (menu-bar-lines . 0)
+          (vertical-scroll-bars)
+          (horizontal-scroll-bars)
+          (fullscreen . fullboth)))
+
+  ;; Loads a nice blue theme, avoids the white screen flash on startup.
+  ;; (load-theme 'modus-vivendi t)
+  #+end_src
 
 * init.el
 :PROPERTIES:
@@ -50,42 +88,72 @@ Don't change or move this block!!!
   ;; -*- lexical-binding: t; -*-
 #+END_SRC
 
+** /profile startup (should be commented out when stable)/
+Profile emacs startup
+#+begin_src emacs-lisp
+  (add-hook 'emacs-startup-hook
+            (lambda ()
+              (message "Emacs loaded in %s."
+                       (emacs-init-time))))
+#+end_src
+
+** COMMENT native compile
+#+begin_src emacs-lisp
+  (when (and (>= emacs-major-version 28)
+             (fboundp 'native-comp-available-p)
+             (native-comp-available-p))
+    (setq native-comp-async-report-warnings-errors nil)
+    (setq package-native-compile t)
+    (add-to-list 'native-comp-eln-load-path
+                 (expand-file-name "eln-cache" user-emacs-directory)))
+#+end_src
+
+** w32 settings
+#+begin_src emacs-lisp
+(when (boundp 'w32-get-true-file-attributes)
+  (setq w32-pipe-buffer-size (* 64 1024)))
+#+end_src
+
 ** built-in settings
 Using custom-set-variables mechanism.
 #+BEGIN_SRC emacs-lisp
-    (custom-set-variables
-     '(auto-save-default nil)
-     '(abbrev-suggest t)
-     '(completion-cycle-threshold 5)
-     '(default-frame-alist
-        '((horizontal-scroll-bars)
-          (vertical-scroll-bars)
-          (fullscreen . fullboth)))
-     '(describe-bindings-outline t)
-     '(help-enable-symbol-autoload t)
-     '(history-length 25)
-     '(inhibit-startup-screen t)
-     '(isearch-allow-motion t)
-     '(kill-buffer-delete-auto-save-files t)
-     '(make-backup-files nil)
-     '(mode-line-compact 'long)
-     '(mouse-wheel-progressive-speed nil)
-     '(next-error-message-highlight 'keep)
-     '(read-quoted-char-radix 16)
-     '(ring-bell-function 'ignore)
-     '(scroll-margin 3)
-     '(scroll-step 1)
-     '(set-mark-command-repeat-pop t)
-     '(shift-select-mode 'permanent)
-     '(show-trailing-whitespace t)
-     '(split-width-threshold 120)
-     '(tab-bar-new-tab-choice 'bookmark-bmenu-get-buffer)
-     '(use-dialog-box nil)
-     '(use-short-answers t)
-     '(visible-bell t)
-     '(what-cursor-show-names t)
-     '(x-stretch-cursor t)
-     '(y-or-n-p-use-read-key t))
+  (custom-set-variables
+   '(auto-save-default nil)
+   '(abbrev-suggest t)
+   '(completion-cycle-threshold 5)
+   ;; '(default-frame-alist
+   ;;    '((horizontal-scroll-bars)
+   ;;      (vertical-scroll-bars)
+   ;;      (fullscreen . fullboth)))
+   '(describe-bindings-outline t)
+   '(delete-by-moving-to-trash t)
+   '(help-enable-symbol-autoload t)
+   '(help-window-select t)
+   '(history-length 25)
+   ;; '(inhibit-startup-screen t)
+   '(isearch-allow-motion t)
+   '(isearch-lazy-count t)
+   '(kill-buffer-delete-auto-save-files t)
+   '(make-backup-files nil)
+   '(mode-line-compact 'long)
+   '(mouse-wheel-progressive-speed nil)
+   '(next-error-message-highlight 'keep)
+   '(read-process-output-max (* 64 1024))
+   '(read-quoted-char-radix 16)
+   '(ring-bell-function 'ignore)
+   '(scroll-margin 3)
+   '(scroll-step 1)
+   '(set-mark-command-repeat-pop t)
+   '(shift-select-mode 'permanent)
+   '(show-trailing-whitespace t)
+   '(split-width-threshold 120)
+   '(tab-bar-new-tab-choice 'bookmark-bmenu-get-buffer)
+   '(use-dialog-box nil)
+   '(use-short-answers t)
+   '(visible-bell t)
+   '(what-cursor-show-names t)
+   '(x-stretch-cursor t)
+   '(y-or-n-p-use-read-key t))
 #+END_SRC
 
 *** TODO modeline显示frame名称，或在minibuffer中显示
@@ -115,19 +183,20 @@ Using custom-set-faces mechanism. Look nice in doom-badger theme.
 ** key bindings
 *** built-in function key bindings
 #+BEGIN_SRC emacs-lisp
-  (global-set-key (kbd "C-x C-b") 'ibuffer)
   (global-set-key (kbd "C-x k") 'kill-current-buffer)
   (global-set-key (kbd "C-M-<backspace>") 'backward-kill-sexp)
   (global-set-key (kbd "<f5>") 'desktop-save)
   (global-set-key (kbd "<f6>") 'desktop-read)
   ;; (global-set-key (kbd "C-x C-1") 'delete-windows-on)
-  (global-set-key (kbd "C-x C-q") 'view-mode)
   (global-set-key (kbd "C-x C-d") 'dired)
   (global-set-key (kbd "C-h C-k") 'describe-keymap)
   (global-set-key (kbd "M-o") 'other-window)
   (global-set-key (kbd "M-F") 'forward-to-word)
   (global-set-key (kbd "M-B") 'backward-to-word)
   (global-set-key (kbd "C-x v p") 'vc-push)
+  (global-set-key (kbd "C-x v P") 'vc-pull)
+
+  (defalias 'list-buffers 'ibuffer)
 #+END_SRC
 
 *** open org init file
@@ -158,7 +227,7 @@ using :noweb to call ORG-INIT-FILE library.
     (setq time-string
           (format-time-string "%F[%R]"))
     (message (concat time-string battery-string)))
-  (global-set-key (kbd "C-c b") 'inn/echo-time-battery)
+  (global-set-key (kbd "C-M-<f22>") 'inn/echo-time-battery)
 #+end_src
 
 ** package settings
@@ -176,6 +245,7 @@ using :noweb to call ORG-INIT-FILE library.
 
   ;; (setq package-check-signature nil)
   (require 'package)
+  (setq package-check-signature nil)
   (unless (bound-and-true-p package--initialized)
     (package-initialize))
   (unless (package-installed-p 'use-package)
@@ -192,6 +262,7 @@ using :noweb to call ORG-INIT-FILE library.
        (require 'use-package)
        (setq use-package-always-ensure t
              use-package-always-defer t
+             use-package-enable-imenu-support t
              use-package-verbose 'debug))
    #+end_src
 
@@ -208,57 +279,53 @@ using :noweb to call ORG-INIT-FILE library.
    
 *** built-in packages
 Don't forget to use ~:ensure nil~ code for built-in packages.
-**** default on built-in packages
+**** globally enabled packages
 #+begin_src emacs-lisp
-  (use-package emacs
-    :ensure nil
-    :init
-    (column-number-mode t)
-    (delete-selection-mode t)
-    (display-battery-mode t)
-    (electric-pair-mode t)
-    ;; (electric-quote-mode t)
-    ;; (global-display-line-numbers-mode t)
-    (global-goto-address-mode t)
-    (global-hl-line-mode t)
-    (horizontal-scroll-bar-mode 0)
-    (line-number-mode t)
-    (menu-bar-mode 0)
-    (save-place-mode t)
-    (savehist-mode t)
-    (scroll-bar-mode 0)
-    (size-indication-mode t)
-    (tool-bar-mode 0))
+  (column-number-mode)
+  (delete-selection-mode)
+  (display-battery-mode)
+  (dired-async-mode)
+  (electric-pair-mode)
+  ;; (electric-quote-mode)
+  ;; (global-display-line-numbers-mode)
+  (global-goto-address-mode)
+  (global-hl-line-mode)
+  (line-number-mode)
+  (save-place-mode)
+  (savehist-mode)
+  (size-indication-mode)
+#+end_src
+
+**** COMMENT pixel scroll
+#+begin_src emacs-lisp
+  (if (fboundp 'pixel-scroll-precision-mode)
+      (pixel-scroll-precision-mode)
+    (pixel-scroll-mode))
 #+end_src
 
 **** COMMENT autorevert
 #+begin_src emacs-lisp
-  (use-package autorevert
-    :ensure nil
-    :custom (global-auto-revert-non-file-buffers t))
-    :init (global-auto-revert-mode t)
+  (setq global-auto-revert-non-file-buffers t)
+  (global-auto-revert-mode)
+  #+end_src
+
+**** time
+#+begin_src emacs-lisp
+  (setq display-time-24hr-format t
+        display-time-day-and-date t
+        display-time-format "%R %p %F")
+  (display-time-mode)
 #+end_src
 
 **** cua
 #+begin_src emacs-lisp
-  (use-package cua-rect
+  (use-package cua
     :ensure nil
     :custom
     (cua-enable-cua-keys nil)
     (cua-enable-modeline-indications t)
     :bind ("C-M-<return>" . cua-rectangle-mark-mode))
-#+end_src
-
-**** time
-   #+begin_src emacs-lisp
-       (use-package time
-         :ensure nil
-         :after doom-modeline
-     :custom (display-time-24hr-format t)
-        (display-time-day-and-date t)
-        (display-time-format "%R %p %F")
-     :init   (display-time-mode t))
-#+end_src
+  #+end_src
 
 **** org
 #+begin_src emacs-lisp
@@ -290,7 +357,7 @@ Don't forget to use ~:ensure nil~ code for built-in packages.
 #+begin_src emacs-lisp
   (use-package recentf
     :ensure nil
-    :init (recentf-mode t)
+    :hook (after-init . recentf-mode)
     :bind ("C-x f" . recentf-open-files))
 #+end_src
 
@@ -302,6 +369,8 @@ Don't forget to use ~:ensure nil~ code for built-in packages.
     :bind (("C-x C-/" . winner-undo)
            ("C-x C-?" . winner-redo)))
 #+end_src
+
+**** TODO eshell|shell keys quake mode etc.
 
 *** appearances
 **** theme
@@ -317,17 +386,17 @@ After code is a list of good looking themes, use one of them.
 #+END_SRC
 
 ***** COMMENT good doom-themes list
-  - doom-badger
-  - doom-gruvbox
-  - doom-material-dark
-  - doom-monokai-machine
-  - doom-monokai-octagon
-  - doom-monokai-spectrum
-  - doom-moonlight
-  - doom-nord
-  - doom-oceanic-next
-  - doom-old-hope
-  - doom-wilmersdorf
+- doom-badger
+- doom-gruvbox
+- doom-material-dark
+- doom-monokai-machine
+- doom-monokai-octagon
+- doom-monokai-spectrum
+- doom-moonlight
+- doom-nord
+- doom-oceanic-next
+- doom-old-hope
+- doom-wilmersdorf
 
 ***** COMMENT doom-themes config example
 #+BEGIN_EXAMPLE emacs-lisp
@@ -349,9 +418,10 @@ Modeline derived from DOOM emacs.
     :hook (after-init . doom-modeline-mode)
     :custom
     (doom-modeline-hud t)
-    (doom-modeline-buffer-file-name-style 'truncate-upto-project)
+    (doom-modeline-buffer-file-name-style 'truncate-except-project)
     (doom-modeline-gnus nil)
-    (doom-modeline-irc nil))
+    (doom-modeline-irc nil)
+    (doom-modeline-bar-width 6))
 #+END_SRC
 
 ***** COMMENT doom-modeline config example
@@ -489,18 +559,6 @@ Modeline derived from DOOM emacs.
   (setq doom-modeline-after-update-env-hook nil)
 #+END_EXAMPLE
 
-**** COMMENT helpful
-Helpful is an alternative to the built-in Emacs help that provides
-much more contextual information.
-#+begin_src emacs-lisp
-  (use-package helpful
-    :bind (("C-h f" . helpful-callable)
-           ("C-h v" . helpful-variable)
-           ("C-h s" . helpful-symbol)
-           ("C-h x" . helpful-command)
-           ("C-h ." . helpful-at-point)))
-#+end_src
-
 **** COMMENT goggles
 Goggles highlights the modified region using pulse. Currently the
 commands undo, yank, kill and delete are supported.
@@ -510,7 +568,18 @@ commands undo, yank, kill and delete are supported.
     :custom (goggles-pulse t)) ;; set to nil to disable pulsing
 #+end_src
 
-**** TODO avy
+**** TODO COMMENT avy
+#+begin_src emacs-lisp
+#+end_src
+
+**** TODO COMMENT popwin
+#+begin_src emacs-lisp
+  ;; popwin
+(use-package popwin
+  :hook (after-init . popwin-mode))
+#+end_src
+
+**** TODO anzu
 
 *** minibuffer & complete
 **** vertico
@@ -617,118 +686,118 @@ In order to save the history across Emacs sessions, enable
     :hook (minibuffer-setup . vertico-repeat-save))
 #+end_src
 
-**** BASIC orderless
+**** SUPER orderless
 This package provides an orderless completion style that divides the
 pattern into space-separated components, and matches candidates that
 match all of the components in any order.
 
 See document of =completion-styles-alist= for details.
 
-   1) ~basic config~::
-      #+HEADER: :tangle (if (string= "BASIC" (org-get-todo-state)) (concat tangle-dir (car (org-get-outline-path t t))) "no")
-      #+begin_src emacs-lisp
-        (use-package orderless
-          :demand
-          :config
-          (orderless-define-completion-style +orderless-with-flex
-            (orderless-matching-styles '(orderless-flex orderless-literal orderless-regexp)))
-          :custom
-          ;; (orderless-matching-styles '(orderless-initialism orderless-literal orderless-regexp))
-          (completion-styles '(orderless basic))
-          (completion-category-defaults nil)
-          (completion-category-overrides '((file (styles partial-completion initials flex))
-                                           (command (styles +orderless-with-flex))
-                                           (variable (styles +orderless-with-flex))
-                                           (symbol (styles +orderless-with-flex))))
-          ;; allow escaping space with backslash!
-          (orderless-component-separator #'orderless-escapable-split-on-space))
-      #+end_src
+1) ~basic config~::
+   #+HEADER: :tangle (if (string= "BASIC" (org-get-todo-state)) (concat tangle-dir (car (org-get-outline-path t t))) "no")
+   #+begin_src emacs-lisp
+     (use-package orderless
+       :demand
+       :config
+       (orderless-define-completion-style +orderless-with-flex
+         (orderless-matching-styles '(orderless-flex orderless-literal orderless-regexp)))
+       :custom
+       ;; (orderless-matching-styles '(orderless-initialism orderless-literal orderless-regexp))
+       (completion-styles '(orderless basic))
+       (completion-category-defaults nil)
+       (completion-category-overrides '((file (styles partial-completion initials flex))
+                                        (command (styles +orderless-with-flex))
+                                        (variable (styles +orderless-with-flex))
+                                        (symbol (styles +orderless-with-flex))))
+       ;; allow escaping space with backslash!
+       (orderless-component-separator #'orderless-escapable-split-on-space))
+   #+end_src
 
-   2) ~super config by minad~::
-      #+HEADER: :tangle (if (string= "SUPER" (org-get-todo-state)) (concat tangle-dir (car (org-get-outline-path t t))) "no")
-      #+BEGIN_SRC emacs-lisp
-        (use-package orderless
-          :demand
-          :config
-          (defvar +orderless-dispatch-alist
-            '((?% . char-fold-to-regexp)
-              (?! . orderless-without-literal)
-              (?`. orderless-initialism)
-              (?= . orderless-literal)
-              (?~ . orderless-flex)))
+2) ~super config by minad~::
+   #+HEADER: :tangle (if (string= "SUPER" (org-get-todo-state)) (concat tangle-dir (car (org-get-outline-path t t))) "no")
+   #+BEGIN_SRC emacs-lisp
+     (use-package orderless
+       :demand
+       :config
+       (defvar +orderless-dispatch-alist
+         '((?% . char-fold-to-regexp)
+           (?! . orderless-without-literal)
+           (?`. orderless-initialism)
+           (?= . orderless-literal)
+           (?~ . orderless-flex)))
 
-          ;; Recognizes the following patterns:
-          ;; * ~flex flex~
-          ;; * =literal literal=
-          ;; * %char-fold char-fold%
-          ;; * `initialism initialism`
-          ;; * !without-literal without-literal!
-          ;; * .ext (file extension)
-          ;; * regexp$ (regexp matching at end)
-          (defun +orderless-dispatch (pattern index _total)
-            (cond
-             ;; Ensure that $ works with Consult commands, which add disambiguation suffixes
-             ((string-suffix-p "$" pattern)
-              `(orderless-regexp . ,(concat (substring pattern 0 -1) "[\x200000-\x300000]*$")))
-             ;; File extensions
-             ((and
-               ;; Completing filename or eshell
-               (or minibuffer-completing-file-name
-                   (derived-mode-p 'eshell-mode))
-               ;; File extension
-               (string-match-p "\\`\\.." pattern))
-              `(orderless-regexp . ,(concat "\\." (substring pattern 1) "[\x200000-\x300000]*$")))
-             ;; Ignore single !
-             ((string= "!" pattern) `(orderless-literal . ""))
-             ;; Prefix and suffix
-             ((if-let (x (assq (aref pattern 0) +orderless-dispatch-alist))
-                  (cons (cdr x) (substring pattern 1))
-                (when-let (x (assq (aref pattern (1- (length pattern))) +orderless-dispatch-alist))
-                  (cons (cdr x) (substring pattern 0 -1)))))))
+       ;; Recognizes the following patterns:
+       ;; * ~flex flex~
+       ;; * =literal literal=
+       ;; * %char-fold char-fold%
+       ;; * `initialism initialism`
+       ;; * !without-literal without-literal!
+       ;; * .ext (file extension)
+       ;; * regexp$ (regexp matching at end)
+       (defun +orderless-dispatch (pattern index _total)
+         (cond
+          ;; Ensure that $ works with Consult commands, which add disambiguation suffixes
+          ((string-suffix-p "$" pattern)
+           `(orderless-regexp . ,(concat (substring pattern 0 -1) "[\x200000-\x300000]*$")))
+          ;; File extensions
+          ((and
+            ;; Completing filename or eshell
+            (or minibuffer-completing-file-name
+                (derived-mode-p 'eshell-mode))
+            ;; File extension
+            (string-match-p "\\`\\.." pattern))
+           `(orderless-regexp . ,(concat "\\." (substring pattern 1) "[\x200000-\x300000]*$")))
+          ;; Ignore single !
+          ((string= "!" pattern) `(orderless-literal . ""))
+          ;; Prefix and suffix
+          ((if-let (x (assq (aref pattern 0) +orderless-dispatch-alist))
+               (cons (cdr x) (substring pattern 1))
+             (when-let (x (assq (aref pattern (1- (length pattern))) +orderless-dispatch-alist))
+               (cons (cdr x) (substring pattern 0 -1)))))))
 
-          ;; Define orderless style with initialism by default
-          (orderless-define-completion-style +orderless-with-initialism
-            (orderless-matching-styles '(orderless-initialism orderless-literal orderless-regexp)))
+       ;; Define orderless style with flex by default
+       (orderless-define-completion-style +orderless-with-flex
+         (orderless-matching-styles '(orderless-flex orderless-literal orderless-regexp)))
 
-          ;; You may want to combine the `orderless` style with `substring` and/or `basic`.
-          ;; There are many details to consider, but the following configurations all work well.
-          ;; Personally I (@minad) use option 3 currently. Also note that you may want to configure
-          ;; special styles for special completion categories, e.g., partial-completion for files.
-          ;;
-          ;; 1. (setq completion-styles '(orderless))
-          ;; This configuration results in a very coherent completion experience,
-          ;; since orderless is used always and exclusively. But it may not work
-          ;; in all scenarios. Prefix expansion with TAB is not possible.
-          ;;
-          ;; 2. (setq completion-styles '(substring orderless))
-          ;; By trying substring before orderless, TAB expansion is possible.
-          ;; The downside is that you can observe the switch from substring to orderless
-          ;; during completion, less coherent.
-          ;;
-          ;; 3. (setq completion-styles '(orderless basic))
-          ;; Certain dynamic completion tables (completion-table-dynamic)
-          ;; do not work properly with orderless. One can add basic as a fallback.
-          ;; Basic will only be used when orderless fails, which happens only for
-          ;; these special tables.
-          ;;
-          ;; 4. (setq completion-styles '(substring orderless basic))
-          ;; Combine substring, orderless and basic.
-          ;;
-          (setq completion-styles '(orderless basic)
-                completion-category-defaults nil
-              ;;; Enable partial-completion for files.
-              ;;; Either give orderless precedence or partial-completion.
-              ;;; Note that completion-category-overrides is not really an override,
-              ;;; but rather prepended to the default completion-styles.
-                ;; completion-category-overrides '((file (styles orderless partial-completion))) ;; orderless is tried first
-                completion-category-overrides '((file (styles partial-completion initials)) ;; partial-completion is tried first
-                                                ;; enable initialism by default for symbols
-                                                (command (styles +orderless-with-initialism))
-                                                (variable (styles +orderless-with-initialism))
-                                                (symbol (styles +orderless-with-initialism)))
-                orderless-component-separator #'orderless-escapable-split-on-space ;; allow escaping space with backslash!
-                orderless-style-dispatchers '(+orderless-dispatch)))
-      #+END_SRC
+       ;; You may want to combine the `orderless` style with `substring` and/or `basic`.
+       ;; There are many details to consider, but the following configurations all work well.
+       ;; Personally I (@minad) use option 3 currently. Also note that you may want to configure
+       ;; special styles for special completion categories, e.g., partial-completion for files.
+       ;;
+       ;; 1. (setq completion-styles '(orderless))
+       ;; This configuration results in a very coherent completion experience,
+       ;; since orderless is used always and exclusively. But it may not work
+       ;; in all scenarios. Prefix expansion with TAB is not possible.
+       ;;
+       ;; 2. (setq completion-styles '(substring orderless))
+       ;; By trying substring before orderless, TAB expansion is possible.
+       ;; The downside is that you can observe the switch from substring to orderless
+       ;; during completion, less coherent.
+       ;;
+       ;; 3. (setq completion-styles '(orderless basic))
+       ;; Certain dynamic completion tables (completion-table-dynamic)
+       ;; do not work properly with orderless. One can add basic as a fallback.
+       ;; Basic will only be used when orderless fails, which happens only for
+       ;; these special tables.
+       ;;
+       ;; 4. (setq completion-styles '(substring orderless basic))
+       ;; Combine substring, orderless and basic.
+       ;;
+       (setq completion-styles '(orderless basic)
+             completion-category-defaults nil
+           ;;; Enable partial-completion for files.
+           ;;; Either give orderless precedence or partial-completion.
+           ;;; Note that completion-category-overrides is not really an override,
+           ;;; but rather prepended to the default completion-styles.
+             ;; completion-category-overrides '((file (styles orderless partial-completion))) ;; orderless is tried first
+             completion-category-overrides '((file (styles partial-completion initials flex)) ;; partial-completion is tried first
+                                             ;; enable flex by default for symbols
+                                             (command (styles +orderless-with-flex))
+                                             (variable (styles +orderless-with-flex))
+                                             (symbol (styles +orderless-with-flex)))
+             orderless-component-separator #'orderless-escapable-split-on-space ;; allow escaping space with backslash!
+             orderless-style-dispatchers '(+orderless-dispatch)))
+   #+END_SRC
 
 ***** Component matching styles
 Each component of a pattern can match in any of several matching
@@ -807,7 +876,8 @@ There's no need to bind #'marginalia-cycle, not useful.
        :bind (:map corfu-map
                    ;; ("-" . corfu-insert-separator) ; Configure SPC for separator insertion
                    ([remap next-line] . nil)
-                   ([remap previous-line] . nil))
+                   ([remap previous-line] . nil)
+                   ("\r" . nil))
        :hook (after-init . global-corfu-mode)
        :config
        (corfu-indexed-mode 1) ; for indexed csndidate selection
@@ -830,7 +900,7 @@ There's no need to bind #'marginalia-cycle, not useful.
        ;; (company-global-modes '(not erc-mode message-mode eshell-mode))
        ;; (company-require-match nil)
        :hook (after-init . global-company-mode))
-       #+end_src
+   #+end_src
 
 ***** COMMENT corfu example
 #+begin_example emacs-lisp
@@ -899,16 +969,16 @@ completion UI.
     ;; Add `completion-at-point-functions', used by `completion-at-point'.
     (add-to-list 'completion-at-point-functions #'cape-file)
     (add-to-list 'completion-at-point-functions #'cape-dabbrev)
-    ;;(add-to-list 'completion-at-point-functions #'cape-history)
+    ;; (add-to-list 'completion-at-point-functions #'cape-history)
     (add-to-list 'completion-at-point-functions #'cape-keyword)
-    ;;(add-to-list 'completion-at-point-functions #'cape-tex)
-    ;;(add-to-list 'completion-at-point-functions #'cape-sgml)
-    ;;(add-to-list 'completion-at-point-functions #'cape-rfc1345)
-    ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
-    ;;(add-to-list 'completion-at-point-functions #'cape-ispell)
-    ;;(add-to-list 'completion-at-point-functions #'cape-dict)
-    (add-to-list 'completion-at-point-functions #'cape-symbol)
-    ;;(add-to-list 'completion-at-point-functions #'cape-line)
+    ;; (add-to-list 'completion-at-point-functions #'cape-tex)
+    ;; (add-to-list 'completion-at-point-functions #'cape-sgml)
+    ;; (add-to-list 'completion-at-point-functions #'cape-rfc1345)
+    ;; (add-to-list 'completion-at-point-functions #'cape-abbrev)
+    ;; (add-to-list 'completion-at-point-functions #'cape-ispell)
+    ;; (add-to-list 'completion-at-point-functions #'cape-dict)
+    ;; (add-to-list 'completion-at-point-functions #'cape-symbol)
+    ;; (add-to-list 'completion-at-point-functions #'cape-line)
     )
 #+end_src
 
@@ -1089,7 +1159,7 @@ common project workflow.
     :after consult
     :bind (("C-x p f" . consult-project-extra-find)
            ("C-x p o" . consult-project-extra-find-other-window)))
-    #+end_src
+#+end_src
 
 ***** consult-dir
 Consult-dir allows you to easily insert directory paths into the
@@ -1149,37 +1219,160 @@ file buffer like sed interactively.
 
 **** TODO tempel
 
-*** edit enhencement
-**** COMMENT whole-line-or-region
-Operate on current line if region undefined.
-#+begin_src emacs-lisp
-  (use-package whole-line-or-region
-    :init
-    (whole-line-or-region-global-mode)
-    ;; (define-key whole-line-or-region-local-mode-map [remap comment-dwim] nil)
-    )
-#+end_src
+*** TODO make packages in after-init-hook or defer N
 *** TODO direddred
 
 *** TODO crux
+Useful additional commands.
 
-*** TODO eglot
+*** TODO text-mode
 
-*** TODO flymake | flycheck
+*** TODO COMMENT prog-mode
+#+begin_src emacs-lisp
+
+  ;; Prettify Symbols
+  ;; `global-prettify-symbols-mode' is provided by prog-mode.el
+  (use-package prog-mode
+    :ensure nil
+    :config (global-prettify-symbols-mode t))
+
+#+end_src
+
+**** TODO flymake | flycheck
+
+**** TODO auto-yasnippets
+
+**** TODO libe-py-plugin
+
+**** TODO format-all
+#+begin_src emacs-lisp
+  ;; format all, formatter for almost languages
+  ;; great for programmers
+  (use-package format-all
+    :diminish
+    :hook (prog-mode . format-all-ensure-formatter)
+    :bind ("C-c f" . #'format-all-buffer))
+#+end_src
+
+**** TODO move-dup
+#+begin_src emacs-lisp
+  
+;; move-dup, move/copy line or region
+(use-package move-dup
+  :hook (after-init . global-move-dup-mode))
+#+end_src
+
+**** TODO quickrun
+#+begin_src emacs-lisp
+  (use-package quickrun)
+#+end_src
+
+**** TODO eglot
+#+begin_src emacs-lisp
+  ;; If you don't like eglot/lsp-mode for specific languages, some alternatives are:
+  ;; - `java-mode' with `meghanada-mode' & `meghanada-server'
+  ;; - `python-mode' with `elpy'
+
+  ;;; Code:
+
+  (use-package eglot
+    :hook ((c-mode
+            c++-mode
+            go-mode
+            java-mode
+            js-mode
+            python-mode
+            rust-mode
+            web-mode) . eglot-ensure)
+    :bind (("C-c e f" . #'eglot-format)
+           ("C-c e a" . #'eglot-code-actions)
+           ("C-c e i" . #'eglot-code-action-organize-imports)
+           ("C-c e q" . #'eglot-code-action-quickfix))
+    :config
+    ;; (setq eglot-ignored-server-capabilities '(:documentHighlightProvider))
+    (add-to-list 'eglot-server-programs '(web-mode "vls"))
+    (defun eglot-actions-before-save()
+      (add-hook 'before-save-hook
+                (lambda ()
+                  (call-interactively #'eglot-format)
+                  (call-interactively #'eglot-code-action-organize-imports))))
+    (add-hook 'eglot--managed-mode-hook #'eglot-actions-before-save))
+
+  (provide 'init-eglot)
+#+end_src
+
+**** TODO python
+#+begin_src emacs-lisp
+  ;;;###autoload
+  (defun check-run-command (command arg-string)
+    "Find the EXEC-FILE and run the BODY."
+
+    (if (not (executable-find command))
+        (message "[ERROR]: <%s> not found!" command)
+      (save-buffer)
+      (shell-command (format "%s %s" command arg-string))
+      (revert-buffer t t t)))
+
+  ;; BE CAREFUL! Maybe bugs here, always call this function manually.
+  ;;;###autoload
+  (defun python-isort ()
+    "Sort the imports with isort."
+    (interactive)
+    (check-run-command "isort"
+                       (format "--atomic --profile=black %s"
+                               (buffer-file-name))))
+
+  ;; BE CAREFUL! Maybe bugs here, always call this function manually.
+  ;;;###autoload
+  (defun python-remove-all-unused-imports ()
+    "Remove all the unused imports, do NOT use pyimport, as it has bugs.
+  eg.from datetime import datetime."
+    (interactive)
+    (check-run-command "autoflake"
+                       (format "-i --remove-all-unused-imports %s"
+                               (buffer-file-name))))
+
+  (add-hook
+   'python-mode-hook
+   (lambda ()
+     (define-key python-mode-map (kbd "C-c p s") 'python-isort)
+     (define-key python-mode-map (kbd "C-c p r") 'python-remove-all-unused-imports)))
+
+#+end_src
+
+*** TODO program languages
+
+*** COMMENT help systems
+**** helpful
+Helpful is an alternative to the built-in Emacs help that provides
+much more contextual information.
+#+begin_src emacs-lisp
+  (use-package helpful
+    :bind (("C-h f" . helpful-callable)
+           ("C-h v" . helpful-variable)
+           ("C-h s" . helpful-symbol)
+           ("C-h x" . helpful-command)
+           ("C-h ." . helpful-at-point)))
+#+end_src
+
+**** info
+Info-colors, make the info manual as colorful.
+#+begin_src emacs-lisp
+  (use-package info-colors
+    :hook (Info-selection . info-colors-fontify-node))
+#+end_src
 
 *** TODO dictionary functions
 
 *** TODO winum | switch-window | ace-window
 
 *** TODO iedit
+edit same text in one buffer or region
 
 *** TODO xah-fly-keys | ergoemacs-mode | hydra | meow
 
 *** TODO git gutter & git timemachine
 
-*** TODO auto-yasnippets
-
-*** TODO libe-py-plugin
 
 *** TODO dump-jump
 
@@ -1302,6 +1495,16 @@ Somehow it just doesn't work.
   (use-package all-the-icons-ibuffer
     :after all-the-icons
     :hook (ibuffer-mode . all-the-icons-ibuffer-mode))
+#+end_src
+
+** whole-line-or-region
+Operate on current line if region undefined.
+#+begin_src emacs-lisp
+  (use-package whole-line-or-region
+    :init
+    (whole-line-or-region-global-mode)
+    ;; (define-key whole-line-or-region-local-mode-map [remap comment-dwim] nil)
+    )
 #+end_src
 
 * /buffer functions & variables/
