@@ -247,7 +247,8 @@ using :noweb to call ORG-INIT-FILE library.
                  (text (if valid-percentage? (format "%d%%%%" percentage) "")))
             (concat " " text " battery-" icon)))
     (setq time-string
-          (format-time-string "%F[%R]"))
+          (propertize (format-time-string "[%F %R]")
+                      'face 'custom-state))
     (message (concat time-string battery-string)))
   (global-set-key (kbd "C-M-<f22>") 'inn/echo-time-battery)
 #+end_src
@@ -262,8 +263,8 @@ using :noweb to call ORG-INIT-FILE library.
     (interactive)
     (move-beginning-of-line 1)
     (open-line 1))
-  (global-set-key (kbd "C-S-o") #'inn/newline-blow-point)
-  (global-set-key (kbd "C-o") #'inn/newline-above-point)
+  (global-set-key (kbd "C-o") #'inn/newline-blow-point)
+  (global-set-key (kbd "C-S-o") #'inn/newline-above-point)
 #+end_src
 
 *** kill back to indentation
@@ -359,9 +360,9 @@ Don't forget to use ~:ensure nil~ code for built-in packages.
 
 **** time
 #+begin_src emacs-lisp
-  (setq display-time-24hr-format t
-        display-time-day-and-date t
-        display-time-format "%R %p %F")
+  (setq display-time-string-forms
+        '((propertize (format-time-string "[%F %R]")
+                      'face 'dired-flagged)))
   (display-time-mode)
 #+end_src
 
@@ -412,8 +413,11 @@ Don't forget to use ~:ensure nil~ code for built-in packages.
     (org-refile-allow-creating-parent-nodes 'confirm)
     :custom-face
     (org-table ((t (:family "Sarasa Term SC"))))
-    :bind(
-          ("C-c l" . org-store-link)
+    :config
+    (defun inn/org-goto-end-of-subtree ()
+      (interactive)
+      (org-end-of-subtree))
+    :bind(("C-c l" . org-store-link)
           ("C-c a" . org-agenda)
           ("C-c c" . org-capture)
           :map org-mode-map
@@ -421,6 +425,7 @@ Don't forget to use ~:ensure nil~ code for built-in packages.
           ("C-c h" . org-hide-entry)
           ("C-c C-'" . org-edit-special)
           ("C-c C-;" . org-toggle-comment)
+          ("C-c C-S-u" . inn/org-goto-end-of-subtree)
           :map org-src-mode-map
           ("C-c C-'" . org-edit-src-exit)))
 #+end_src
@@ -928,7 +933,7 @@ There's no need to bind #'marginalia-cycle, not useful.
     :hook (after-init . marginalia-mode))
 #+END_SRC
     
-**** TAB-INSERT corfu
+**** TAB-SELECT corfu
 1) ~Use <tab> to insert candidate and quit~::
    #+HEADER: :tangle (if (string= "TAB-INSERT" (org-get-todo-state)) (concat tangle-dir (car (org-get-outline-path t t))) "no")
    #+begin_src emacs-lisp
