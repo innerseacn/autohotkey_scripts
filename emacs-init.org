@@ -116,6 +116,16 @@ Profile emacs startup
   (setq w32-pipe-buffer-size (* 1024 1024)))
 #+end_src
 
+** COMMENT server start
+Allow access from emacsclient
+#+begin_src emacs-lisp
+(add-hook 'after-init-hook
+          (lambda ()
+            (require 'server)
+            (unless (server-running-p)
+              (server-start))))
+#+end_src
+
 ** built-in settings
 Using custom-set-variables mechanism.
 #+BEGIN_SRC emacs-lisp
@@ -124,6 +134,7 @@ Using custom-set-variables mechanism.
    '(auto-window-vscroll nil)
    '(abbrev-suggest t)
    '(completion-cycle-threshold 5)
+   '(create-lockfiles nil)
    ;; '(default-frame-alist
    ;;    '((horizontal-scroll-bars)
    ;;      (vertical-scroll-bars)
@@ -133,6 +144,7 @@ Using custom-set-variables mechanism.
    '(help-enable-symbol-autoload t)
    '(help-window-select t)
    '(history-length 25)
+   '(indicate-buffer-boundaries 'left)
    ;; '(inhibit-startup-screen t)
    '(isearch-allow-motion t)
    '(isearch-lazy-count t)
@@ -165,6 +177,10 @@ Using custom-set-variables mechanism.
 *** TODO 测试eldoc-documentation-strategy设置的最佳方法，或使用其他方式（如lsp-mode）
 
 *** TODO 尝试使用etags-xref-prefer-current-file选项
+
+*** TODO some settings
+ ediff-split-window-function 'split-window-horizontally
+ ediff-window-setup-function 'ediff-setup-windows-plain
 
 ** face settings
 *** built-in face settings
@@ -199,6 +215,8 @@ Using custom-set-faces mechanism. Look nice in doom-badger theme.
   (global-set-key (kbd "M-B") #'backward-to-word)
   (global-set-key (kbd "C-x v p") #'vc-push)
   (global-set-key (kbd "C-h K") #'describe-keymap)
+  (global-set-key (kbd "M-Z") #'zap-up-to-char)
+  (global-set-key [remap just-one-space] #'cycle-spacing)
 
   (defalias 'list-buffers 'ibuffer)
 #+END_SRC
@@ -232,6 +250,31 @@ using :noweb to call ORG-INIT-FILE library.
           (format-time-string "%F[%R]"))
     (message (concat time-string battery-string)))
   (global-set-key (kbd "C-M-<f22>") 'inn/echo-time-battery)
+#+end_src
+
+*** open newline like vim
+#+begin_src emacs-lisp
+  (defun inn/newline-blow-point ()
+    (interactive)
+    (move-end-of-line 1)
+    (newline-and-indent))
+  (defun inn/newline-above-point ()
+    (interactive)
+    (move-beginning-of-line 1)
+    (open-line 1))
+  (global-set-key (kbd "C-S-o") #'inn/newline-blow-point)
+  (global-set-key (kbd "C-o") #'inn/newline-above-point)
+#+end_src
+
+*** kill back to indentation
+#+begin_src emacs-lisp
+  (defun inn/kill-back-to-indentation ()
+    "Kill from point back to the first non-whitespace character on the line."
+    (interactive)
+    (let ((prev-pos (point)))
+      (back-to-indentation)
+      (kill-region (point) prev-pos)))
+  (global-set-key (kbd "C-S-k") #'inn/kill-back-to-indentation)
 #+end_src
 
 *** COMMENT isearch bindings
@@ -295,23 +338,23 @@ From purcel's.
    
 *** built-in packages
 Don't forget to use ~:ensure nil~ code for built-in packages.
-**** globally enabled packages
+**** globally enabled modes
 #+begin_src emacs-lisp
-  (column-number-mode)
-  (delete-selection-mode)
-  (display-battery-mode)
-  (dired-async-mode)
-  (electric-pair-mode)
-  ;; (electric-quote-mode)
-  ;; (global-display-line-numbers-mode)
-  (global-goto-address-mode)
-  (global-hl-line-mode)
-  ;; (global-so-long-mode)
-  ;; (ibuffer-auto-mode)
-  (line-number-mode)
-  (save-place-mode)
-  (savehist-mode)
-  (size-indication-mode)
+  (add-hook 'after-init-hook 'column-number-mode)
+  (add-hook 'after-init-hook 'delete-selection-mode)
+  (add-hook 'after-init-hook 'display-battery-mode)
+  (add-hook 'after-init-hook 'dired-async-mode)
+  (add-hook 'after-init-hook 'electric-pair-mode)
+  ;; (add-hook 'after-init-hook 'electric-quote-mode)
+  ;; (add-hook 'after-init-hook 'global-display-line-numbers-mode)
+  (add-hook 'after-init-hook 'global-goto-address-mode)
+  (add-hook 'after-init-hook 'global-hl-line-mode)
+  ;; (add-hook 'after-init-hook 'global-so-long-mode)
+  ;; (add-hook 'after-init-hook 'ibuffer-auto-mode)
+  (add-hook 'after-init-hook 'line-number-mode)
+  (add-hook 'after-init-hook 'save-place-mode)
+  (add-hook 'after-init-hook 'savehist-mode)
+  (add-hook 'after-init-hook 'size-indication-mode)
 #+end_src
 
 **** time
@@ -363,6 +406,10 @@ Don't forget to use ~:ensure nil~ code for built-in packages.
     (org-log-into-drawer t)
     (org-special-ctrl-a/e t)
     ;; (org-ellipsis "…")
+    (org-refile-targets '((nil . (:maxlevel . 5))))
+    (org-refile-use-outline-path 'file)
+    (org-outline-path-complete-in-steps nil)
+    (org-refile-allow-creating-parent-nodes 'confirm)
     :custom-face
     (org-table ((t (:family "Sarasa Term SC"))))
     :bind(
@@ -583,15 +630,6 @@ Modeline derived from DOOM emacs.
   (setq doom-modeline-before-update-env-hook nil)
   (setq doom-modeline-after-update-env-hook nil)
 #+END_EXAMPLE
-
-**** COMMENT goggles
-Goggles highlights the modified region using pulse. Currently the
-commands undo, yank, kill and delete are supported.
-#+begin_src emacs-lisp
-  (use-package goggles
-    :hook ((prog-mode text-mode) . goggles-mode)
-    :custom (goggles-pulse t)) ;; set to nil to disable pulsing
-#+end_src
 
 **** TODO COMMENT avy
 #+begin_src emacs-lisp
@@ -905,6 +943,8 @@ There's no need to bind #'marginalia-cycle, not useful.
        (corfu-current ((t (:background "#22282c"))))
        :bind (:map corfu-map
                    ;; ("-" . corfu-insert-separator) ; Configure SPC for separator insertion
+                   ([remap next-line] . nil)
+                   ([remap previous-line] . nil)
                    ("\r" . nil))
        :hook (after-init . global-corfu-mode)
        :config
@@ -1252,12 +1292,12 @@ Useful additional commands.
 
 *** TODO COMMENT prog-mode
 #+begin_src emacs-lisp
-
   ;; Prettify Symbols
   ;; `global-prettify-symbols-mode' is provided by prog-mode.el
   (use-package prog-mode
     :ensure nil
-    :config (global-prettify-symbols-mode t))
+    :hook (global-prettify-symbols-mode t))
+  (add-hook ' 'goto-address-prog-mode)
 
 #+end_src
 
@@ -1279,11 +1319,17 @@ Useful additional commands.
 
 **** TODO move-dup
 #+begin_src emacs-lisp
-  
 ;; move-dup, move/copy line or region
 (use-package move-dup
   :hook (after-init . global-move-dup-mode))
 #+end_src
+(global-set-key [M-up] 'move-dup-move-lines-up)
+(global-set-key [M-down] 'move-dup-move-lines-down)
+(global-set-key [M-S-up] 'move-dup-move-lines-up)
+(global-set-key [M-S-down] 'move-dup-move-lines-down)
+
+(global-set-key (kbd "C-c d") 'move-dup-duplicate-down)
+(global-set-key (kbd "C-c u") 'move-dup-duplicate-up)
 
 **** TODO quickrun
 #+begin_src emacs-lisp
@@ -1326,7 +1372,7 @@ Useful additional commands.
 
 *** TODO COMMENT program languages
 **** TODO python
-from cabin's
+***** cabin's
 #+begin_src emacs-lisp
   ;;;###autoload
   (defun check-run-command (command arg-string)
@@ -1364,7 +1410,7 @@ from cabin's
      (define-key python-mode-map (kbd "C-c p r") 'python-remove-all-unused-imports)))
 
 #+end_src
-from rational's
+***** rational's
 #+begin_src emacs-lisp
   ;;; rational-python.el --- python configuration      -*- lexical-binding: t; -*-
 
@@ -1461,6 +1507,35 @@ from rational's
   (provide 'rational-python)
   ;;; rational-python.el ends here
 #+end_src
+***** purcell's
+#+begin_src emacs-lisp
+  ;;; init-python.el --- Python editing -*- lexical-binding: t -*-
+;;; Commentary:
+;;; Code:
+
+;; I use nix + direnv instead of virtualenv/pyenv/pyvenv, and it is an
+;; approach which extends to other languages too. I recorded a
+;; screencast about this: https://www.youtube.com/watch?v=TbIHRHy7_JM
+
+
+(setq auto-mode-alist
+      (append '(("SConstruct\\'" . python-mode)
+                ("SConscript\\'" . python-mode))
+              auto-mode-alist))
+
+(setq python-shell-interpreter "python3")
+
+(require-package 'pip-requirements)
+
+(when (maybe-require-package 'toml-mode)
+  (add-to-list 'auto-mode-alist '("poetry\\.lock\\'" . toml-mode)))
+
+(when (maybe-require-package 'reformatter)
+  (reformatter-define black :program "black" :args '("-")))
+
+(provide 'init-python)
+;;; init-python.el ends here
+#+end_src
 
 *** COMMENT help systems
 **** helpful
@@ -1497,7 +1572,6 @@ edit same text in one buffer or region
 
 *** TODO git gutter & git timemachine
 
-
 *** TODO dump-jump
 
 *** TODO emmet-mode
@@ -1518,12 +1592,162 @@ edit same text in one buffer or region
 
 *** TODO expand-region
 
+*** TODO subword | superword
+
+*** TODO rainbow-delimiters
+
+*** TODO multiple-cursors
+
+*** TODO highlight-escape-sequences
+
+*** TODO git-blame | git-modes | git-timemachine | git-link | git-commit
+  ;;; init-git.el --- Git SCM support -*- lexical-binding: t -*-
+;;; Commentary:
+
+;; See also init-github.el.
+
+;;; Code:
+
+;; TODO: link commits from vc-log to magit-show-commit
+;; TODO: smerge-mode
+(require-package 'git-blamed)
+(require-package 'git-modes)
+(when (maybe-require-package 'git-timemachine)
+  (global-set-key (kbd "C-x v t") 'git-timemachine-toggle))
+
+(require-package 'git-link)
+
+(when (maybe-require-package 'magit)
+  (setq-default magit-diff-refine-hunk t)
+
+  ;; Hint: customize `magit-repository-directories' so that you can use C-u M-F12 to
+  ;; quickly open magit on any one of your projects.
+  (global-set-key [(meta f12)] 'magit-status)
+  (global-set-key (kbd "C-x g") 'magit-status)
+  (global-set-key (kbd "C-x M-g") 'magit-dispatch)
+
+  (defun sanityinc/magit-or-vc-log-file (&optional prompt)
+    (interactive "P")
+    (if (and (buffer-file-name)
+             (eq 'Git (vc-backend (buffer-file-name))))
+        (if prompt
+            (magit-log-buffer-file-popup)
+          (magit-log-buffer-file t))
+      (vc-print-log)))
+
+  (with-eval-after-load 'vc
+    (define-key vc-prefix-map (kbd "l") 'sanityinc/magit-or-vc-log-file)))
+
+
+(with-eval-after-load 'magit
+  (define-key magit-status-mode-map (kbd "C-M-<up>") 'magit-section-up))
+
+(maybe-require-package 'magit-todos)
+
+(require-package 'fullframe)
+(with-eval-after-load 'magit
+  (fullframe magit-status magit-mode-quit-window))
+
+(when (maybe-require-package 'git-commit)
+  (add-hook 'git-commit-mode-hook 'goto-address-mode))
+
+
+(when *is-a-mac*
+  (with-eval-after-load 'magit
+    (add-hook 'magit-mode-hook (lambda () (local-unset-key [(meta h)])))))
+
+
+
+;; Convenient binding for vc-git-grep
+(with-eval-after-load 'vc
+  (define-key vc-prefix-map (kbd "f") 'vc-git-grep))
+
+
+
+;;; git-svn support
+
+;; (when (maybe-require-package 'magit-svn)
+;;   (require-package 'magit-svn)
+;;   (autoload 'magit-svn-enabled "magit-svn")
+;;   (defun sanityinc/maybe-enable-magit-svn-mode ()
+;;     (when (magit-svn-enabled)
+;;       (magit-svn-mode)))
+;;   (add-hook 'magit-status-mode-hook #'sanityinc/maybe-enable-magit-svn-mode))
+
+(with-eval-after-load 'compile
+  (dolist (defn (list '(git-svn-updated "^\t[A-Z]\t\\(.*\\)$" 1 nil nil 0 1)
+                      '(git-svn-needs-update "^\\(.*\\): needs update$" 1 nil nil 2 1)))
+    (add-to-list 'compilation-error-regexp-alist-alist defn)
+    (add-to-list 'compilation-error-regexp-alist (car defn))))
+
+(defvar git-svn--available-commands nil "Cached list of git svn subcommands")
+(defun git-svn--available-commands ()
+  (or git-svn--available-commands
+      (setq git-svn--available-commands
+            (sanityinc/string-all-matches
+             "^  \\([a-z\\-]+\\) +"
+             (shell-command-to-string "git svn help") 1))))
+
+(autoload 'vc-git-root "vc-git")
+
+(defun git-svn (dir command)
+  "Run a git svn subcommand in DIR."
+  (interactive (list (read-directory-name "Directory: ")
+                     (completing-read "git-svn command: " (git-svn--available-commands) nil t nil nil (git-svn--available-commands))))
+  (let* ((default-directory (vc-git-root dir))
+         (compilation-buffer-name-function (lambda (major-mode-name) "*git-svn*")))
+    (compile (concat "git svn " command))))
+
+
+(provide 'init-git)
+;;; init-git.el ends here
+
+*** TODO rainbow-mode
+
+*** TODO comint
+
+*** TODO regex-tool
+
+*** TODO re-builder
+
+*** TODO origami
+
+*** TODO sudo-edit
+
+*** TODO gnuplot
+
+*** TODO envrc (with direnv installed)
+
 * COMMENT modes may useful later
 ** TODO ibuffer-vc
 Auto grouping ibuffer contents. Not very useful.
 
 ** TODO multi-web-mode | mmm-mode
 multi major-mode in one buffer for web development.
+
+** TODO vlf
+This package provides the M-x vlf command, which visits part of large
+file without loading it entirely.
+
+** TODO global-so-long-mode
+
+** TODO github
+;;; init-github.el --- Github integration -*- lexical-binding: t -*-
+;;; Commentary:
+;;; Code:
+
+(require 'init-git)
+
+(maybe-require-package 'yagist)
+(require-package 'bug-reference-github)
+(add-hook 'prog-mode-hook 'bug-reference-prog-mode)
+
+(maybe-require-package 'github-clone)
+(maybe-require-package 'forge)
+(maybe-require-package 'github-review)
+
+(provide 'init-github)
+;;; init-github.el ends here
 
 * COMMENT backup snippets for future
 :PROPERTIES:
@@ -1676,6 +1900,15 @@ and Emacs 28's elisp-mode) provide.
     (kind-icon-use-icons nil)
     :config
     (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
+#+end_src
+
+** goggles
+Goggles highlights the modified region using pulse. Currently the
+commands undo, yank, kill and delete are supported.
+#+begin_src emacs-lisp
+  (use-package goggles
+    :hook ((prog-mode text-mode) . goggles-mode)
+    :custom (goggles-pulse t)) ;; set to nil to disable pulsing
 #+end_src
 
 * /buffer functions & variables/
