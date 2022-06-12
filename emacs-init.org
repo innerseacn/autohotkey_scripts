@@ -39,9 +39,9 @@ Don't change or move this block!!!
 #+END_SRC
 
 ** GC stuff [from tenon emacs]
+For speed up the startup, please do NOT forget reset it to default
+after Emacs after-init-hook, or it may cause freezes.
 #+begin_src emacs-lisp
-  ;; For speed up the startup, please do NOT forget reset it to default
-  ;; after Emacs after-init-hook, or it may cause freezes.
   (setq gc-cons-threshold most-positive-fixnum)
   (add-hook 'after-init-hook #'(lambda () (setq gc-cons-threshold 800000)))
 #+end_src
@@ -110,20 +110,30 @@ Profile emacs startup
                  (expand-file-name "eln-cache" user-emacs-directory)))
 #+end_src
 
-** w32 settings
+** COMMENT run server
+Allow access from EMACSCLIENT_TRAMP
 #+begin_src emacs-lisp
-(when (boundp 'w32-get-true-file-attributes)
-  (setq w32-pipe-buffer-size (* 1024 1024)))
+  (add-hook 'after-init-hook
+            (lambda () (server-mode)))
 #+end_src
 
-** COMMENT server start
-Allow access from emacsclient
+** w32 settings
 #+begin_src emacs-lisp
-(add-hook 'after-init-hook
-          (lambda ()
-            (require 'server)
-            (unless (server-running-p)
-              (server-start))))
+  (when (eq system-type 'windows-nt)
+    (setq w32-get-true-file-attributes nil   ; decrease file IO workload
+          w32-pipe-read-delay 0              ; faster IPC
+          w32-pipe-buffer-size (* 64 1024)))
+#+end_src
+
+** encoding
+#+begin_src emacs-lisp
+  ;; UTF-8 as the default coding system
+  (when (fboundp 'set-charset-priority)
+    (set-charset-priority 'unicode))
+  ;; Explicitly set the prefered coding systems to avoid annoying prompt
+  ;; from emacs (especially on Microsoft Windows)
+  (set-language-environment 'chinese-gbk)
+  (prefer-coding-system 'utf-8-auto)
 #+end_src
 
 ** built-in settings
@@ -133,7 +143,7 @@ Using custom-set-variables mechanism.
    '(auto-save-default nil)
    '(auto-window-vscroll nil)
    '(abbrev-suggest t)
-   '(completion-cycle-threshold 5)
+   '(completion-cycle-threshold 3)
    '(create-lockfiles nil)
    ;; '(default-frame-alist
    ;;    '((horizontal-scroll-bars)
@@ -141,6 +151,9 @@ Using custom-set-variables mechanism.
    ;;      (fullscreen . fullboth)))
    '(describe-bindings-outline t)
    ;; '(delete-by-moving-to-trash t)
+   '(dired-recursive-deletes 'always)
+   '(dired-recursive-copies 'always)
+   '(ffap-machine-p-known 'reject)
    '(help-enable-symbol-autoload t)
    '(help-window-select t)
    '(history-length 25)
@@ -151,14 +164,15 @@ Using custom-set-variables mechanism.
    '(kill-buffer-delete-auto-save-files t)
    '(kill-do-not-save-duplicates t)
    '(make-backup-files nil)
-   '(mode-line-compact 'long)
+   ;; '(mode-line-compact 'long)
    '(mouse-wheel-progressive-speed nil)
    '(next-error-message-highlight 'keep)
-   '(read-process-output-max (* 1024 1024))
+   '(read-process-output-max (* 64 1024))
    '(read-quoted-char-radix 16)
    '(ring-bell-function 'ignore)
    '(scroll-margin 3)
    '(scroll-conservatively 101)
+   ;; '(sentence-end "\\([。！？]\\|……\\|[.?!][]\"')}]*\\($\\|[ \t]\\)\\)[ \t\n]*")
    '(set-mark-command-repeat-pop t)
    '(shift-select-mode 'permanent)
    '(show-trailing-whitespace t)
@@ -215,7 +229,10 @@ Using custom-set-faces mechanism. Look nice in doom-badger theme.
   (global-set-key (kbd "M-B") #'backward-to-word)
   (global-set-key (kbd "C-x v p") #'vc-push)
   (global-set-key (kbd "C-h K") #'describe-keymap)
-  (global-set-key (kbd "M-Z") #'zap-up-to-char)
+  (global-set-key (kbd "M-Z") #'zap-to-char)
+  (global-set-key (kbd "M-z") #'zap-up-to-char)
+  (global-set-key (kbd "M-s M-f") #'project-find-file)
+  (global-set-key (kbd "C-x C-f") #'find-file)
   (global-set-key [remap just-one-space] #'cycle-spacing)
 
   (defalias 'list-buffers 'ibuffer)
@@ -263,8 +280,8 @@ using :noweb to call ORG-INIT-FILE library.
     (interactive)
     (move-beginning-of-line 1)
     (open-line 1))
-  (global-set-key (kbd "C-o") #'inn/newline-blow-point)
-  (global-set-key (kbd "C-S-o") #'inn/newline-above-point)
+  (global-set-key (kbd "C-S-o") #'inn/newline-blow-point)
+  (global-set-key (kbd "C-o") #'inn/newline-above-point)
 #+end_src
 
 *** kill back to indentation
@@ -289,6 +306,32 @@ From purcel's.
     (goto-char isearch-other-end))
 
   (define-key isearch-mode-map (kbd "C-<return>" 'inn/isearch-exit-other-end)
+#+end_src
+
+*** TODO COMMENT web search region
+考虑加入embark菜单
+#+begin_src emacs-lisp
+  (defun prelude-search (query-url prompt)
+  "Open the search url constructed with the QUERY-URL.
+PROMPT sets the `read-string prompt."
+  (browse-url
+   (concat query-url
+           (url-hexify-string
+            (if mark-active
+                (buffer-substring (region-beginning) (region-end))
+              (read-string prompt))))))
+
+(defmacro prelude-install-search-engine (search-engine-name search-engine-url search-engine-prompt)
+  "Given some information regarding a search engine, install the interactive command to search through them"
+  `(defun ,(intern (format "prelude-%s" search-engine-name)) ()
+       ,(format "Search %s with a query or region if any." search-engine-name)
+       (interactive)
+       (prelude-search ,search-engine-url ,search-engine-prompt)))
+
+(prelude-install-search-engine "google"     "http://www.google.com/search?q="              "Google: ")
+(prelude-install-search-engine "youtube"    "http://www.youtube.com/results?search_query=" "Search YouTube: ")
+(prelude-install-search-engine "github"     "https://github.com/search?q="                 "Search GitHub: ")
+(prelude-install-search-engine "duckduckgo" "https://duckduckgo.com/?t=lm&q="              "Search DuckDuckGo: ")
 #+end_src
 
 ** package settings
@@ -357,6 +400,10 @@ Don't forget to use ~:ensure nil~ code for built-in packages.
   (add-hook 'after-init-hook 'savehist-mode)
   (add-hook 'after-init-hook 'size-indication-mode)
 #+end_src
+**** turn off blink-cursor
+#+begin_src emacs-lisp
+  (blink-cursor-mode -1)
+#+end_src
 
 **** time
 #+begin_src emacs-lisp
@@ -366,7 +413,7 @@ Don't forget to use ~:ensure nil~ code for built-in packages.
   (display-time-mode)
 #+end_src
 
-**** COMMENT pixel scroll
+**** pixel scroll
 #+begin_src emacs-lisp
   (if (fboundp 'pixel-scroll-precision-mode)
       (pixel-scroll-precision-mode)
@@ -420,6 +467,7 @@ Don't forget to use ~:ensure nil~ code for built-in packages.
     :bind(("C-c l" . org-store-link)
           ("C-c a" . org-agenda)
           ("C-c c" . org-capture)
+          ("C-c b" . org-switchb)
           :map org-mode-map
           ("C-c s" . org-show-entry)
           ("C-c h" . org-hide-entry)
@@ -447,7 +495,18 @@ Don't forget to use ~:ensure nil~ code for built-in packages.
            ("C-x C-?" . winner-redo)))
 #+end_src
 
-**** TODO eshell|shell keys quake mode etc.
+**** TODO eshell & emacs-term-toggle | shell-pop
+
+*** system
+**** gcmh
+Garbage Collector Magic Hack
+#+begin_src emacs-lisp
+  (use-package gcmh
+    :init
+    (setq gcmh-idle-delay 5
+          gcmh-high-cons-threshold #x1000000) ; 16MB
+    (gcmh-mode 1)))
+#+end_src
 
 *** appearances
 **** theme
@@ -646,6 +705,12 @@ Modeline derived from DOOM emacs.
 (use-package popwin
   :hook (after-init . popwin-mode))
 #+end_src
+
+  (with-eval-after-load 'popwin
+    (progn
+      (push '(occur-mode :position right :width 100) popwin:special-display-config)
+      (push '(grep-mode :position right :width 100) popwin:special-display-config)
+      (push '(special-mode :position right :width 100) popwin:special-display-config)))
 
 **** TODO anzu
 
@@ -1234,8 +1299,14 @@ Consult-dir allows you to easily insert directory paths into the
 minibuffer prompt in Emacs.
 #+begin_src emacs-lisp
   (use-package consult-dir
-    :bind (:map vertico-map
-                ("C-x C-d" . consult-dir)))
+    :bind (([remap list-directory] . consult-dir)
+           :map vertico-map
+           ("C-x C-d" . consult-dir)))
+#+end_src
+***** TODO COMMENT consult-flycheck
+#+begin_src emacs-lisp
+  (use-package consult-flycheck
+    :after (consult flycheck))
 #+end_src
 
 **** embark
@@ -1279,10 +1350,8 @@ wgrep allows you to edit a grep buffer and apply those changes to the
 file buffer like sed interactively.
 #+BEGIN_SRC emacs-lisp
   (use-package wgrep
-    :after (consult embark embark-consult)
-    :demand
-    :custom
-    (wgrep-auto-save-buffer t))
+    :commands wgrep-change-to-wgrep-mode
+    :custom (wgrep-auto-save-buffer t))
 #+END_SRC
 
 **** TODO tempel
@@ -1306,7 +1375,46 @@ Useful additional commands.
 
 #+end_src
 
+(defun prelude-local-comment-auto-fill ()
+  (set (make-local-variable 'comment-auto-fill-only-comments) t))
+
+;; show the name of the current function definition in the modeline
+(require 'which-func)
+(which-function-mode 1)
+
+;; font-lock annotations like TODO in source code
+(require 'hl-todo)
+(global-hl-todo-mode 1)
+
+(defun prelude-prog-mode-defaults ()
+  "Default coding hook, useful with any programming language."
+  (when (and (executable-find ispell-program-name)
+             prelude-flyspell)
+    (flyspell-prog-mode))
+  (when prelude-guru
+    (guru-mode +1)
+    (diminish 'guru-mode))
+  (smartparens-mode +1)
+  (prelude-enable-whitespace)
+  (prelude-local-comment-auto-fill))
+
+(setq prelude-prog-mode-hook 'prelude-prog-mode-defaults)
+
+(add-hook 'prog-mode-hook (lambda ()
+                            (run-hooks 'prelude-prog-mode-hook)))
+
+;; enable on-the-fly syntax checking
+(if (fboundp 'global-flycheck-mode)
+    (global-flycheck-mode +1)
+  (add-hook 'prog-mode-hook 'flycheck-mode))
+
 **** TODO flymake | flycheck
+use aspell with ispell & flycheck
+
+;; flyspell-mode does spell-checking on the fly as you type
+(require 'flyspell)
+(setq ispell-program-name "aspell" ; use aspell instead of ispell
+      ispell-extra-args '("--sug-mode=ultra"))
 
 **** TODO auto-yasnippets
 
@@ -1374,6 +1482,13 @@ Useful additional commands.
 
   (provide 'init-eglot)
 #+end_src
+
+**** TODO make script executable in linux
+
+;; make a shell script executable automatically on save
+(add-hook 'after-save-hook
+          'executable-make-buffer-file-executable-if-script-p)
+          
 
 *** TODO COMMENT program languages
 **** TODO python
@@ -1541,6 +1656,97 @@ Useful additional commands.
 (provide 'init-python)
 ;;; init-python.el ends here
 #+end_src
+***** prelude's
+(require 'electric)
+(require 'prelude-programming)
+
+;; Code navigation, documentation lookup and completion for Python
+(prelude-require-package 'anaconda-mode)
+
+(when (boundp 'company-backends)
+  (prelude-require-package 'company-anaconda)
+  (add-to-list 'company-backends 'company-anaconda))
+
+(defcustom prelude-python-mode-set-encoding-automatically nil
+  "Non-nil values enable auto insertion of '# coding: utf-8' on python buffers."
+  :type 'boolean
+  :group 'prelude)
+
+;;; Encoding detection/insertion logic
+;;
+;; Adapted from ruby-mode.el
+;;
+;; This logic was useful in Python 2, but it's not really needed in Python 3.
+(defun prelude-python--encoding-comment-required-p ()
+  (re-search-forward "[^\0-\177]" nil t))
+
+(defun prelude-python--detect-encoding ()
+  (let ((coding-system
+         (or save-buffer-coding-system
+             buffer-file-coding-system)))
+    (if coding-system
+        (symbol-name
+         (or (coding-system-get coding-system 'mime-charset)
+             (coding-system-change-eol-conversion coding-system nil)))
+      "ascii-8bit")))
+
+(defun prelude-python--insert-coding-comment (encoding)
+  (let ((newlines (if (looking-at "^\\s *$") "\n" "\n\n")))
+    (insert (format "# coding: %s" encoding) newlines)))
+
+(defun prelude-python-mode-set-encoding ()
+  "Insert a magic comment header with the proper encoding if necessary."
+  (save-excursion
+    (widen)
+    (goto-char (point-min))
+    (when (prelude-python--encoding-comment-required-p)
+      (goto-char (point-min))
+      (let ((coding-system (prelude-python--detect-encoding)))
+        (when coding-system
+          (if (looking-at "^#!") (beginning-of-line 2))
+          (cond ((looking-at "\\s *#\\s *.*\\(en\\)?coding\\s *:\\s *\\([-a-z0-9_]*\\)")
+                 ;; update existing encoding comment if necessary
+                 (unless (string= (match-string 2) coding-system)
+                   (goto-char (match-beginning 2))
+                   (delete-region (point) (match-end 2))
+                   (insert coding-system)))
+                ((looking-at "\\s *#.*coding\\s *[:=]"))
+                (t (prelude-python--insert-coding-comment coding-system)))
+          (when (buffer-modified-p)
+            (basic-save-buffer-1)))))))
+
+;;; python-mode setup
+
+(when (fboundp 'exec-path-from-shell-copy-env)
+  (exec-path-from-shell-copy-env "PYTHONPATH"))
+
+(defun prelude-python-mode-defaults ()
+  "Defaults for Python programming."
+  (subword-mode +1)
+  (anaconda-mode +1)
+  (eldoc-mode +1)
+  (setq-local electric-layout-rules
+              '((?: . (lambda ()
+                        (and (zerop (first (syntax-ppss)))
+                             (python-info-statement-starts-block-p)
+                             'after)))))
+  (when (fboundp #'python-imenu-create-flat-index)
+    (setq-local imenu-create-index-function
+                #'python-imenu-create-flat-index))
+  (add-hook 'post-self-insert-hook
+            #'electric-layout-post-self-insert-function nil 'local)
+  (when prelude-python-mode-set-encoding-automatically
+    (add-hook 'after-save-hook 'prelude-python-mode-set-encoding nil 'local)))
+
+(setq prelude-python-mode-hook 'prelude-python-mode-defaults)
+
+(add-hook 'python-mode-hook (lambda ()
+                              (run-hooks 'prelude-python-mode-hook)))
+
+(provide 'prelude-python)
+
+;;; prelude-python.el ends here
+
 
 *** COMMENT help systems
 **** helpful
@@ -1570,7 +1776,7 @@ Info-colors, make the info manual as colorful.
 
 *** TODO winum | switch-window | ace-window
 
-*** TODO iedit
+*** TODO iedit | symbol-overlay
 edit same text in one buffer or region
 
 *** TODO xah-fly-keys | ergoemacs-mode | hydra | meow
@@ -1581,7 +1787,7 @@ edit same text in one buffer or region
 
 *** TODO emmet-mode
 
-*** TODO expand-region & multiple cursors
+*** TODO multiple cursors
 
 *** TODO workgroups2
 
@@ -1595,7 +1801,7 @@ edit same text in one buffer or region
 
 *** TODO scratch
 
-*** TODO expand-region
+*** TODO expand-region | easy-kill
 
 *** TODO subword | superword
 
@@ -1723,9 +1929,36 @@ edit same text in one buffer or region
 
 *** TODO envrc (with direnv installed)
 
+*** TODO hl-todo
+
+*** TODO move-text
+
+*** TODO smartparens
+
+*** TODO undo-tree
+
+;; supercharge your undo/redo with undo-tree
+(require 'undo-tree)
+;; autosave the undo-tree history
+(setq undo-tree-history-directory-alist
+      `((".*" . ,temporary-file-directory)))
+(setq undo-tree-auto-save-history t)
+(global-undo-tree-mode)
+(diminish 'undo-tree-mode)
+
+*** TODO volatile-highlights
+
+*** TODO zop-to-char
+
+*** TODO key-chord
+
 * COMMENT modes may useful later
 ** TODO ibuffer-vc
 Auto grouping ibuffer contents. Not very useful.
+
+** TODO editorconfig
+EditorConfig helps developers define and maintain consistent coding
+styles between different editors and IDEs.
 
 ** TODO multi-web-mode | mmm-mode
 multi major-mode in one buffer for web development.
@@ -1753,6 +1986,9 @@ file without loading it entirely.
 
 (provide 'init-github)
 ;;; init-github.el ends here
+
+** TODO gist
+An Emacs interface for managing gists (http://gist.github.com).
 
 * COMMENT backup snippets for future
 :PROPERTIES:
@@ -1915,6 +2151,106 @@ commands undo, yank, kill and delete are supported.
     :hook ((prog-mode text-mode) . goggles-mode)
     :custom (goggles-pulse t)) ;; set to nil to disable pulsing
 #+end_src
+
+** OS specific settings
+
+;; macOS specific settings
+(when (eq system-type 'darwin)
+  (require 'prelude-macos))
+
+;; Linux specific settings
+(when (eq system-type 'gnu/linux)
+  (require 'prelude-linux))
+
+;; WSL specific setting
+(when (and (eq system-type 'gnu/linux) (getenv "WSLENV"))
+  (require 'prelude-wsl))
+
+;; Windows specific settings
+(when (eq system-type 'windows-nt)
+  (require 'prelude-windows))
+
+*** macOS
+(require 'exec-path-from-shell)
+(exec-path-from-shell-initialize)
+
+;; It's all in the Meta
+(setq ns-function-modifier 'hyper)
+
+(defun prelude-swap-meta-and-super ()
+  "Swap the mapping of Meta and Super.
+Very useful for people using their Mac with a
+Windows external keyboard from time to time."
+  (interactive)
+  (if (eq mac-command-modifier 'super)
+      (progn
+        (setq mac-command-modifier 'meta)
+        (setq mac-option-modifier 'super)
+        (message "Command is now bound to META and Option is bound to SUPER."))
+    (setq mac-command-modifier 'super)
+    (setq mac-option-modifier 'meta)
+    (message "Command is now bound to SUPER and Option is bound to META.")))
+
+(define-key prelude-mode-map (kbd "C-c w") 'prelude-swap-meta-and-super)
+
+;; There's no point in hiding the menu bar on macOS, so let's not do it
+(menu-bar-mode +1)
+
+;; Enable emoji, and stop the UI from freezing when trying to display them.
+(when (fboundp 'set-fontset-font)
+  (set-fontset-font t 'unicode "Apple Color Emoji" nil 'prepend))
+
+
+(provide 'prelude-macos)
+;;; prelude-macos.el ends here
+
+*** linux
+
+(require 'exec-path-from-shell)
+(exec-path-from-shell-initialize)
+
+(provide 'prelude-linux)
+;;; prelude-linux.el ends here
+
+*** windows
+
+;; Teach Emacs how to interpret various modifier keys
+(setq w32-pass-lwindow-to-system nil)
+(setq w32-lwindow-modifier 'super) ; Left Windows key
+
+(setq w32-pass-rwindow-to-system nil)
+(setq w32-rwindow-modifier 'super) ; Right Windows key
+
+(setq w32-pass-apps-to-system nil)
+(setq w32-apps-modifier 'hyper) ; Menu/App key
+
+;; Git setup (assuming you've installed Git for Windows)
+(when (file-exists-p "C:/Program Files/Git/bin")
+  (add-to-list 'exec-path "C:/Program Files/Git/bin")
+  (add-to-list 'exec-path "C:/Program Files/Git/mingw64/bin")
+  (setenv "PATH" (concat "C:/Program Files/Git/bin;" "C:/Program Files/Git/mingw64/bin;" (getenv "PATH"))))
+
+;; needed for arc-mode (it allows you to open archives in Emacs)
+(if (file-exists-p "C:/Program Files/7-Zip")
+    (add-to-list 'exec-path "C:/Program Files/7-Zip")
+  (message "7-Zip not found. It's a good idea to install it."))
+
+(provide 'prelude-windows)
+;;; prelude-windows.el ends here
+
+*** wsl
+
+;; teach Emacs how to open links with your default browser
+(let ((cmd-exe "/mnt/c/Windows/System32/cmd.exe")
+      (cmd-args '("/c" "start")))
+  (when (file-exists-p cmd-exe)
+    (setq browse-url-generic-program  cmd-exe
+          browse-url-generic-args     cmd-args
+          browse-url-browser-function 'browse-url-generic
+          search-web-default-browser 'browse-url-generic)))
+
+(provide 'prelude-wsl)
+;;; prelude-wsl.el ends here
 
 * /buffer functions & variables/
 :PROPERTIES:
