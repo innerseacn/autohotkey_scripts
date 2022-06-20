@@ -145,22 +145,33 @@ Using custom-set-variables mechanism.
    '(abbrev-suggest t)
    '(completion-cycle-threshold 3)
    '(create-lockfiles nil)
-   ;; '(default-frame-alist
-   ;;    '((horizontal-scroll-bars)
-   ;;      (vertical-scroll-bars)
-   ;;      (fullscreen . fullboth)))
    '(describe-bindings-outline t)
    ;; '(delete-by-moving-to-trash t)
-   '(dired-recursive-deletes 'always)
+   '(dired-dwim-target t)
+   ;; '(dired-guess-shell-alist-user
+   ;;   '(("\\.pdf\\'" "open")
+   ;;     ("\\.docx\\'" "open")
+   ;;     ("\\.\\(?:djvu\\|eps\\)\\'" "open")
+   ;;     ("\\.\\(?:jpg\\|jpeg\\|png\\|gif\\|xpm\\)\\'" "open")
+   ;;     ("\\.\\(?:xcf\\)\\'" "open")
+   ;;     ("\\.csv\\'" "open")
+   ;;     ("\\.tex\\'" "open")
+   ;;     ("\\.\\(?:mp4\\|mkv\\|avi\\|flv\\|ogv\\)\\(?:\\.part\\)?\\'"
+   ;;      "open")
+   ;;     ("\\.\\(?:mp3\\|flac\\)\\'" "open")
+   ;;     ("\\.html?\\'" "open")
+   ;;     ("\\.md\\'" "open")))
+   '(dired-listing-switches "-alh")
    '(dired-recursive-copies 'always)
+   '(dired-recursive-deletes 'always)
    '(ffap-machine-p-known 'reject)
    '(help-enable-symbol-autoload t)
    '(help-window-select t)
    '(history-length 25)
    '(indicate-buffer-boundaries 'left)
-   ;; '(inhibit-startup-screen t)
    '(isearch-allow-motion t)
    '(isearch-lazy-count t)
+   ;; '(isearch-yank-on-move 'shift)
    '(kill-buffer-delete-auto-save-files t)
    '(kill-do-not-save-duplicates t)
    '(make-backup-files nil)
@@ -195,6 +206,8 @@ Using custom-set-variables mechanism.
 *** TODO some settings
  ediff-split-window-function 'split-window-horizontally
  ediff-window-setup-function 'ediff-setup-windows-plain
+
+*** TODO eww settings (engines for example)
 
 ** face settings
 *** built-in face settings
@@ -233,6 +246,7 @@ Using custom-set-faces mechanism. Look nice in doom-badger theme.
   (global-set-key (kbd "M-z") #'zap-up-to-char)
   (global-set-key (kbd "M-s M-f") #'project-find-file)
   (global-set-key (kbd "C-x C-f") #'find-file)
+  (global-set-key (kbd "M-s f") #'find-lisp-find-dired)
   (global-set-key [remap just-one-space] #'cycle-spacing)
 
   (defalias 'list-buffers 'ibuffer)
@@ -244,7 +258,7 @@ using :noweb to call ORG-INIT-FILE library.
   (defun inn/open-org-init-file()
     (interactive)
     (find-file "<<ORG-INIT-FILE()>>"))
-  (global-set-key (kbd "<f2>") 'inn/open-org-init-file)
+  (global-set-key (kbd "<f1>") 'inn/open-org-init-file)
 #+END_SRC
 
 *** echo date time & battery status
@@ -495,8 +509,6 @@ Don't forget to use ~:ensure nil~ code for built-in packages.
            ("C-x C-?" . winner-redo)))
 #+end_src
 
-**** TODO eshell & emacs-term-toggle | shell-pop
-
 *** system
 **** gcmh
 Garbage Collector Magic Hack
@@ -505,7 +517,7 @@ Garbage Collector Magic Hack
     :init
     (setq gcmh-idle-delay 5
           gcmh-high-cons-threshold #x1000000) ; 16MB
-    (gcmh-mode 1)))
+    (gcmh-mode 1))
 #+end_src
 
 *** appearances
@@ -695,6 +707,16 @@ Modeline derived from DOOM emacs.
   (setq doom-modeline-after-update-env-hook nil)
 #+END_EXAMPLE
 
+**** shell-pop
+Helps you to use shell easily on Emacs. Only one key action to work.
+#+begin_src emacs-lisp
+  (use-package shell-pop
+    :bind ("<f2>" . shell-pop)
+    :custom
+     (shell-pop-shell-type '("eshell" "*eshell*" (lambda nil (eshell))))
+     (shell-pop-window-position "full"))
+#+end_src
+
 **** TODO COMMENT avy
 #+begin_src emacs-lisp
 #+end_src
@@ -712,7 +734,7 @@ Modeline derived from DOOM emacs.
       (push '(grep-mode :position right :width 100) popwin:special-display-config)
       (push '(special-mode :position right :width 100) popwin:special-display-config)))
 
-**** TODO anzu
+**** TODO anzu | visual-regexp
 
 *** minibuffer & complete
 **** vertico
@@ -1027,7 +1049,7 @@ There's no need to bind #'marginalia-cycle, not useful.
        (add-hook 'minibuffer-setup-hook #'corfu-enable-in-minibuffer))
    #+end_src
 
-2) ~Use <tab> to select candidate and <return> to quit if necessary~::
+2) ~Use <tab> to select candidate and C-g to quit if necessary~::
    #+HEADER: :tangle (if (string= "TAB-SELECT" (org-get-todo-state)) (concat tangle-dir (car (org-get-outline-path t t))) "no")
    #+begin_src emacs-lisp
      (use-package corfu
@@ -1045,7 +1067,8 @@ There's no need to bind #'marginalia-cycle, not useful.
                    ("<tab>" . corfu-next)
                    ("S-<tab>" . corfu-previous)
                    ([remap next-line] . nil)
-                   ([remap previous-line] . nil))
+                   ([remap previous-line] . nil)
+                   ("\r" . nil))
        :hook (after-init . global-corfu-mode)
        :config
        (corfu-indexed-mode 1) ; for indexed csndidate selection
@@ -1216,7 +1239,7 @@ function completing-read.
            ("M-g g" . consult-goto-line)             ;; orig. goto-line
            ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
 
-           ("M-s o" . consult-outline)               ;; Alternative: consult-org-heading
+           ("M-s j" . consult-outline)               ;; Alternative: consult-org-heading
            ("M-s m" . consult-mark)
            ("M-s k" . consult-global-mark)
            ("M-s i" . consult-imenu)
@@ -1747,7 +1770,6 @@ use aspell with ispell & flycheck
 
 ;;; prelude-python.el ends here
 
-
 *** COMMENT help systems
 **** helpful
 Helpful is an alternative to the built-in Emacs help that provides
@@ -1772,9 +1794,9 @@ Info-colors, make the info manual as colorful.
     :hook (Info-selection . info-colors-fontify-node))
 #+end_src
 
-*** TODO dictionary functions
+*** TODO dictionary functions | youdao-dictionary
 
-*** TODO winum | switch-window | ace-window
+*** TODO winum | switch-window | ace-window | window-numbering
 
 *** TODO iedit | symbol-overlay
 edit same text in one buffer or region
@@ -1789,7 +1811,7 @@ edit same text in one buffer or region
 
 *** TODO multiple cursors
 
-*** TODO workgroups2
+*** TODO workgroups2 | perspective
 
 *** TODO posframe
 
@@ -1952,6 +1974,12 @@ edit same text in one buffer or region
 
 *** TODO key-chord
 
+*** TODO hungry-delete
+
+*** TODO tree-sitter
+
+*** TODO hippie-expand
+
 * COMMENT modes may useful later
 ** TODO ibuffer-vc
 Auto grouping ibuffer contents. Not very useful.
@@ -1960,8 +1988,8 @@ Auto grouping ibuffer contents. Not very useful.
 EditorConfig helps developers define and maintain consistent coding
 styles between different editors and IDEs.
 
-** TODO multi-web-mode | mmm-mode
-multi major-mode in one buffer for web development.
+** TODO multi-web-mode | mmm-mode | polymode | mumamo | multimode | two-mode-mode
+multi major-mode in one buffer for web development, or SQL, or JSON, or else.
 
 ** TODO vlf
 This package provides the M-x vlf command, which visits part of large
@@ -1990,6 +2018,52 @@ file without loading it entirely.
 ** TODO gist
 An Emacs interface for managing gists (http://gist.github.com).
 
+** TODO chinese search
+(use-package pyim
+  :demand t
+  :init
+  (defun eh-orderless-regexp (orig_func component)
+    (let ((result (funcall orig_func component)))
+      (pyim-cregexp-build result)))
+
+
+  (defun toggle-chinese-search ()
+    (interactive)
+    (if (not (advice-member-p #'eh-orderless-regexp 'orderless-regexp))
+        (advice-add 'orderless-regexp :around #'eh-orderless-regexp)
+      (advice-remove 'orderless-regexp #'eh-orderless-regexp)))
+
+  (defun disable-py-search (&optional args)
+    (if (advice-member-p #'eh-orderless-regexp 'orderless-regexp)
+        (advice-remove 'orderless-regexp #'eh-orderless-regexp)))
+
+  ;; (advice-add 'exit-minibuffer :after #'disable-py-search)
+  (add-hook 'minibuffer-exit-hook 'disable-py-search)
+
+  (global-set-key (kbd "s-p") 'toggle-chinese-search)
+  ;; use #$#pyim to search chinese and also es.exe locate 子龙
+  )
+  
+** TODO rime
+(use-package rime
+  :init
+  (setq default-input-method "rime")
+  :config
+  (progn (set-face-attribute 'rime-default-face nil :foreground "#839496" :background "#073642")
+         (setq rime-librime-root (expand-file-name "librime/dist" user-emacs-directory))
+         (setq rime-show-candidate 'posframe)
+         (setq rime-share-data-dir "~/Library/Rime")
+         (setq rime-user-data-dir "~/Library/Rime")
+         (if sys/win32p
+             (progn
+               (setq rime-share-data-dir "C:\\Users\\lionqu\\AppData\\Roaming\\Rime")
+               (setq rime-user-data-dir "C:\\Users\\lionqu\\AppData\\Roaming\\Rime")
+               ))
+         (setq rime-posframe-properties
+               (list :background-color "#073642"
+                     :foreground-color "#839496"
+                     :internal-border-width 1))))
+                     
 * COMMENT backup snippets for future
 :PROPERTIES:
 :VISIBILITY: folded
