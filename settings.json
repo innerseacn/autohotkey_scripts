@@ -1,7 +1,12 @@
 {
+    "$help": "https://aka.ms/terminal-documentation",
     "$schema": "https://aka.ms/terminal-profiles-schema",
     "actions": 
     [
+        {
+            "command": "paste",
+            "keys": "ctrl+v"
+        },
         {
             "command": 
             {
@@ -9,10 +14,6 @@
                 "singleLine": false
             },
             "keys": "ctrl+c"
-        },
-        {
-            "command": "paste",
-            "keys": "ctrl+v"
         },
         {
             "command": "find",
@@ -39,7 +40,6 @@
     {
         "defaults": 
         {
-            "acrylicOpacity": 0.90000000000000002,
             "antialiasingMode": "cleartype",
             "bellStyle": "window",
             "colorScheme": "Tango Dark",
@@ -50,13 +50,13 @@
                 "size": 12
             },
             "intenseTextStyle": "all",
+            "opacity": 90,
             "snapOnInput": true,
             "useAcrylic": false
         },
         "list": 
         [
             {
-                "commandline": "cmd.exe",
                 "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
                 "hidden": false,
                 "name": "Command Prompt"
