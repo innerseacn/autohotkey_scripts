@@ -258,7 +258,7 @@ using :noweb to call ORG-INIT-FILE library.
   (defun inn/open-org-init-file()
     (interactive)
     (find-file "<<ORG-INIT-FILE()>>"))
-  (global-set-key (kbd "M-<lwindow>") 'inn/open-org-init-file)
+  (global-set-key (kbd "M-<f2>") 'inn/open-org-init-file)
 #+END_SRC
 
 *** echo date time & battery status
@@ -396,6 +396,7 @@ PROMPT sets the `read-string prompt."
 Don't forget to use ~:ensure nil~ code for built-in packages.
 **** globally enabled modes
 #+begin_src emacs-lisp
+  ;; (add-hook 'text-mode-hook 'auto-fill-mode)
   (add-hook 'after-init-hook 'column-number-mode)
   (add-hook 'after-init-hook 'delete-selection-mode)
   (add-hook 'after-init-hook 'display-battery-mode)
@@ -411,6 +412,7 @@ Don't forget to use ~:ensure nil~ code for built-in packages.
   (add-hook 'after-init-hook 'save-place-mode)
   (add-hook 'after-init-hook 'savehist-mode)
   (add-hook 'after-init-hook 'size-indication-mode)
+  (add-hook 'after-init-hook 'visual-line-mode)
 #+end_src
 **** turn off blink-cursor
 #+begin_src emacs-lisp
@@ -674,23 +676,27 @@ Modeline derived from DOOM emacs.
 ***** shell-pop
 Helps you to use shell easily on Emacs. Only one key action to work.
 #+begin_src emacs-lisp
-  (use-package shell-pop
-    :bind ("<f2>" . shell-pop)
-    :custom
-     (shell-pop-shell-type '("eshell" "*eshell*" (lambda nil (eshell))))
-     (shell-pop-window-position "full"))
+    (use-package shell-pop
+      :bind ("<f2>" . shell-pop)
+      :custom
+       (shell-pop-shell-type '("eshell" "*eshell*" (lambda nil (eshell))))
+       (shell-pop-window-position "full")
+       (shell-pop-autocd-to-working-dir nil))
 #+end_src
 
 ***** eshell & extensions
+****** COMMENT em-smart
 #+begin_src emacs-lisp
-  (use-package eshell
+  (use-package em-smart
     :ensure nil
-    :config
-    ;; '(eshell-destroy-buffer-when-process-dies t)
-    )
+    :hook (eshell-mode . eshell-smart-initialize)
+    :custom
+    ;; (eshell-review-quick-commands nil)
+    ;; (eshell-smart-space-goes-to-end t)
+    (eshell-where-to-jump 'after))
 #+end_src
 
-***** capf-autosuggest
+****** capf-autosuggest
 Capf-autosuggest lets you preview the most recent matching history
 element.
 #+begin_src emacs-lisp
@@ -698,7 +704,7 @@ element.
     :hook (eshell-mode . capf-autosuggest-mode))
 #+end_src
 
-***** COMMENT esh-help (need manpage)
+****** COMMENT esh-help (need manpage)
 This library adds the following help functions and support for Eshell:
 - run-help function inspired by Zsh
 - eldoc support
@@ -709,45 +715,56 @@ This library adds the following help functions and support for Eshell:
     :config (setup-esh-help-eldoc))
 #+end_src
 
-***** eshell-z
+****** eshell-z
 #+begin_src emacs-lisp
   (use-package eshell-z
     :after eshell
     :demand)
 #+end_src
 
-***** eshell-fringe-status
+****** eshell-fringe-status
 Quickly navigating to a specific parent directory in eshell.
 #+begin_src emacs-lisp
   (use-package eshell-fringe-status
     :hook (eshell-mode . eshell-fringe-status-mode))
 #+end_src
 
-***** eshell-bookmark
+****** eshell-bookmark
 Integrating eshell with bookmark.el.
 #+begin_src emacs-lisp
   (use-package eshell-bookmark
     :hook (eshell-mode . eshell-bookmark-setup))
 #+end_src
 
-***** eshell-syntax-highlighting
+****** eshell-syntax-highlighting
 Adds syntax highlighting to the Emacs Eshell.
 #+begin_src emacs-lisp
   (use-package eshell-syntax-highlighting
   :after eshell
+  :demand
   :config
   ;; Enable in all Eshell buffers.
   (eshell-syntax-highlighting-global-mode))
 #+end_src
 
-***** COMMENT eshell-info-banner
+****** COMMENT eshell-info-banner
 A utility for creating an informative banner.
 #+begin_src emacs-lisp
   (use-package eshell-info-banner
     :hook (eshell-banner-load . eshell-info-banner-update-banner))
 #+end_src
 
-***** 
+****** COMMENT eshell-prompt-extras
+#+begin_src emacs-lisp
+  (use-package eshell-prompt-extras
+    :after esh-opt
+    :demand
+    :custom
+    (eshell-highlight-prompt nil)
+    (eshell-prompt-function 'epe-theme-lambda))
+#+end_src
+
+****** TODO exec-path-from-shell (under linux or macos)
 
 **** TODO COMMENT avy
 #+begin_src emacs-lisp
@@ -1459,6 +1476,7 @@ Settings about org-mode & extensions.
   (use-package ox-pandoc
     :after ox
     :demand
+    :bind ("C-c d" . org-pandoc-export-to-docx)
     ;; let pandoc support chinese path.
     :config (modify-coding-system-alist 'process "pandoc" 'cp936))
 #+end_src
