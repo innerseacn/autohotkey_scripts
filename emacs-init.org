@@ -78,6 +78,15 @@ after Emacs after-init-hook, or it may cause freezes.
   ;; (load-theme 'modus-vivendi t)
   #+end_src
 
+** [from lambda emacs]
+#+begin_src emacs-lisp
+    ;;;; Variable Binding Depth
+  ;; This variable controls the number of lisp bindings that can exists at a time.
+  ;; We should make it fairly large for modern machines.
+  ;; https://www.reddit.com/r/emacs/comments/9jp9zt/anyone_know_what_variable_binding_depth_exceeds/
+  (customize-set-variable 'max-specpdl-size 13000)
+#+end_src
+
 * init.el
 :PROPERTIES:
 :header-args: :tangle (concat tangle-dir (car (org-get-outline-path t t)))
@@ -137,12 +146,12 @@ Allow access from EMACSCLIENT_TRAMP
 #+end_src
 
 ** built-in settings
-Using custom-set-variables mechanism.
+*** custom-set-variables
 #+BEGIN_SRC emacs-lisp
   (custom-set-variables
-   '(auto-save-default nil)
    '(auto-window-vscroll nil)
    '(abbrev-suggest t)
+   '(bidi-paragraph-direction 'left-to-right)
    '(completion-cycle-threshold 3)
    '(create-lockfiles nil)
    '(describe-bindings-outline t)
@@ -165,17 +174,16 @@ Using custom-set-variables mechanism.
    '(dired-recursive-copies 'always)
    '(dired-recursive-deletes 'always)
    '(ffap-machine-p-known 'reject)
+   '(find-file-visit-truename t)
    '(help-enable-symbol-autoload t)
    '(help-window-select t)
-   '(history-length 25)
    '(indicate-buffer-boundaries 'left)
    '(isearch-allow-motion t)
    '(isearch-lazy-count t)
    ;; '(isearch-yank-on-move 'shift)
-   '(kill-buffer-delete-auto-save-files t)
    '(kill-do-not-save-duplicates t)
-   '(make-backup-files nil)
    ;; '(mode-line-compact 'long)
+   '(mouse-autoselect-window t)
    '(mouse-wheel-progressive-speed nil)
    '(next-error-message-highlight 'keep)
    '(read-process-output-max (* 64 1024))
@@ -195,8 +203,15 @@ Using custom-set-variables mechanism.
    '(what-cursor-show-names t)
    '(x-stretch-cursor t)
    '(y-or-n-p-use-read-key t))
-#+END_SRC
+     #+END_SRC
+*** make parent directory
+#+begin_src emacs-lisp
+  (defun inn/make-parent-directory ()
+    "Make sure the directory of `buffer-file-name' exists."
+    (make-directory (file-name-directory buffer-file-name) t))
 
+  (add-hook 'find-file-not-found-functions #'inn/make-parent-directory)
+#+end_src
 *** TODO modeline显示frame名称，或在minibuffer中显示
 
 *** TODO 测试eldoc-documentation-strategy设置的最佳方法，或使用其他方式（如lsp-mode）
@@ -204,8 +219,8 @@ Using custom-set-variables mechanism.
 *** TODO 尝试使用etags-xref-prefer-current-file选项
 
 *** TODO some settings
- ediff-split-window-function 'split-window-horizontally
- ediff-window-setup-function 'ediff-setup-windows-plain
+ediff-split-window-function 'split-window-horizontally
+ediff-window-setup-function 'ediff-setup-windows-plain
 
 *** TODO eww settings (engines for example)
 
@@ -247,6 +262,8 @@ Using custom-set-faces mechanism. Look nice in doom-badger theme.
   (global-set-key (kbd "M-s M-f") #'project-find-file)
   (global-set-key (kbd "C-x C-f") #'find-file)
   (global-set-key (kbd "M-s f") #'find-lisp-find-dired)
+  (global-set-key (kbd "C-'") #'goto-last-change)
+  (global-set-key (kbd "C-\"") #'goto-last-change-reverse)
   (global-set-key [remap just-one-space] #'cycle-spacing)
 
   (defalias 'list-buffers 'ibuffer)
@@ -309,6 +326,14 @@ using :noweb to call ORG-INIT-FILE library.
   (global-set-key (kbd "C-S-k") #'inn/kill-back-to-indentation)
 #+end_src
 
+*** switch to previous buffer
+#+begin_src emacs-lisp
+  (defun inn/switch-to-previous-buffer ()
+    (interactive)
+    (switch-to-buffer (other-buffer (current-buffer) 1)))
+  (global-set-key (kbd "C-<tab>") #'inn/switch-to previous-buffer)
+#+end_src
+
 *** COMMENT isearch bindings
 From purcel's.
 #+begin_src emacs-lisp
@@ -326,26 +351,26 @@ From purcel's.
 考虑加入embark菜单
 #+begin_src emacs-lisp
   (defun prelude-search (query-url prompt)
-  "Open the search url constructed with the QUERY-URL.
-PROMPT sets the `read-string prompt."
-  (browse-url
-   (concat query-url
-           (url-hexify-string
-            (if mark-active
-                (buffer-substring (region-beginning) (region-end))
-              (read-string prompt))))))
+    "Open the search url constructed with the QUERY-URL.
+  PROMPT sets the `read-string prompt."
+    (browse-url
+     (concat query-url
+             (url-hexify-string
+              (if mark-active
+                  (buffer-substring (region-beginning) (region-end))
+                (read-string prompt))))))
 
-(defmacro prelude-install-search-engine (search-engine-name search-engine-url search-engine-prompt)
-  "Given some information regarding a search engine, install the interactive command to search through them"
-  `(defun ,(intern (format "prelude-%s" search-engine-name)) ()
+  (defmacro prelude-install-search-engine (search-engine-name search-engine-url search-engine-prompt)
+    "Given some information regarding a search engine, install the interactive command to search through them"
+    `(defun ,(intern (format "prelude-%s" search-engine-name)) ()
        ,(format "Search %s with a query or region if any." search-engine-name)
        (interactive)
        (prelude-search ,search-engine-url ,search-engine-prompt)))
 
-(prelude-install-search-engine "google"     "http://www.google.com/search?q="              "Google: ")
-(prelude-install-search-engine "youtube"    "http://www.youtube.com/results?search_query=" "Search YouTube: ")
-(prelude-install-search-engine "github"     "https://github.com/search?q="                 "Search GitHub: ")
-(prelude-install-search-engine "duckduckgo" "https://duckduckgo.com/?t=lm&q="              "Search DuckDuckGo: ")
+  (prelude-install-search-engine "google"     "http://www.google.com/search?q="              "Google: ")
+  (prelude-install-search-engine "youtube"    "http://www.youtube.com/results?search_query=" "Search YouTube: ")
+  (prelude-install-search-engine "github"     "https://github.com/search?q="                 "Search GitHub: ")
+  (prelude-install-search-engine "duckduckgo" "https://duckduckgo.com/?t=lm&q="              "Search DuckDuckGo: ")
 #+end_src
 
 ** package settings
@@ -368,7 +393,7 @@ PROMPT sets the `read-string prompt."
     (package-install 'use-package))
 #+END_SRC
 
-*** VERBOSE-ON use-package
+*** VERBOSE-OFF use-package
 1) ~verbose-on with error catch & verbose~::
    #+HEADER: :tangle (if (string= "VERBOSE-ON" (org-get-todo-state)) (concat tangle-dir (car (org-get-outline-path t t))) "no")
    #+begin_src emacs-lisp
@@ -377,6 +402,7 @@ PROMPT sets the `read-string prompt."
        (require 'use-package)
        (setq use-package-always-ensure t
              use-package-always-defer t
+             use-package-minimum-reported-time 0
              use-package-enable-imenu-support t
              use-package-verbose 'debug))
    #+end_src
@@ -407,13 +433,13 @@ Don't forget to use ~:ensure nil~ code for built-in packages.
   (add-hook 'after-init-hook 'global-goto-address-mode)
   (add-hook 'after-init-hook 'global-hl-line-mode)
   ;; (add-hook 'after-init-hook 'global-so-long-mode)
+  (add-hook 'after-init-hook 'global-visual-line-mode)
   ;; (add-hook 'after-init-hook 'ibuffer-auto-mode)
   (add-hook 'after-init-hook 'line-number-mode)
   (add-hook 'after-init-hook 'save-place-mode)
-  (add-hook 'after-init-hook 'savehist-mode)
   (add-hook 'after-init-hook 'size-indication-mode)
-  (add-hook 'after-init-hook 'visual-line-mode)
 #+end_src
+
 **** turn off blink-cursor
 #+begin_src emacs-lisp
   (blink-cursor-mode -1)
@@ -429,16 +455,146 @@ Don't forget to use ~:ensure nil~ code for built-in packages.
 
 **** pixel scroll
 #+begin_src emacs-lisp
-  (if (fboundp 'pixel-scroll-precision-mode)
-      (pixel-scroll-precision-mode)
-    (pixel-scroll-mode))
+  (use-package pixel-scroll
+    :ensure nil
+    :custom
+    (pixel-scroll-precision-mode t)
+    (pixel-scroll-precision-interpolate-page t)
+    :config
+    (pixel-scroll-mode 1))
 #+end_src
 
 **** COMMENT autorevert
 #+begin_src emacs-lisp
   (setq global-auto-revert-non-file-buffers t)
-  (global-auto-revert-mode)
-  #+end_src
+  (add-hook 'after-init-hook 'global-auto-revert-mode)
+#+end_src
+
+**** TODO (change to :custom after test) auto-save & backup
+#+begin_src emacs-lisp
+      ;;;; Backups / Auto-Save
+  (use-package files
+    :ensure NIL-FOR-TOO-LONG
+    :hook (after-init . auto-save-mode)
+    :init
+    ;; backups
+    (setq backup-directory-alist
+          `(("." . ,(concat user-emacs-directory "backups"))))
+    ;; (let ((backup-dir (expand-file-name "backups" user-emacs-directory)))
+    ;;   ;; Move backup file to `./backups'
+    ;;   (setq backup-directory-alist `(("." . ,backup-dir)))
+    ;;   ;; Makesure backup directory exist
+    ;;   (when (not (file-exists-p backup-dir))
+    ;;     (make-directory backup-dir t)))
+
+    ;; auto save
+    (setq auto-save-list-file-prefix
+          (concat user-emacs-directory "auto-save-list/.saves-"))
+    ;; (let ((auto-save-files-dir (concat user-emacs-directory "auto-save-files/")))
+    ;;   (setq auto-save-file-name-transforms
+    ;;         `((".*" ,auto-save-files-dir t)))
+    ;;   (when (not (file-exists-p auto-save-files-dir))
+    ;;     (make-directory auto-save-files-dir t)))
+    ;; auto-save every file visiting buffer
+    ;; see https://emacs.stackexchange.com/q/7729/11934
+    (setq-default
+     auto-save-default t
+     ;; auto-save-timeout 30              ; number of seconds idle time before auto-save (default: 30)
+     ;; auto-save-interval 300            ; number of keystrokes between auto-saves (default: 300)
+     ;; auto-save-visited-mode t          ; auto save in place other than in auto-save files
+     delete-auto-save-files t
+     ;; kill-buffer-delete-auto-save-files t
+     create-lockfiles nil)
+    :config
+    (setq
+     ;; make-backup-files t               ; backup of a file the first time it is saved.
+     ;; backup-by-copying t               ; don't clobber symlinks
+     ;; version-control t                 ; version numbers for backup files
+     delete-old-versions t             ; delete excess backup files silently
+     kept-old-versions 0               ; oldest versions to keep when a new numbered backup is made
+     kept-new-versions 3               ; newest versions to keep when a new numbered backup is made
+     ;; vc-make-backup-files t            ; backup versioned files, which Emacs does not do by default
+     )
+
+    ;; put <full auto save function here>
+    )
+#+end_src
+
+***** COMMENT full auto save function
+#+begin_src emacs-lisp
+  (defun lem-full-auto-save ()
+    (interactive)
+    (save-excursion
+      (dolist (buf (buffer-list))
+        (set-buffer buf)
+        (if (and (buffer-file-name) (buffer-modified-p))
+            (basic-save-buffer)))))
+
+  (add-hook 'auto-save-hook 'lem-full-auto-save)
+
+  ;; Save all buffers after idle time
+  (run-with-idle-timer 5 t (lambda () (lem-full-auto-save)))
+  ;; Save on exit from insert state
+  ;; (add-hook 'meow-insert-exit-hook #'lem-full-auto-save)
+#+end_src
+
+***** TODO backup-walker
+
+**** TODO (change to :custom after test) savehist
+#+begin_src emacs-lisp
+  ;;;; Save History
+  (use-package savehist
+    :ensure nil
+    :hook (after-init . savehist-mode)
+    :config
+    ;; (setq savehist-save-minibuffer-history t)
+    ;; (setq history-length 100)
+    (put 'minibuffer-history 'history-length 50)
+    ;; (put 'evil-ex-history 'history-length 50)
+    (put 'kill-ring 'history-length 25))
+#+end_src
+
+**** TODO (change to :custom after test) desktop
+#+begin_src emacs-lisp
+  ;;;; Desktop
+  (use-package desktop
+    :ensure nil
+    :init
+    (setq desktop-dirname             (concat user-emacs-directory "desktops")
+          ;; desktop-base-file-name      "emacs.desktop"
+          ;; desktop-base-lock-name      "lock"
+          desktop-path                (list desktop-dirname)
+          ;; desktop-save                'ask-if-new
+          ;; desktop-files-not-to-save   (concat "^$" ".*magit$")
+          desktop-restore-eager 4
+          ;; desktop-load-locked-desktop t
+          )
+    ;; (when (not (file-exists-p desktop-dirname))
+    ;;   (make-directory desktop-dirname t))
+    ;; (setq desktop-buffers-not-to-save
+    ;;       (concat "\\("
+    ;;               "^nn\\.a[0-9]+\\|\\.log\\|(ftp)\\|^tags\\|^TAGS"
+    ;;               "\\|\\.emacs.*\\|\\.diary\\|\\.newsrc-dribble\\|\\.bbdb"
+    ;;               "\\)$"))
+    ;; (desktop-save-mode 0)
+    )
+#+end_src
+
+**** COMMENT time-stamp
+#+begin_src emacs-lisp
+  (use-package time-stamp
+    :ensure nil
+    :commands (time-stamp lem-time-stamp)
+    :custom
+    ;; (time-stamp-active t)          ; do enable time-stamps
+    ;; (time-stamp-line-limit 10)     ; check first 10 buffer lines for Time-stamp:
+    (time-stamp-format "Last modified on %Y-%02m%02d-%02H:%02M:%02S") ; date format
+    :hook (before-save . time-stamp) ; update when saving
+    :init
+    (defun lem-time-stamp ()
+      (interactive)
+      (insert (concat  "Time-stamp: <"(format-time-string "%Y-%02m%02d-%02H:%02M:%02S")">"))))
+#+end_src
 
 **** COMMENT whitespace
 #+begin_src emacs-lisp
@@ -474,6 +630,69 @@ Don't forget to use ~:ensure nil~ code for built-in packages.
            ("C-x C-?" . winner-redo)))
 #+end_src
 
+**** TODO COMMENT ibuffer
+#+begin_src emacs-lisp
+    ;;;; iBuffer
+  ;; A better list of buffers
+  (use-package ibuffer
+    :ensure nil
+    :commands (ibuffer)
+    :custom
+    (ibuffer-default-sorting-mode 'major-mode)
+    (ibuffer-filter-group-name-face 'outline-1)
+    (ibuffer-movement-cycle t)
+    (ibuffer-old-time 12)
+    (ibuffer-modified-char ?*)
+    (ibuffer-read-only-char ?R)
+    (ibuffer-marked-char ?➤)
+    (ibuffer-locked-char ?L)
+    (ibuffer-deletion-char ?🗙)
+    (ibuffer-use-header-line nil)
+    :config
+    ;; Fix function for displaying groups
+    (defun ibuffer-insert-filter-group (name display-name filter-string format bmarklist)
+      (add-text-properties
+       (point)
+       (progn
+         (insert display-name)
+         (point))
+       `(ibuffer-filter-group-name
+         ,name
+         font-lock-face ,ibuffer-filter-group-name-face
+         keymap ,ibuffer-mode-filter-group-map
+         mouse-face highlight
+         help-echo ,(let ((echo '(if tooltip-mode
+                                     "mouse-1: toggle marks in this group\nmouse-2: hide/show this filtering group"
+                                   "mouse-1: toggle marks  mouse-2: hide/show")))
+                      (if (> (length filter-string) 0)
+                          `(concat ,filter-string
+                                   (if tooltip-mode "\n" " ")
+                                   ,echo)
+                        echo))))
+      (insert "\n")
+      (when bmarklist
+        (put-text-property
+         (point)
+         (progn
+           (dolist (entry bmarklist)
+             (ibuffer-insert-buffer-line (car entry) (cdr entry) format))
+           (point))
+         'ibuffer-filter-group
+         name))))
+#+end_src
+
+**** TODO COMMENT reveal
+#+begin_src emacs-lisp
+  ;;;; Reveal Mode
+  ;; Toggle uncloaking of invisible text near point, including folded org headlines (Reveal mode).
+  (use-package reveal
+    :ensure nil
+    :defer 1
+    :config
+    (setq reveal-auto-hide nil)
+    (global-reveal-mode))
+#+end_src
+
 *** system
 **** gcmh
 Garbage Collector Magic Hack
@@ -483,6 +702,14 @@ Garbage Collector Magic Hack
     (setq gcmh-idle-delay 5
           gcmh-high-cons-threshold #x1000000) ; 16MB
     (gcmh-mode 1))
+#+end_src
+**** restart-emacs
+Provides a simple command to restart Emacs from within Emacs.
+#+begin_src emacs-lisp
+  ;; Versions of Emacs lower than 29 don't have a restart command, so add that.
+  (use-package restart-emacs
+    :when (version< emacs-version "29")
+    :commands restart-emacs)
 #+end_src
 
 *** appearances
@@ -676,12 +903,12 @@ Modeline derived from DOOM emacs.
 ***** shell-pop
 Helps you to use shell easily on Emacs. Only one key action to work.
 #+begin_src emacs-lisp
-    (use-package shell-pop
-      :bind ("<f2>" . shell-pop)
-      :custom
-       (shell-pop-shell-type '("eshell" "*eshell*" (lambda nil (eshell))))
-       (shell-pop-window-position "full")
-       (shell-pop-autocd-to-working-dir nil))
+  (use-package shell-pop
+    :bind ("<f2>" . shell-pop)
+    :custom
+    (shell-pop-shell-type '("eshell" "*eshell*" (lambda nil (eshell))))
+    (shell-pop-window-position "full")
+    (shell-pop-autocd-to-working-dir nil))
 #+end_src
 
 ***** eshell & extensions
@@ -740,11 +967,11 @@ Integrating eshell with bookmark.el.
 Adds syntax highlighting to the Emacs Eshell.
 #+begin_src emacs-lisp
   (use-package eshell-syntax-highlighting
-  :after eshell
-  :demand
-  :config
-  ;; Enable in all Eshell buffers.
-  (eshell-syntax-highlighting-global-mode))
+    :after eshell
+    :demand
+    :config
+    ;; Enable in all Eshell buffers.
+    (eshell-syntax-highlighting-global-mode))
 #+end_src
 
 ****** COMMENT eshell-info-banner
@@ -773,17 +1000,198 @@ A utility for creating an informative banner.
 **** TODO COMMENT popwin
 #+begin_src emacs-lisp
   ;; popwin
-(use-package popwin
-  :hook (after-init . popwin-mode))
+  (use-package popwin
+    :hook (after-init . popwin-mode))
 #+end_src
 
-  (with-eval-after-load 'popwin
-    (progn
-      (push '(occur-mode :position right :width 100) popwin:special-display-config)
-      (push '(grep-mode :position right :width 100) popwin:special-display-config)
-      (push '(special-mode :position right :width 100) popwin:special-display-config)))
+(with-eval-after-load 'popwin
+(progn
+(push '(occur-mode :position right :width 100) popwin:special-display-config)
+(push '(grep-mode :position right :width 100) popwin:special-display-config)
+(push '(special-mode :position right :width 100) popwin:special-display-config)))
 
 **** TODO anzu | visual-regexp
+
+**** TODO font-lock+
+
+**** TODO COMMENT dimmer
+#+begin_src emacs-lisp
+;;;; Dim inactive windows
+(use-package dimmer
+  :hook (after-init . dimmer-mode)
+  :custom
+  (dimmer-prevent-dimming-predicates '(window-minibuffer-p))
+  (dimmer-fraction 0.5)
+  (dimmer-adjustment-mode :foreground)
+  (dimmer-use-colorspace :rgb)
+  (dimmer-watch-frame-focus-events nil)
+  :config
+  (dimmer-configure-which-key)
+  (dimmer-configure-hydra)
+  (dimmer-configure-magit)
+  (dimmer-configure-posframe)
+  (dimmer-configure-vertico))
+
+(defun dimmer-configure-vertico ()
+  "Convenience settings for Dimmer & Vertico users."
+  (with-no-warnings
+    (add-to-list
+     'dimmer-buffer-exclusion-regexps "^ \\*Vertico\\*$")))
+#+end_src
+
+**** TODO COMMENT svg-tag-mode
+#+begin_src emacs-lisp
+;;;; SVG Library (For Tags/Labels/etc.)
+  ;;; SVG Tag Mode
+(use-package svg-tag-mode
+  :when (image-type-available-p 'svg)
+  :straight (:type git :host github :repo "rougier/svg-tag-mode")
+  :hook (prog-mode . svg-tag-mode)
+  :config
+  (setq svg-tag-tags
+        '(;; Replaces any occurence of :XXX: with a dynamic SVG tag displaying XXX
+          ("\\(:[A-Z]+:\\)" . ((lambda (tag)
+                                 (svg-tag-make tag :face 'success :inverse t :beg 1 :end -1))))
+          ;; other tags
+          ("DONE:"  . ((lambda (tag) (svg-tag-make "DONE:"  :face 'fringe  :inverse t ))))
+          ("FIXME:" . ((lambda (tag) (svg-tag-make "FIXME:" :face 'error :inverse t))))
+          ("HACK:"  . ((lambda (tag) (svg-tag-make "HACK:"  :face 'warning :inverse t))))
+          ("NOTE:"  . ((lambda (tag) (svg-tag-make "NOTE:"  :face 'warning :inverse t))))
+          ("TODO:"  . ((lambda (tag) (svg-tag-make "TODO:"  :face 'warning :inverse t)))))))
+#+end_src
+
+**** TODO COMMENT hl-line+
+#+begin_src emacs-lisp
+;;;; Highlight
+;;;;; Highlight Lines
+;; Highlight lines. You can toggle this off
+(use-package hl-line+
+  :straight t
+  :defer 1
+  :hook
+  ;; https://tech.toryanderson.com/2021/09/24/replacing-beacon.el-with-hl-line-flash/
+  (window-scroll-functions . hl-line-flash)
+  (focus-in . hl-line-flash)
+  (post-command . hl-line-flash)
+  :custom-face
+  ;; subtle highlighting
+  (hl-line ((t (:inherit highlight))))
+  :custom
+  (global-hl-line-mode nil)
+  (hl-line-flash-show-period 0.5)
+  ;; (hl-line-inhibit-highlighting-for-modes '(dired-mode))
+  ;; (hl-line-overlay-priority -100) ;; sadly, seems not observed by diredfl
+  (hl-line-when-idle-interval 5)
+  :config
+  (toggle-hl-line-when-idle 1 t))
+#+end_src
+
+**** TODO COMMENT lin
+#+begin_src emacs-lisp
+;;;;; LIN (Make HL Line Better)
+(use-package lin
+  :straight t
+  :config
+  (setq lin-mode-hooks
+        '(dired-mode-hook
+          elfeed-search-mode-hook
+          git-rebase-mode-hook
+          grep-mode-hook
+          ibuffer-mode-hook
+          ilist-mode-hook
+          log-view-mode-hook
+          magit-log-mode-hook
+          mu4e-headers-mode
+          occur-mode-hook
+          org-agenda-mode-hook
+          proced-mode-hook
+          tabulated-list-mode-hook))
+  (lin-global-mode 1))
+#+end_src
+
+**** TODO COMMENT highlight-numbers
+#+begin_src emacs-lisp
+;;;;; Highlight Numbers & TODOS
+(use-package highlight-numbers
+  :defer t
+  :commands highlight-numbers-mode
+  :init
+  (add-hook 'prog-mode-hook #'highlight-numbers-mode))
+#+end_src
+
+**** TODO COMMENT hl-todo
+#+begin_src emacs-lisp
+(use-package hl-todo
+  :defer t
+  :commands hl-todo-mode
+  :init
+  ;; (add-hook 'org-mode-hook #'hl-todo-mode)
+  (add-hook 'prog-mode-hook #'hl-todo-mode)
+  (add-hook 'markdown-mode-hook #'hl-todo-mode))
+#+end_src
+
+**** TODO COMMENT goggles | pulse
+Goggles highlights the modified region using pulse. Currently the
+commands undo, yank, kill and delete are supported.
+#+begin_src emacs-lisp
+  (use-package goggles
+    :hook ((prog-mode text-mode) . goggles-mode)
+    :custom (goggles-pulse t)) ;; set to nil to disable pulsing
+#+end_src
+
+#+begin_src emacs-lisp
+(use-package pulse
+  :straight (:type built-in)
+  :defer 1
+  :bind
+  ("C-<return>" . pulse-line)
+  :commands (pulse-line pulse-momentary-highlight-one-line)
+  :config
+  (setq pulse-delay 0.08)
+  (defun pulse-line (&rest _)
+    "Pulse the current line."
+    (interactive)
+    (pulse-momentary-highlight-one-line (point)))
+  ;; pulse for commands
+  (dolist (command '(scroll-up-command scroll-down-command
+                                       recenter-top-bottom other-window))
+    (advice-add command :after #'pulse-line))
+  ;; pulse on window change
+  (push 'pulse-line window-selection-change-functions))
+#+end_src
+
+**** TODO COMMENT crosshairs
+#+begin_src emacs-lisp
+;;;;; Crosshair Highlighting
+;; Highlight cursor vertically and horizontally
+(use-package crosshairs
+  :straight t
+  :commands (crosshairs-highlight
+             crosshairs-mode
+             flash-crosshairs)
+  :bind (:map lem+toggle-keys
+         ("c" . crosshairs-mode))
+  :custom-face
+  (col-highlight ((t (:inherit hl-line))))
+  :config
+  ;; same colors for both hlines
+  (setq col-highlight-vline-face-flag t))
+#+end_src
+
+**** TODO COMMENT pulsing-cursor
+#+begin_src emacs-lisp
+;;;; Pulsing Cursor
+(use-package pulsing-cursor
+  :straight (:type git :host github :repo "jasonjckn/pulsing-cursor")
+  :defer 1
+  :custom-face
+  (pulsing-cursor-overlay-face1 ((t (:inherit match))))
+  :custom
+  (pulsing-cursor-delay 1.0)
+  (pulsing-cursor-interval .5)
+  (pulsing-cursor-blinks 5)
+  :config (pulsing-cursor-mode +1))
+#+end_src
 
 *** minibuffer & complete
 **** vertico
@@ -1120,7 +1528,7 @@ There's no need to bind #'marginalia-cycle, not useful.
                    ("\r" . nil))
        :hook (after-init . global-corfu-mode)
        :config
-       (corfu-indexed-mode 1) ; for indexed csndidate selection
+       ;; (corfu-indexed-mode 1) ; for indexed csndidate selection
        (defun corfu-enable-in-minibuffer ()
          "Enable Corfu in the minibuffer if `completion-at-point' is bound."
          (when (where-is-internal #'completion-at-point (list (current-local-map)))
@@ -1173,6 +1581,24 @@ There's no need to bind #'marginalia-cycle, not useful.
     #+end_example
 
 **** TODO corfu-terminal
+
+**** TODO COMMENT corfu-doc
+#+begin_src emacs-lisp
+;;;;; Corfu Doc
+(use-package corfu-doc
+  :straight (corfu-doc :type git :host github :repo "galeo/corfu-doc")
+  :hook   (corfu-mode . corfu-doc-mode)
+  :bind (:map corfu-map
+         ("C-d" . corfu-doc-toggle)
+         ;;        ;; This is a manual toggle for the documentation window.
+         ;;        ([remap corfu-show-documentation] . corfu-doc-toggle) ; Remap the default doc command
+         ;; Scroll in the documentation window
+         ("M-k" . corfu-doc-scroll-up)
+         ("M-j" . corfu-doc-scroll-down))
+  :custom
+  (corfu-doc-max-width 70)
+  (corfu-doc-max-height 20))
+#+end_src
 
 **** cape
 Cape provides a bunch of Completion At Point Extensions which can be
@@ -1494,38 +1920,70 @@ Settings about org-mode & extensions.
 
 #+end_src
 
-(defun prelude-local-comment-auto-fill ()
-  (set (make-local-variable 'comment-auto-fill-only-comments) t))
+#+begin_src emacs-lisp
+  (defun prelude-local-comment-auto-fill ()
+    (set (make-local-variable 'comment-auto-fill-only-comments) t))
 
-;; show the name of the current function definition in the modeline
-(require 'which-func)
-(which-function-mode 1)
+  ;; show the name of the current function definition in the modeline
+  (require 'which-func)
+  (which-function-mode 1)
 
-;; font-lock annotations like TODO in source code
-(require 'hl-todo)
-(global-hl-todo-mode 1)
+  ;; font-lock annotations like TODO in source code
+  (require 'hl-todo)
+  (global-hl-todo-mode 1)
 
-(defun prelude-prog-mode-defaults ()
-  "Default coding hook, useful with any programming language."
-  (when (and (executable-find ispell-program-name)
-             prelude-flyspell)
-    (flyspell-prog-mode))
-  (when prelude-guru
-    (guru-mode +1)
-    (diminish 'guru-mode))
-  (smartparens-mode +1)
-  (prelude-enable-whitespace)
-  (prelude-local-comment-auto-fill))
+  (defun prelude-prog-mode-defaults ()
+    "Default coding hook, useful with any programming language."
+    (when (and (executable-find ispell-program-name)
+               prelude-flyspell)
+      (flyspell-prog-mode))
+    (when prelude-guru
+      (guru-mode +1)
+      (diminish 'guru-mode))
+    (smartparens-mode +1)
+    (prelude-enable-whitespace)
+    (prelude-local-comment-auto-fill))
 
-(setq prelude-prog-mode-hook 'prelude-prog-mode-defaults)
+  (setq prelude-prog-mode-hook 'prelude-prog-mode-defaults)
 
-(add-hook 'prog-mode-hook (lambda ()
-                            (run-hooks 'prelude-prog-mode-hook)))
+  (add-hook 'prog-mode-hook (lambda ()
+                              (run-hooks 'prelude-prog-mode-hook)))
 
-;; enable on-the-fly syntax checking
-(if (fboundp 'global-flycheck-mode)
-    (global-flycheck-mode +1)
-  (add-hook 'prog-mode-hook 'flycheck-mode))
+  ;; enable on-the-fly syntax checking
+  (if (fboundp 'global-flycheck-mode)
+      (global-flycheck-mode +1)
+    (add-hook 'prog-mode-hook 'flycheck-mode))
+#+end_src
+
+#+begin_src emacs-lisp
+  ;;;;; Outline Navigation
+  ;; Navigate elisp files easily. Outline is a built-in library and we can easily
+  ;; configure it to treatment elisp comments as headings.
+  (use-package outline
+    :straight (:type built-in)
+    :hook (prog-mode . outline-minor-mode)
+    :bind (:map outline-minor-mode-map
+                ("<tab>"   . outline-cycle)
+                ("S-<tab>" . outline-cycle-buffer)
+                ("M-j"     . outline-move-subtree-down)
+                ("M-k"     . outline-move-subtree-up)
+                ("M-h"     . outline-promote)
+                ("M-l"     . outline-demote))
+    :config
+    (add-hook 'emacs-lisp-mode-hook
+              (lambda ()
+                ;; prevent `outline-level' from being overwritten by `lispy'
+                (setq-local outline-level #'outline-level)
+                ;; setup heading regexp specific to `emacs-lisp-mode'
+                (setq-local outline-regexp ";;;\\(;* \\)")
+                ;; heading alist allows for subtree-like folding
+                (setq-local outline-heading-alist
+                            '((";;; " . 1)
+                              (";;;; " . 2)
+                              (";;;;; " . 3)
+                              (";;;;;; " . 4)
+                              (";;;;;;; " . 5))))))
+#+end_src
 
 **** TODO flymake | flycheck
 use aspell with ispell & flycheck
@@ -1533,9 +1991,47 @@ use aspell with ispell & flycheck
 ;; flyspell-mode does spell-checking on the fly as you type
 (require 'flyspell)
 (setq ispell-program-name "aspell" ; use aspell instead of ispell
-      ispell-extra-args '("--sug-mode=ultra"))
+ispell-extra-args '("--sug-mode=ultra"))
 
 **** TODO auto-yasnippets
+
+**** TODO COMMENT yasnippets
+#+begin_src emacs-lisp
+  (use-package yasnippet
+  :straight (:type git :host github :repo "joaotavora/yasnippet")
+  :defer 1
+  :bind (:map yas-minor-mode-map
+         ("C-'" . yas-expand))
+  :config
+  ;; NOTE: need to specify dirs; does not look in non-snippet subdirs
+  (ignore-errors (mkdir (concat lem-all-snippets-dir "lem-snippets/")))
+  (ignore-errors (mkdir (concat lem-all-snippets-dir "yasnippet-snippets/")))
+  (setq yas-snippet-dirs `(,(concat lem-all-snippets-dir "lem-snippets/") ; custom snippets
+                           ,(concat lem-all-snippets-dir "yasnippet-snippets/") ; yas snippets
+                           ))
+  (setq yas--loaddir yas-snippet-dirs)
+  (setq yas-installed-snippets-dir yas-snippet-dirs)
+  (setq yas--default-user-snippets-dir yas-snippet-dirs)
+  ;; see https://emacs.stackexchange.com/a/30150/11934
+  (defun lem-yas-org-mode-hook ()
+    (setq-local yas-buffer-local-condition
+                '(not (org-in-src-block-p t))))
+  (add-hook 'org-mode-hook #'lem-yas-org-mode-hook)
+  ;; suppress warnings when expanding
+  (with-eval-after-load 'warnings
+    (push '(yasnippet backquote-change) warning-suppress-types))
+  (yas-global-mode 1))
+#+end_src
+
+**** TODO yasnippet-snippets
+#+begin_src emacs-lisp
+;; the official snippet collection https://github.com/AndreaCrotti/yasnippet-snippets
+(use-package yasnippet-snippets
+  :straight (:type git :host github :repo "AndreaCrotti/yasnippet-snippets")
+  :after (yasnippet)
+  :config
+  (setq yasnippet-snippets-dir (concat lem-all-snippets-dir "yasnippet-snippets")))
+#+end_src
 
 **** TODO libe-py-plugin
 
@@ -1551,9 +2047,9 @@ use aspell with ispell & flycheck
 
 **** TODO move-dup
 #+begin_src emacs-lisp
-;; move-dup, move/copy line or region
-(use-package move-dup
-  :hook (after-init . global-move-dup-mode))
+  ;; move-dup, move/copy line or region
+  (use-package move-dup
+    :hook (after-init . global-move-dup-mode))
 #+end_src
 (global-set-key [M-up] 'move-dup-move-lines-up)
 (global-set-key [M-down] 'move-dup-move-lines-down)
@@ -1606,9 +2102,8 @@ use aspell with ispell & flycheck
 
 ;; make a shell script executable automatically on save
 (add-hook 'after-save-hook
-          'executable-make-buffer-file-executable-if-script-p)
+'executable-make-buffer-file-executable-if-script-p)
           
-
 *** TODO COMMENT program languages
 **** TODO python
 ***** cabin's
@@ -1748,32 +2243,32 @@ use aspell with ispell & flycheck
 #+end_src
 ***** purcell's
 #+begin_src emacs-lisp
-  ;;; init-python.el --- Python editing -*- lexical-binding: t -*-
-;;; Commentary:
-;;; Code:
+    ;;; init-python.el --- Python editing -*- lexical-binding: t -*-
+  ;;; Commentary:
+  ;;; Code:
 
-;; I use nix + direnv instead of virtualenv/pyenv/pyvenv, and it is an
-;; approach which extends to other languages too. I recorded a
-;; screencast about this: https://www.youtube.com/watch?v=TbIHRHy7_JM
+  ;; I use nix + direnv instead of virtualenv/pyenv/pyvenv, and it is an
+  ;; approach which extends to other languages too. I recorded a
+  ;; screencast about this: https://www.youtube.com/watch?v=TbIHRHy7_JM
 
 
-(setq auto-mode-alist
-      (append '(("SConstruct\\'" . python-mode)
-                ("SConscript\\'" . python-mode))
-              auto-mode-alist))
+  (setq auto-mode-alist
+        (append '(("SConstruct\\'" . python-mode)
+                  ("SConscript\\'" . python-mode))
+                auto-mode-alist))
 
-(setq python-shell-interpreter "python3")
+  (setq python-shell-interpreter "python3")
 
-(require-package 'pip-requirements)
+  (require-package 'pip-requirements)
 
-(when (maybe-require-package 'toml-mode)
-  (add-to-list 'auto-mode-alist '("poetry\\.lock\\'" . toml-mode)))
+  (when (maybe-require-package 'toml-mode)
+    (add-to-list 'auto-mode-alist '("poetry\\.lock\\'" . toml-mode)))
 
-(when (maybe-require-package 'reformatter)
-  (reformatter-define black :program "black" :args '("-")))
+  (when (maybe-require-package 'reformatter)
+    (reformatter-define black :program "black" :args '("-")))
 
-(provide 'init-python)
-;;; init-python.el ends here
+  (provide 'init-python)
+  ;;; init-python.el ends here
 #+end_src
 ***** prelude's
 (require 'electric)
@@ -1783,13 +2278,13 @@ use aspell with ispell & flycheck
 (prelude-require-package 'anaconda-mode)
 
 (when (boundp 'company-backends)
-  (prelude-require-package 'company-anaconda)
-  (add-to-list 'company-backends 'company-anaconda))
+(prelude-require-package 'company-anaconda)
+(add-to-list 'company-backends 'company-anaconda))
 
 (defcustom prelude-python-mode-set-encoding-automatically nil
-  "Non-nil values enable auto insertion of '# coding: utf-8' on python buffers."
-  :type 'boolean
-  :group 'prelude)
+"Non-nil values enable auto insertion of '# coding: utf-8' on python buffers."
+:type 'boolean
+:group 'prelude)
 
 ;;; Encoding detection/insertion logic
 ;;
@@ -1797,70 +2292,70 @@ use aspell with ispell & flycheck
 ;;
 ;; This logic was useful in Python 2, but it's not really needed in Python 3.
 (defun prelude-python--encoding-comment-required-p ()
-  (re-search-forward "[^\0-\177]" nil t))
+(re-search-forward "[^\0-\177]" nil t))
 
 (defun prelude-python--detect-encoding ()
-  (let ((coding-system
-         (or save-buffer-coding-system
-             buffer-file-coding-system)))
-    (if coding-system
-        (symbol-name
-         (or (coding-system-get coding-system 'mime-charset)
-             (coding-system-change-eol-conversion coding-system nil)))
-      "ascii-8bit")))
+(let ((coding-system
+(or save-buffer-coding-system
+buffer-file-coding-system)))
+(if coding-system
+(symbol-name
+(or (coding-system-get coding-system 'mime-charset)
+(coding-system-change-eol-conversion coding-system nil)))
+"ascii-8bit")))
 
 (defun prelude-python--insert-coding-comment (encoding)
-  (let ((newlines (if (looking-at "^\\s *$") "\n" "\n\n")))
-    (insert (format "# coding: %s" encoding) newlines)))
+(let ((newlines (if (looking-at "^\\s *$") "\n" "\n\n")))
+(insert (format "# coding: %s" encoding) newlines)))
 
 (defun prelude-python-mode-set-encoding ()
-  "Insert a magic comment header with the proper encoding if necessary."
-  (save-excursion
-    (widen)
-    (goto-char (point-min))
-    (when (prelude-python--encoding-comment-required-p)
-      (goto-char (point-min))
-      (let ((coding-system (prelude-python--detect-encoding)))
-        (when coding-system
-          (if (looking-at "^#!") (beginning-of-line 2))
-          (cond ((looking-at "\\s *#\\s *.*\\(en\\)?coding\\s *:\\s *\\([-a-z0-9_]*\\)")
-                 ;; update existing encoding comment if necessary
-                 (unless (string= (match-string 2) coding-system)
-                   (goto-char (match-beginning 2))
-                   (delete-region (point) (match-end 2))
-                   (insert coding-system)))
-                ((looking-at "\\s *#.*coding\\s *[:=]"))
-                (t (prelude-python--insert-coding-comment coding-system)))
-          (when (buffer-modified-p)
-            (basic-save-buffer-1)))))))
+"Insert a magic comment header with the proper encoding if necessary."
+(save-excursion
+(widen)
+(goto-char (point-min))
+(when (prelude-python--encoding-comment-required-p)
+(goto-char (point-min))
+(let ((coding-system (prelude-python--detect-encoding)))
+(when coding-system
+(if (looking-at "^#!") (beginning-of-line 2))
+(cond ((looking-at "\\s *#\\s *.*\\(en\\)?coding\\s *:\\s *\\([-a-z0-9_]*\\)")
+;; update existing encoding comment if necessary
+(unless (string= (match-string 2) coding-system)
+(goto-char (match-beginning 2))
+(delete-region (point) (match-end 2))
+(insert coding-system)))
+((looking-at "\\s *#.*coding\\s *[:=]"))
+(t (prelude-python--insert-coding-comment coding-system)))
+(when (buffer-modified-p)
+(basic-save-buffer-1)))))))
 
 ;;; python-mode setup
 
 (when (fboundp 'exec-path-from-shell-copy-env)
-  (exec-path-from-shell-copy-env "PYTHONPATH"))
+(exec-path-from-shell-copy-env "PYTHONPATH"))
 
 (defun prelude-python-mode-defaults ()
-  "Defaults for Python programming."
-  (subword-mode +1)
-  (anaconda-mode +1)
-  (eldoc-mode +1)
-  (setq-local electric-layout-rules
-              '((?: . (lambda ()
-                        (and (zerop (first (syntax-ppss)))
-                             (python-info-statement-starts-block-p)
-                             'after)))))
-  (when (fboundp #'python-imenu-create-flat-index)
-    (setq-local imenu-create-index-function
-                #'python-imenu-create-flat-index))
-  (add-hook 'post-self-insert-hook
-            #'electric-layout-post-self-insert-function nil 'local)
-  (when prelude-python-mode-set-encoding-automatically
-    (add-hook 'after-save-hook 'prelude-python-mode-set-encoding nil 'local)))
+"Defaults for Python programming."
+(subword-mode +1)
+(anaconda-mode +1)
+(eldoc-mode +1)
+(setq-local electric-layout-rules
+'((?: . (lambda ()
+(and (zerop (first (syntax-ppss)))
+(python-info-statement-starts-block-p)
+'after)))))
+(when (fboundp #'python-imenu-create-flat-index)
+(setq-local imenu-create-index-function
+#'python-imenu-create-flat-index))
+(add-hook 'post-self-insert-hook
+#'electric-layout-post-self-insert-function nil 'local)
+(when prelude-python-mode-set-encoding-automatically
+(add-hook 'after-save-hook 'prelude-python-mode-set-encoding nil 'local)))
 
 (setq prelude-python-mode-hook 'prelude-python-mode-defaults)
 
 (add-hook 'python-mode-hook (lambda ()
-                              (run-hooks 'prelude-python-mode-hook)))
+(run-hooks 'prelude-python-mode-hook)))
 
 (provide 'prelude-python)
 
@@ -1881,13 +2376,32 @@ much more contextual information.
            ("C-h ." . helpful-at-point)))
 #+end_src
 
-**** TODO elisp-demos
+**** TODO COMMENT elisp-demos
+#+begin_src emacs-lisp
+;;;;; Elisp Demos
+;; Provide examples of Elisp code
+(use-package elisp-demos
+  :defer 1
+  :config
+  ;; inject demos into helpful
+  (advice-add 'helpful-update :after #'elisp-demos-advice-helpful-update))
+#+end_src
 
-**** info
+**** info-colors
 Info-colors, make the info manual as colorful.
 #+begin_src emacs-lisp
   (use-package info-colors
     :hook (Info-selection . info-colors-fontify-node))
+#+end_src
+
+**** TODO COMMENT help-at-pt
+#+begin_src emacs-lisp
+;;;;; Help At Point
+(use-package help-at-pt
+  :straight (:type built-in)
+  :custom
+  (help-at-pt-timer-delay 0.1)
+  (help-at-pt-display-when-idle '(flymake-diagnostic)))
 #+end_src
 
 *** TODO dictionary functions | youdao-dictionary
@@ -1930,7 +2444,7 @@ edit same text in one buffer or region
 *** TODO highlight-escape-sequences
 
 *** TODO git-blame | git-modes | git-timemachine | git-link | git-commit
-  ;;; init-git.el --- Git SCM support -*- lexical-binding: t -*-
+;;; init-git.el --- Git SCM support -*- lexical-binding: t -*-
 ;;; Commentary:
 
 ;; See also init-github.el.
@@ -1942,54 +2456,54 @@ edit same text in one buffer or region
 (require-package 'git-blamed)
 (require-package 'git-modes)
 (when (maybe-require-package 'git-timemachine)
-  (global-set-key (kbd "C-x v t") 'git-timemachine-toggle))
+(global-set-key (kbd "C-x v t") 'git-timemachine-toggle))
 
 (require-package 'git-link)
 
 (when (maybe-require-package 'magit)
-  (setq-default magit-diff-refine-hunk t)
+(setq-default magit-diff-refine-hunk t)
 
-  ;; Hint: customize `magit-repository-directories' so that you can use C-u M-F12 to
-  ;; quickly open magit on any one of your projects.
-  (global-set-key [(meta f12)] 'magit-status)
-  (global-set-key (kbd "C-x g") 'magit-status)
-  (global-set-key (kbd "C-x M-g") 'magit-dispatch)
+;; Hint: customize `magit-repository-directories' so that you can use C-u M-F12 to
+;; quickly open magit on any one of your projects.
+(global-set-key [(meta f12)] 'magit-status)
+(global-set-key (kbd "C-x g") 'magit-status)
+(global-set-key (kbd "C-x M-g") 'magit-dispatch)
 
-  (defun sanityinc/magit-or-vc-log-file (&optional prompt)
-    (interactive "P")
-    (if (and (buffer-file-name)
-             (eq 'Git (vc-backend (buffer-file-name))))
-        (if prompt
-            (magit-log-buffer-file-popup)
-          (magit-log-buffer-file t))
-      (vc-print-log)))
+(defun sanityinc/magit-or-vc-log-file (&optional prompt)
+(interactive "P")
+(if (and (buffer-file-name)
+(eq 'Git (vc-backend (buffer-file-name))))
+(if prompt
+(magit-log-buffer-file-popup)
+(magit-log-buffer-file t))
+(vc-print-log)))
 
-  (with-eval-after-load 'vc
-    (define-key vc-prefix-map (kbd "l") 'sanityinc/magit-or-vc-log-file)))
+(with-eval-after-load 'vc
+(define-key vc-prefix-map (kbd "l") 'sanityinc/magit-or-vc-log-file)))
 
 
 (with-eval-after-load 'magit
-  (define-key magit-status-mode-map (kbd "C-M-<up>") 'magit-section-up))
+(define-key magit-status-mode-map (kbd "C-M-<up>") 'magit-section-up))
 
 (maybe-require-package 'magit-todos)
 
 (require-package 'fullframe)
 (with-eval-after-load 'magit
-  (fullframe magit-status magit-mode-quit-window))
+(fullframe magit-status magit-mode-quit-window))
 
 (when (maybe-require-package 'git-commit)
-  (add-hook 'git-commit-mode-hook 'goto-address-mode))
+(add-hook 'git-commit-mode-hook 'goto-address-mode))
 
 
 (when *is-a-mac*
-  (with-eval-after-load 'magit
-    (add-hook 'magit-mode-hook (lambda () (local-unset-key [(meta h)])))))
+(with-eval-after-load 'magit
+(add-hook 'magit-mode-hook (lambda () (local-unset-key [(meta h)])))))
 
 
 
 ;; Convenient binding for vc-git-grep
 (with-eval-after-load 'vc
-  (define-key vc-prefix-map (kbd "f") 'vc-git-grep))
+(define-key vc-prefix-map (kbd "f") 'vc-git-grep))
 
 
 
@@ -2004,28 +2518,28 @@ edit same text in one buffer or region
 ;;   (add-hook 'magit-status-mode-hook #'sanityinc/maybe-enable-magit-svn-mode))
 
 (with-eval-after-load 'compile
-  (dolist (defn (list '(git-svn-updated "^\t[A-Z]\t\\(.*\\)$" 1 nil nil 0 1)
-                      '(git-svn-needs-update "^\\(.*\\): needs update$" 1 nil nil 2 1)))
-    (add-to-list 'compilation-error-regexp-alist-alist defn)
-    (add-to-list 'compilation-error-regexp-alist (car defn))))
+(dolist (defn (list '(git-svn-updated "^\t[A-Z]\t\\(.*\\)$" 1 nil nil 0 1)
+'(git-svn-needs-update "^\\(.*\\): needs update$" 1 nil nil 2 1)))
+(add-to-list 'compilation-error-regexp-alist-alist defn)
+(add-to-list 'compilation-error-regexp-alist (car defn))))
 
 (defvar git-svn--available-commands nil "Cached list of git svn subcommands")
 (defun git-svn--available-commands ()
-  (or git-svn--available-commands
-      (setq git-svn--available-commands
-            (sanityinc/string-all-matches
-             "^  \\([a-z\\-]+\\) +"
-             (shell-command-to-string "git svn help") 1))))
+(or git-svn--available-commands
+(setq git-svn--available-commands
+(sanityinc/string-all-matches
+"^  \\([a-z\\-]+\\) +"
+(shell-command-to-string "git svn help") 1))))
 
 (autoload 'vc-git-root "vc-git")
 
 (defun git-svn (dir command)
-  "Run a git svn subcommand in DIR."
-  (interactive (list (read-directory-name "Directory: ")
-                     (completing-read "git-svn command: " (git-svn--available-commands) nil t nil nil (git-svn--available-commands))))
-  (let* ((default-directory (vc-git-root dir))
-         (compilation-buffer-name-function (lambda (major-mode-name) "*git-svn*")))
-    (compile (concat "git svn " command))))
+"Run a git svn subcommand in DIR."
+(interactive (list (read-directory-name "Directory: ")
+(completing-read "git-svn command: " (git-svn--available-commands) nil t nil nil (git-svn--available-commands))))
+(let* ((default-directory (vc-git-root dir))
+(compilation-buffer-name-function (lambda (major-mode-name) "*git-svn*")))
+(compile (concat "git svn " command))))
 
 
 (provide 'init-git)
@@ -2059,7 +2573,7 @@ edit same text in one buffer or region
 (require 'undo-tree)
 ;; autosave the undo-tree history
 (setq undo-tree-history-directory-alist
-      `((".*" . ,temporary-file-directory)))
+`((".*" . ,temporary-file-directory)))
 (setq undo-tree-auto-save-history t)
 (global-undo-tree-mode)
 (diminish 'undo-tree-mode)
@@ -2080,9 +2594,57 @@ edit same text in one buffer or region
 
 *** TODO magit & transient
 
-* COMMENT modes may useful later
+*** TODO COMMENT imenu-list
+#+begin_src emacs-lisp
+;;;; Imenu list outline
+;; Make a useful outline buffer
+;; Binding set to toggle "o"
+(use-package imenu-list
+  :commands (imenu-list-smart-toggle imenu-list-minor-mode)
+  :config
+  (setq imenu-list-focus-after-activation t
+        imenu-list-auto-resize t
+        imenu-list-position 'left))
+#+end_src
+
+* COMMENT packages may useful later
 ** TODO ibuffer-vc
-Auto grouping ibuffer contents. Not very useful.
+Auto grouping ibuffer contents & git status. we'll see if it's useful.
+#+begin_src emacs-lisp
+  (use-package ibuffer-vc
+    :straight (:host github :repo "purcell/ibuffer-vc")
+    :defer 2
+    :config
+    ;; To include vc status info in the ibuffer list, add either
+    ;; vc-status-mini or vc-status to `ibuffer-formats':
+    (setq ibuffer-formats
+          '((mark modified read-only vc-status-mini " "
+                  (name 18 18 :left :elide)
+                  " "
+                  (size 9 -1 :right)
+                  " "
+                  (mode 16 16 :left :elide)
+                  " "
+                  (vc-status 16 16 :left)
+                  " "
+                  vc-relative-file)))
+
+    ;; Don't need to display "Git" for every project; use a symbol instead
+    (defun ibuffer-vc-generate-filter-groups-by-vc-root ()
+      "Create a set of ibuffer filter groups based on the vc root dirs of buffers."
+      (let ((roots (ibuffer-remove-duplicates
+                    (delq nil (mapcar 'ibuffer-vc-root (buffer-list))))))
+        (mapcar (lambda (vc-root)
+                  (cons (format " %s" (cdr vc-root))
+                        `((vc-root . ,vc-root))))
+                roots)))
+
+    (add-hook 'ibuffer-hook
+              (lambda ()
+                (ibuffer-vc-set-filter-groups-by-vc-root)
+                (unless (eq ibuffer-sorting-mode 'alphabetic)
+                  (ibuffer-do-sort-by-alphabetic)))))
+#+end_src
 
 ** TODO editorconfig
 EditorConfig helps developers define and maintain consistent coding
@@ -2164,6 +2726,9 @@ An Emacs interface for managing gists (http://gist.github.com).
                      :foreground-color "#839496"
                      :internal-border-width 1))))
                      
+** TODO el-patch
+;; Package for helping advise/modify features of other packages
+
 * COMMENT backup snippets for future
 :PROPERTIES:
 :VISIBILITY: folded
@@ -2179,6 +2744,41 @@ An Emacs interface for managing gists (http://gist.github.com).
   ;; (push (expand-file-name "elpa" user-emacs-directory) load-path)
 
 #+END_SRC
+** running time & gc time
+#+begin_src emacs-lisp
+  (defmacro k-time (&rest body)
+    "Measure and return the time it takes evaluating BODY."
+    `(let ((time (current-time)))
+       ,@body
+       (float-time (time-since time))))
+#+end_src
+
+#+begin_src emacs-lisp
+  ;; When idle for 15sec run the GC no matter what.
+(defvar k-gc-timer
+  (run-with-idle-timer 15 t
+                       (lambda ()
+                         (let ((inhibit-message t))
+                           (message "Garbage Collector has run for %.06fsec"
+                                    (k-time (garbage-collect)))))))
+#+end_src
+
+#+begin_src emacs-lisp
+  ;;;;; Measure Time Macro
+;; Useful macro to wrap functions in for testing
+;; See https://stackoverflow.com/q/23622296
+(defmacro measure-time (&rest body)
+  "Measure the time it takes to evaluate BODY."
+  `(let ((time (current-time)))
+     ,@body
+     (message "*Elapsed time: %.06f*" (float-time (time-since time)))))
+#+end_src
+
+** if native-comp
+;; See if native-comp is available
+(when (not (and (fboundp 'native-comp-available-p)
+                (native-comp-available-p)))
+  (message "Native complation is *not* available"))
 
 ** dired
 #+BEGIN_SRC emacs-lisp
@@ -2316,16 +2916,33 @@ and Emacs 28's elisp-mode) provide.
     :config
     (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 #+end_src
-
-** goggles
-Goggles highlights the modified region using pulse. Currently the
-commands undo, yank, kill and delete are supported.
+or (from lambda emacs)
 #+begin_src emacs-lisp
-  (use-package goggles
-    :hook ((prog-mode text-mode) . goggles-mode)
-    :custom (goggles-pulse t)) ;; set to nil to disable pulsing
-#+end_src
+;;;;; Kind Icon (For Corfu)
+(use-package kind-icon
+  :straight (:type git :host github :repo "jdtsmith/kind-icon")
+  :after corfu
+  :custom
+  (kind-icon-use-icons t)
+  (kind-icon-default-face 'corfu-default) ; Have background color be the same as `corfu' face background
+  (kind-icon-blend-background nil)
+  ;; NOTE kind-icon' depends on `svg-lib' which creates a cache directory that
+  ;; defaults to the `user-emacs-directory'. Here, I change that directory to
+  ;; the cache location.
+  (svg-lib-icons-dir (concat lem-cache-dir  "svg-lib/cache/")) ; Change cache dir
+  :config
+  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter) ; Enable `kind-icon'
 
+  ;; NOTE 2022-02-05: Add hook to reset cache so the icon colors match the theme
+  ;; If this isn't done, then the backgound color will remain the same, meaning
+  ;; it will not match the background color corresponding to the current theme.
+  ;; This hook is already set in the `lem-setup-themes.el' file, but you could
+  ;; set it here if you prefer:
+  ;; e.g. (add-hook 'after-load-theme-hook #'kind-icon-reset-cache)
+  ;; kind-icon needs to have its cache flushed after theme change
+  (add-hook 'lambda-themes-after-load-theme-hook #'kind-icon-reset-cache)
+  )
+#+end_src
 ** OS specific settings
 
 ;; macOS specific settings
@@ -2426,6 +3043,25 @@ Windows external keyboard from time to time."
 (provide 'prelude-wsl)
 ;;; prelude-wsl.el ends here
 
+** libraries
+#+begin_src emacs-lisp
+;; Asynchronous commands. Adds the ability to call asynchronous functions and
+;; process with ease. See the documentation for `async-start' and
+;; `async-start-process'.
+(use-package async
+  :straight t
+  :defer
+  :config
+  (dired-async-mode 1)
+  (setq dired-async--modeline-mode nil))
+;; A modern list API for Emacs. No 'cl required.
+(use-package dash     :straight t :defer 2)
+;; String manipulation
+(use-package s        :straight t :defer 2)
+;; APIs for files & directories
+(use-package f        :straight t :defer 2)
+#+end_src
+
 * /buffer functions & variables/
 :PROPERTIES:
 :VISIBILITY: folded
@@ -2445,6 +3081,12 @@ So we use :noweb as below.
 
 #+RESULTS: ORG-INIT-FILE
 : c:/Users/InnerSea/pyprojs/autohotkey_scripts/emacs-init.org
+** named kbd macros
+Open project file at point.
+#+begin_src emacs-lisp
+  (fset 'open-project-file
+   (kmacro-lambda-form [?\C-x ?4 ?4 ?\C-x ?p ?f ?\M-n return] 0 "%d"))
+#+end_src
 
 ** confirm the branch-tags for tangling
 A branch-tag is a set of TODO-tags indicating certain code blocks
