@@ -200,6 +200,7 @@ Allow access from EMACSCLIENT_TRAMP
    '(use-dialog-box nil)
    '(use-short-answers t)
    '(visible-bell t)
+   '(wdired-allow-to-change-permissions t)
    '(what-cursor-show-names t)
    '(x-stretch-cursor t)
    '(y-or-n-p-use-read-key t))
@@ -265,6 +266,11 @@ Using custom-set-faces mechanism. Look nice in doom-badger theme.
   (global-set-key (kbd "C-'") #'goto-last-change)
   (global-set-key (kbd "C-\"") #'goto-last-change-reverse)
   (global-set-key [remap just-one-space] #'cycle-spacing)
+  (global-set-key (kbd "C-`") #'previous-buffer)
+  (global-set-key (kbd "C-<tab>") #'next-buffer)
+  (global-set-key (kbd "M-u") 'upcase-dwim)
+  (global-set-key (kbd "M-l") 'downcase-dwim)
+  (global-set-key (kbd "M-c") 'capitalize-dwim)
 
   (defalias 'list-buffers 'ibuffer)
 #+END_SRC
@@ -326,12 +332,35 @@ using :noweb to call ORG-INIT-FILE library.
   (global-set-key (kbd "C-S-k") #'inn/kill-back-to-indentation)
 #+end_src
 
-*** switch to previous buffer
+*** TODO COMMENT narrow or widen dwim
+找不到bind-key*，真的需要这个功能吗？
+From lambda-emacs.
 #+begin_src emacs-lisp
-  (defun inn/switch-to-previous-buffer ()
-    (interactive)
-    (switch-to-buffer (other-buffer (current-buffer) 1)))
-  (global-set-key (kbd "C-<tab>") #'inn/switch-to previous-buffer)
+  (defun inn/narrow-or-widen-dwim (p)
+    "Widen if buffer is narrowed, narrow-dwim otherwise.
+    Dwim means: region, org-src-block, org-subtree, markdown
+    subtree, or defun, whichever applies first. Narrowing to
+    org-src-block actually calls `org-edit-src-code'.
+
+    With prefix P, don't widen, just narrow even if buffer
+    is already narrowed."
+    (interactive "P")
+    (declare (interactive-only))
+    (cond ((and (buffer-narrowed-p) (not p)) (widen))
+          ((region-active-p)
+           (narrow-to-region (region-beginning)
+                             (region-end)))
+          ((derived-mode-p 'org-mode)
+           ;; `org-edit-src-code' is not a real narrowing
+           ;; command. Remove this first conditional if
+           ;; you don't want it.
+           (cond ((ignore-errors (org-narrow-to-block) t))
+                 (t (org-narrow-to-subtree))))
+          (t (narrow-to-defun))))
+
+  ;;bind this in the narrow keymap
+  (require 'bind-key)
+  (bind-key* "C-x n n" #'inn/narrow-or-widen-dwim narrow-map)
 #+end_src
 
 *** COMMENT isearch bindings
@@ -474,7 +503,7 @@ Don't forget to use ~:ensure nil~ code for built-in packages.
 #+begin_src emacs-lisp
       ;;;; Backups / Auto-Save
   (use-package files
-    :ensure NIL-FOR-TOO-LONG
+    :ensure nil
     :hook (after-init . auto-save-mode)
     :init
     ;; backups
@@ -912,6 +941,198 @@ Helps you to use shell easily on Emacs. Only one key action to work.
 #+end_src
 
 ***** eshell & extensions
+****** TODO COMMENT eshell
+#+begin_src emacs-lisp
+  ;;; Eshell
+  ;; https://www.masteringemacs.org/article/complete-guide-mastering-eshell Eshell is
+  ;; an elisp shell. It has its own configuration parameters, distinct from those of
+  ;; shell or ansi-terminal.
+  ;;;; Eshell Settings
+  (use-package eshell
+    :commands eshell
+    :init
+    (setq eshell-directory-name (concat lem-etc-dir "eshell/")
+          eshell-history-file-name (concat lem-etc-dir "eshell/history")
+          eshell-aliases-file (concat lem-etc-dir "eshell/alias")
+          eshell-last-dir-ring-file-name (concat lem-etc-dir "eshell/lastdir")
+          eshell-highlight-prompt nil
+          eshell-buffer-shorthand t
+          eshell-cmpl-ignore-case t
+          eshell-cmpl-cycle-completions t
+          eshell-destroy-buffer-when-process-dies t
+          eshell-history-size 10000
+          ;; auto truncate after 20k lines
+          eshell-buffer-maximum-lines 20000
+          eshell-hist-ignoredups t
+          eshell-error-if-no-glob t
+          eshell-glob-case-insensitive t
+          eshell-scroll-to-bottom-on-input 'all
+          eshell-scroll-to-bottom-on-output 'all
+          eshell-list-files-after-cd t
+          eshell-banner-message ""
+          ;; eshell-banner-message (message "Emacs initialized in %.2fs \n\n" (float-time (time-subtract (current-time) my-start-time)))
+          ;; eshell-banner-message "What would you like to do?\n\n"
+          )
+    ;; Visual commands
+    (setq eshell-visual-commands '("ranger" "vi" "screen" "top" "less" "more" "lynx"
+                                   "ncftp" "pine" "tin" "trn" "elm" "vim"
+                                   "nmtui" "alsamixer" "htop" "el" "elinks"
+                                   ))
+    (setq eshell-visual-subcommands '(("git" "log" "diff" "show"))))
+
+  (defun lem-setup-eshell ()
+    (interactive)
+    ;; turn off semantic-mode in eshell buffers
+    (semantic-mode -1)
+    ;; turn off hl-line-mode
+    (hl-line-mode -1))
+
+  ;;;; Eshell Evil Histgory Navigation
+  ;; History browsing. Note keybindings need to be buffer local as per
+  ;; https://github.com/noctuid/general.el/issues/80
+  (add-hook 'eshell-mode-hook
+            (lambda ()
+              (bind-keys :map eshell-mode-map
+                         ("<down>" . eshell-next-input)
+                         ("<up>"   . eshell-previous-input)
+                         ("C-k"    . eshell-next-input)
+                         ("C-j"    . eshell-previous-input))))
+
+  ;;;; Eshell Prompt
+  ;; A nicer eshell prompt https://gist.github.com/ekaschalk/f0ac91c406ad99e53bb97752683811a5
+  ;; with some useful discussion of how it was put together http://www.modernemacs.com/post/custom-eshell/
+  ;; I've made just a few tiny modifications.
+
+  (with-eval-after-load 'eshell
+    (require 'dash)
+    (require 's)
+
+    (defmacro with-face (STR &rest PROPS)
+      "Return STR propertized with PROPS."
+      `(propertize ,STR 'face (list ,@PROPS)))
+
+    (defmacro esh-section (NAME ICON FORM &rest PROPS)
+      "Build eshell section NAME with ICON prepended to evaled FORM with PROPS."
+      `(setq ,NAME
+             (lambda () (when ,FORM
+                          (-> ,ICON
+                              (concat esh-section-delim ,FORM)
+                              (with-face ,@PROPS))))))
+
+    (defun esh-acc (acc x)
+      "Accumulator for evaluating and concatenating esh-sections."
+      (--if-let (funcall x)
+          (if (s-blank? acc)
+              it
+            (concat acc esh-sep it))
+        acc))
+
+    (defun esh-prompt-func ()
+      "Build `eshell-prompt-function'"
+      (concat esh-header
+              (-reduce-from 'esh-acc "" eshell-funcs)
+              "\n"
+              eshell-prompt-string))
+
+    (esh-section esh-dir
+                 "\xf07c"  ;  (faicon folder)
+                 (abbreviate-file-name (eshell/pwd))
+                 '(:foreground "#268bd2" :underline t))
+
+    (esh-section esh-git
+                 "\xe907"  ;  (git icon)
+                 (with-eval-after-load 'magit
+                   (magit-get-current-branch))
+                 '(:foreground "#b58900"))
+
+    (esh-section esh-python
+                 "\xe928"  ;  (python icon)
+                 (with-eval-after-load "virtualenvwrapper"
+                   venv-current-name))
+
+    (esh-section esh-clock
+                 "\xf017"  ;  (clock icon)
+                 (format-time-string "%H:%M" (current-time))
+                 '(:foreground "forest green"))
+
+    ;; Below I implement a "prompt number" section
+    (setq esh-prompt-num 0)
+    (add-hook 'eshell-exit-hook (lambda () (setq esh-prompt-num 0)))
+    (advice-add 'eshell-send-input :before
+                (lambda (&rest args) (setq esh-prompt-num (cl-incf esh-prompt-num))))
+
+    (esh-section esh-num
+                 "\xf0c9"  ;  (list icon)
+                 (number-to-string esh-prompt-num)
+                 '(:foreground "brown"))
+
+    ;; Separator between esh-sections
+    (setq esh-sep " | ")  ; or "  "
+
+    ;; Separator between an esh-section icon and form
+    (setq esh-section-delim " ")
+
+    ;; Eshell prompt header
+    (setq esh-header "\n┌─")  ; or "\n "
+
+    ;; Eshell prompt regexp and string. Unless you are varying the prompt by eg.
+    ;; your login, these can be the same.
+    (setq eshell-prompt-regexp "^└─>> ") ;; note the '^' to get regex working right
+    (setq eshell-prompt-string "└─>> ")
+
+    ;; Choose which eshell-funcs to enable
+    (setq eshell-funcs (list esh-dir esh-git esh-python esh-clock esh-num))
+
+    ;; Enable the new eshell prompt
+    (setq eshell-prompt-function 'esh-prompt-func))
+
+  ;;;; Clear Eshell
+  ;; Make eshell act like a standard unix terminal.
+  (defun eshell-clear-buffer ()
+    "Clear terminal"
+    (interactive)
+    (let ((inhibit-read-only t))
+      (erase-buffer)
+      (eshell-send-input)))
+
+  (add-hook 'eshell-mode-hook
+            #'(lambda()
+                (local-set-key (kbd "C-l") 'eshell-clear-buffer)))
+
+  ;;;; Eshell Magit
+  (defun eshell/magit ()
+    "Function to open magit-status for the current directory"
+    (interactive)
+    (require 'magit)
+    (magit-status-setup-buffer default-directory)
+    nil)
+
+  ;;;; Eshell Fringe Status
+  ;; Show last status in fringe
+  ;; https://github.com/ryuslash/eshell-fringe-status
+  (use-package eshell-fringe-status
+    :defer t
+    :config
+    (add-hook 'eshell-mode-hook 'eshell-fringe-status-mode))
+
+  ;;;; Eshell Autosuggest
+  ;; Fish-like history autosuggestions in eshell
+  ;; https://github.com/dieggsy/esh-autosuggest/
+  (use-package esh-autosuggest
+    :hook (eshell-mode . esh-autosuggest-mode))
+
+  ;;;; Open in iTerm
+  (defun lem-open-dir-in-iterm ()
+    "Open the current directory of the buffer in iTerm."
+    (interactive)
+    (let* ((iterm-app-path "/Applications/iTerm.app")
+           (iterm-brew-path "/opt/homebrew-cask/Caskroom/iterm2/2.1.4/iTerm.app")
+           (iterm-path (if (file-directory-p iterm-app-path)
+                           iterm-app-path
+                         iterm-brew-path)))
+      (shell-command (concat "open -a " iterm-path " ."))))
+  ;; (global-set-key (kbd "C-x t") 'open-dir-in-iterm)
+#+end_src
 ****** COMMENT em-smart
 #+begin_src emacs-lisp
   (use-package em-smart
@@ -1896,7 +2117,1370 @@ Settings about org-mode & extensions.
           :map org-src-mode-map
           ("C-c C-'" . org-edit-src-exit)))
 #+end_src
+**** TODO COMMENT [final kill]another org settings
+#+begin_src emacs-lisp
+  ;;; lem-setup-org-base.el --- Org-mode settings -*- lexical-binding: t -*-
 
+;; Author: Colin McLear
+;; Maintainer: Colin McLear
+;; Version: 0.1
+;; Package-Requires: (dependencies)
+;; Homepage: https://github.com/Lambda-Emacs/lambda-emacs
+;; Keywords: org-mode
+
+
+;; This file is not part of GNU Emacs
+
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; Basic setup for org-mode in 𝛌-Emacs
+
+;;; Code:
+
+;;;; Git Org
+;; Use Org from source rather than built in
+(use-package org
+  :straight t ;; let straight handle this
+  :commands (org-mode)
+  :mode (("\\.org$" . org-mode))
+  :bind
+  (:map global-map
+   ("C-c a" . org-agenda))
+  (:map org-mode-map
+   ("C-M-k" . org-metaup)
+   ("C-M-j" . org-metadown)
+   ("C-M-l" . org-metaright)
+   ("C-M-h" . org-metaleft)
+   ("M-J" . org-shiftdown)
+   ("M-K" . org-shiftup)
+   ("M-L" . org-shiftright)
+   ("M-H" . org-shiftleft)
+   ;; easily emphasize text
+   ("s-b" . (lambda () (interactive) (org-emphasize-dwim ?*)))
+   ("s-i" . (lambda () (interactive) (org-emphasize-dwim ?/)))
+   ("s-M-`" . org-emphasize-with-verbatim-dwim)
+   ("s-M-~" . org-emphasize-with-code-dwim)
+   ;; better pasting behavior in org-mode
+   ("s-v" . org-yank))
+
+  :init
+  ;; Org-Emphasis-Regex settings. Set regex boundaries for emphasis.
+  ;; Load this before org-mode is loaded.
+  ;; See https://emacs.stackexchange.com/q/54673/11934
+  ;; https://emacs.stackexchange.com/q/54632/11934
+
+  (setq org-emphasis-regexp-components
+        '("-—[:space:]('\"{["
+          "\] - [:space:].,:!?;'\")}\\["
+          "[:space:]"
+          "."
+          1))
+
+  :custom
+  ;; Aesthetics & UI
+  (org-adapt-indentation 'headline-data) ;; adapt indentation only for data lines
+  (org-catch-invisible-edits 'smart) ;; prevent editing invisible area
+  (org-cycle-separator-lines 0) ;; no empty lines in collapsed view
+  (org-ellipsis "…") ;; nicer elipses "↷" "↴" "▼"
+  (org-fontify-quote-and-verse-blocks t) ;; make quotes stand out
+  (org-hide-emphasis-markers t)  ;; hide emph markers
+  (org-hide-leading-stars t)  ;; hide leading stars
+  (org-image-actual-width  500) ;; show all images at 500px using imagemagik
+  (org-insert-heading-respect-content t) ;; insert new headings after subtree
+  (org-list-allow-alphabetical t) ;; allow alphabetical list
+  (org-pretty-entities t) ;; make latex look good, etc.
+  (org-pretty-entities-include-sub-superscripts t) ;; prettify sub/superscripts
+  (org-read-date-prefer-future 'time) ;; Incomplete dates refer to future dates & times
+  (org-startup-folded t) ;; start org in outline
+  (org-startup-indented t) ;; start with indentation of headlines
+  (org-auto-align-tags nil) ;; don't auto-align tags
+  (org-tags-column 0) ;; place tags directly next to headline text
+
+  ;; Footnotes
+  (org-footnote-section nil) ;; place footnotes locally
+  (org-footnote-auto-adjust t) ;; renumber footnotes
+
+  ;; Insertion/Yanking
+  (org-M-RET-may-split-line '((default . t)))  ;; don't split line when creating a new headline, list item, or table field
+  (org-yank-adjusted-subtrees t)  ;; adjust subtrees to depth when yanked
+  (org-yank-folded-subtrees t) ;; fold subtrees on yank
+
+  ;; Lists
+  ;; Demote sequence for list bullets
+  (org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+")))
+  (org-list-indent-offset 1) ;; increase sub-item indentation
+
+  ;; Logging
+  (org-log-done 'time)
+  (org-log-into-drawer t)
+  (org-log-state-notes-insert-after-drawers nil)
+  (org-log-redeadline nil) ;; don't log the time a task was rescheduled/redeadlined.
+  (org-log-reschedule nil)
+
+  ;; Movement
+  (org-return-follows-link t) ;; make RET follow links
+  (org-special-ctrl-a/e t)  ;; better movement in headers
+
+  ;; Searching
+  (org-imenu-depth 8) ;; scan to depth 8 w/imenu
+  (imenu-auto-rescan t) ;; make sure imenu refreshes
+
+  ;; Source block settings
+  (org-src-fontify-natively t) ;; use lang-specific fontification
+  (org-src-window-setup 'other-window) ;; edit source in other window
+  (org-src-tab-acts-natively t) ;; use lang bindings
+  (org-confirm-babel-evaluate t) ;; confirm evaluation
+
+  ;; TODOS
+  (org-use-fast-todo-selection 'expert) ;; don't use popup window for todos
+  ;; don't set to DONE if children aren’t DONE
+  (org-enforce-todo-dependencies t)
+  (org-enforce-todo-checkbox-dependencies t)
+
+  :config
+  ;; Setup further org config
+  (require 'lem-setup-org-settings)
+  (require 'lem-setup-org-extensions))
+
+;;; Provide Org-Setup
+(provide 'lem-setup-org-base)
+;;; lem-setup-org-base.el ends here
+#+end_src
+**** TODO COMMENT [final kill]org extensions
+#+begin_src emacs-lisp
+  ;; Additions & modifications to org functionality
+  ;; NOTE: some org-extensions are set in other setup files:
+  ;; - org roam setup is in setup-notes
+  ;; - org citations setup is in setup-citation
+  ;; - some org export functions are in setup-teaching
+
+  ;;; Org Appearance
+  ;;;; Org-Appear (Show Markup/Pretty Entities)
+  ;; show markup at point -- this should be part of org!
+  (use-package org-appear
+    :straight (:type git :host github :repo "awth13/org-appear"
+               :branch "master")
+    :commands (org-appear-mode)
+    :custom
+    (org-appear-autoemphasis  t)
+    (org-appear-autolinks nil)
+    (org-appear-autosubmarkers t)
+    :hook (org-mode . org-appear-mode))
+
+  ;;;; Org Modern (Display properties, bullets, etc)
+  ;; A nicer set of default display options
+  (use-package org-modern
+    :straight (:type git :host github :repo "minad/org-modern")
+    :hook (org-mode . org-modern-mode)
+    :custom-face
+    (org-modern-label ((t (:height 1.0 :inherit ,(if lambda-themes-set-variable-pitch 'variable-pitch 'default)))))
+    :custom
+    (org-modern-hide-stars nil) ;; compatibility w/org-indent
+    ;; don't use other faces
+    (org-modern-priority nil)
+    (org-modern-todo nil)
+    (org-modern-tag t)
+    ;; Customize this per your font
+    (org-modern-label-border .25)
+    ;; Note that these stars allow differentiation of levels
+    ;; "①" "②" "③" "④" "⑤" "⑥" "⑦"
+    (org-modern-star ["⦶" "⦷" "⦹" "⊕" "⍟" "⊛" "⏣" "❂"]))
+
+  ;;;; Org Modern Indent
+  ;; Make org-modern work better with org-indent
+  (use-package org-modern-indent
+    :straight (:type git :host github :repo "jdtsmith/org-modern-indent")
+    :hook (org-indent-mode . org-modern-indent-mode)
+    :custom-face
+    (org-modern-indent-line ((t (:height 1.0 :inherit lem-ui-default-font :inherit lambda-meek)))))
+
+  ;;; Org Autolist (Smart Lists)
+  ;; Better list behavior
+  (use-package org-auto-list
+    :straight (:type git :host github :repo "calvinwyoung/org-autolist")
+    :hook (org-mode . org-autolist-mode))
+
+  ;;; Org Babel
+  ;; Avoid `org-babel-do-load-languages' since it does an eager require.
+  (use-package ob-python
+    :straight nil
+    :defer t
+    :commands (org-babel-execute:python)
+    :config
+    (progn
+      (setq org-babel-python-command "python3"))) ;Default to python 3.x
+
+  (use-package ob-ditaa
+    :straight nil
+    :defer t
+    :config
+    (progn
+      ;; http://pages.sachachua.com/.emacs.d/Sacha.html
+      (setq org-ditaa-jar-path (expand-file-name
+                                "ditaa.jar"
+                                (concat user-emacs-directory "software/")))))
+
+  (use-package ob-plantuml
+    :straight nil
+    :defer t
+    :config
+    (progn
+      (setq org-plantuml-jar-path (expand-file-name
+                                   "plantuml.jar"
+                                   (concat user-emacs-directory "software/")))
+
+      (defun lem-advice-org-babel-execute:plantuml (orig-fun &rest args)
+        "Force `shell-file-name' to be bash as the \">\" operator is used for redirection.
+
+  If this forcing is not done, and if `shell-file-name' is tcsh,
+  \">\" does not work.  When trying to overwrite files, we get a
+  \"File exists\" error, and \">!\" would need to be used instead.
+
+  Instead it's simpler to use bash."
+        (let ((shell-file-name (executable-find "bash")))
+          (apply orig-fun args)))
+      (advice-add 'org-babel-execute:plantuml :around #'lem-advice-org-babel-execute:plantuml)))
+
+  (use-package ob-shell
+    :straight nil
+    :defer t
+    :commands
+    (org-babel-execute:sh
+     org-babel-expand-body:sh
+     org-babel-execute:bash
+     org-babel-expand-body:bash))
+
+  (use-package ob-lisp
+    :straight nil
+    :defer t
+    :commands (org-babel-execute:lisp))
+
+  (use-package ob-latex
+    :straight nil
+    :defer t
+    :commands
+    (org-babel-execute:latex))
+
+  ;;; Org Babel Tangle
+  (use-package ob-tangle
+    :straight nil
+    :defer t
+    :config
+    (progn
+      ;; Trailing whitespace management
+      ;; Delete trailing whitespace in tangled buffer and save it.
+      (add-hook 'org-babel-post-tangle-hook #'delete-trailing-whitespace)
+      (add-hook 'org-babel-post-tangle-hook #'save-buffer :append)))
+
+  ;;; Org-Download
+  ;; Drag and drop images to Emacs org-mode. Courtesy of abo-abo.
+  ;; https://github.com/abo-abo/org-download.
+
+  (use-package org-download
+    :commands (org-download-yank org-download-screenshot org-download-image)
+    :custom
+    (org-download-method 'directory)
+    (org-download-image-dir (concat org-directory "org-pictures/"))
+    (org-download-image-latex-width 500)
+    (org-download-timestamp "%Y-%m-%d"))
+
+  ;;; Org Devonthink Integration
+  (use-package org-devonthink
+    :when sys-mac
+    :straight (:type git :host github :repo "lasvice/org-devonthink")
+    :commands (org-insert-dtp-link org-dtp-store-link))
+
+  ;;; Org Export Extensions
+  ;;;; Ox-Pandoc
+  ;; Export w/pandoc
+  (use-package ox-pandoc
+    :straight (:type git :host github :repo "a-fent/ox-pandoc")
+    :if (executable-find "pandoc")
+    :after ox
+    :custom
+    (org-pandoc-command (executable-find "pandoc"))
+    (org-pandoc-options '((standalone .  t)))
+    (org-pandoc-options-for-docx '((standalone . nil)))
+    (org-pandoc-options-for-beamer-pdf '((pdf-engine . "xelatex")))
+    (org-pandoc-options-for-latex-pdf '((pdf-engine . "xelatex")))
+    (org-pandoc-format-extensions '(org+smart)))
+
+  ;;;; Ox-Pandoc Export Menu Options
+  ;; Set pandoc export options
+  (setq org-pandoc-menu-entry
+        '(
+          ;;(?0 "to jats." org-pandoc-export-to-jats)
+          ;;(?0 "to jats and open." org-pandoc-export-to-jats-and-open)
+          ;;(?  "as jats." org-pandoc-export-as-jats)
+          ;;(?1 "to epub2 and open." org-pandoc-export-to-epub2-and-open)
+          ;;(?! "to epub2." org-pandoc-export-to-epub2)
+          ;;(?2 "to tei." org-pandoc-export-to-tei)
+          ;;(?2 "to tei and open." org-pandoc-export-to-tei-and-open)
+          ;;(?" "as tei." org-pandoc-export-as-tei)
+          ;;(?3 "to markdown_mmd." org-pandoc-export-to-markdown_mmd)
+          ;;(?3 "to markdown_mmd and open." org-pandoc-export-to-markdown_mmd-and-open)
+          ;;(?# "as markdown_mmd." org-pandoc-export-as-markdown_mmd)
+          ;;(?4 "to html5." org-pandoc-export-to-html5)
+          (?4 "to html5 and open." org-pandoc-export-to-html5-and-open)
+          (?$ "as html5." org-pandoc-export-as-html5)
+          (?5 "to html5-pdf and open." org-pandoc-export-to-html5-pdf-and-open)
+          (?% "to html5-pdf." org-pandoc-export-to-html5-pdf)
+          ;;(?6 "to markdown_phpextra." org-pandoc-export-to-markdown_phpextra)
+          ;;(?6 "to markdown_phpextra and open." org-pandoc-export-to-markdown_phpextra-and-open)
+          ;;(?& "as markdown_phpextra." org-pandoc-export-as-markdown_phpextra)
+          ;;(?7 "to markdown_strict." org-pandoc-export-to-markdown_strict)
+          ;;(?7 "to markdown_strict and open." org-pandoc-export-to-markdown_strict-and-open)
+          ;;(?' "as markdown_strict." org-pandoc-export-as-markdown_strict)
+          ;; (?8 "to opendocument." org-pandoc-export-to-opendocument)
+          ;; (?8 "to opendocument and open." org-pandoc-export-to-opendocument-and-open)
+          ;; (?( "as opendocument." org-pandoc-export-as-opendocument)
+          (?8 "to opml." org-pandoc-export-to-opml)
+          (?9 "to opml and open." org-pandoc-export-to-opml-and-open)
+          ;; (?* "as opml." org-pandoc-export-as-opml)
+          ;;(?: "to rst." org-pandoc-export-to-rst)
+          ;;(?: "to rst and open." org-pandoc-export-to-rst-and-open)
+          ;;(?* "as rst." org-pandoc-export-as-rst)
+          ;;(?< "to slideous." org-pandoc-export-to-slideous)
+          (?< "to slideous and open." org-pandoc-export-to-slideous-and-open)
+          (?, "as slideous." org-pandoc-export-as-slideous)
+          (?= "to ms-pdf and open." org-pandoc-export-to-ms-pdf-and-open)
+          (?- "to ms-pdf." org-pandoc-export-to-ms-pdf)
+          ;;(?> "to textile." org-pandoc-export-to-textile)
+          ;;(?> "to textile and open." org-pandoc-export-to-textile-and-open)
+          ;;(?. "as textile." org-pandoc-export-as-textile)
+          ;;(?a "to asciidoc." org-pandoc-export-to-asciidoc)
+          ;;(?a "to asciidoc and open." org-pandoc-export-to-asciidoc-and-open)
+          ;;(?A "as asciidoc." org-pandoc-export-as-asciidoc)
+          (?b "to beamer-pdf and open." org-pandoc-export-to-beamer-pdf-and-open)
+          (?B "to beamer-pdf." org-pandoc-export-to-beamer-pdf)
+          (?c "to context-pdf and open." org-pandoc-export-to-context-pdf-and-open)
+          (?C "to context-pdf." org-pandoc-export-to-context-pdf)
+          ;;(?d "to docbook5." org-pandoc-export-to-docbook5)
+          (?d "to docbook5 and open." org-pandoc-export-to-docbook5-and-open)
+          (?D "as docbook5." org-pandoc-export-as-docbook5)
+          (?e "to epub3 and open." org-pandoc-export-to-epub3-and-open)
+          (?E "to epub3." org-pandoc-export-to-epub3)
+          ;;(?f "to fb2." org-pandoc-export-to-fb2)
+          ;;(?f "to fb2 and open." org-pandoc-export-to-fb2-and-open)
+          ;;(?F "as fb2." org-pandoc-export-as-fb2)
+          ;;(?g "to gfm." org-pandoc-export-to-gfm)
+          (?g "to gfm and open." org-pandoc-export-to-gfm-and-open)
+          (?G "as gfm." org-pandoc-export-as-gfm)
+          ;;(?h "to html4." org-pandoc-export-to-html4)
+          (?h "to html4 and open." org-pandoc-export-to-html4-and-open)
+          (?H "as html4." org-pandoc-export-as-html4)
+          ;;(?i "to icml." org-pandoc-export-to-icml)
+          (?i "to icml and open." org-pandoc-export-to-icml-and-open)
+          (?I "as icml." org-pandoc-export-as-icml)
+          ;;(?j "to json." org-pandoc-export-to-json)
+          (?j "to json and open." org-pandoc-export-to-json-and-open)
+          (?J "as json." org-pandoc-export-as-json)
+          ;; (?k "to markdown." org-pandoc-export-to-markdown)
+          (?k "to markdown and open." org-pandoc-export-to-markdown-and-open)
+          (?K "as markdown." org-pandoc-export-as-markdown)
+          (?l "to latex-pdf and open." org-pandoc-export-to-latex-pdf-and-open)
+          (?L "to latex-pdf." org-pandoc-export-to-latex-pdf)
+          ;;(?m "to man." org-pandoc-export-to-man)
+          (?m "to man and open." org-pandoc-export-to-man-and-open)
+          (?M "as man." org-pandoc-export-as-man)
+          ;;(?n "to native." org-pandoc-export-to-native)
+          (?n "to native and open." org-pandoc-export-to-native-and-open)
+          (?N "as native." org-pandoc-export-as-native)
+          (?o "to odt and open." org-pandoc-export-to-odt-and-open)
+          (?O "to odt." org-pandoc-export-to-odt)
+          (?p "to pptx and open." org-pandoc-export-to-pptx-and-open)
+          (?P "to pptx." org-pandoc-export-to-pptx)
+          ;;(?q "to commonmark." org-pandoc-export-to-commonmark)
+          ;;(?q "to commonmark and open." org-pandoc-export-to-commonmark-and-open)
+          ;;(?Q "as commonmark." org-pandoc-export-as-commonmark)
+          ;;(?r "to rtf." org-pandoc-export-to-rtf)
+          (?r "to rtf and open." org-pandoc-export-to-rtf-and-open)
+          (?R "as rtf." org-pandoc-export-as-rtf)
+          ;;(?s "to s5." org-pandoc-export-to-s5)
+          ;;(?s "to s5 and open." org-pandoc-export-to-s5-and-open)
+          ;;(?S "as s5." org-pandoc-export-as-s5)
+          ;;(?t "to texinfo." org-pandoc-export-to-texinfo)
+          ;;(?t "to texinfo and open." org-pandoc-export-to-texinfo-and-open)
+          ;;(?T "as texinfo." org-pandoc-export-as-texinfo)
+          ;;(?u "to dokuwiki." org-pandoc-export-to-dokuwiki)
+          (?u "to dokuwiki and open." org-pandoc-export-to-dokuwiki-and-open)
+          (?U "as dokuwiki." org-pandoc-export-as-dokuwiki)
+          ;; (?v "to revealjs." org-pandoc-export-to-revealjs)
+          (?v "to revealjs and open." org-pandoc-export-to-revealjs-and-open)
+          (?V "as revealjs." org-pandoc-export-as-revealjs)
+          ;;(?w "to mediawiki." org-pandoc-export-to-mediawiki)
+          (?w "to mediawiki and open." org-pandoc-export-to-mediawiki-and-open)
+          (?W "as mediawiki." org-pandoc-export-as-mediawiki)
+          (?x "to docx and open." org-pandoc-export-to-docx-and-open)
+          (?X "to docx." org-pandoc-export-to-docx)
+          ;;(?y "to slidy." org-pandoc-export-to-slidy)
+          (?y "to slidy and open." org-pandoc-export-to-slidy-and-open)
+          (?Y "as slidy." org-pandoc-export-as-slidy)
+          ;;(?z "to dzslides." org-pandoc-export-to-dzslides)
+          (?z "to dzslides and open." org-pandoc-export-to-dzslides-and-open)
+          (?Z "as dzslides." org-pandoc-export-as-dzslides)
+          ;;(?{ "to muse." org-pandoc-export-to-muse)
+          ;;(?{ "to muse and open." org-pandoc-export-to-muse-and-open)
+          ;;(?[ "as muse." org-pandoc-export-as-muse)
+          ;;(?} "to zimwiki." org-pandoc-export-to-zimwiki)
+          ;;(?} "to zimwiki and open." org-pandoc-export-to-zimwiki-and-open)
+          ;;(?] "as zimwiki." org-pandoc-export-as-zimwiki)
+          ;;(?~ "to haddock." org-pandoc-export-to-haddock)
+          ;;(?~ "to haddock and open." org-pandoc-export-to-haddock-and-open)
+          ;;(?^ "as haddock." org-pandoc-export-as-haddock)
+          ))
+
+
+  ;;;; Ox-Hugo
+  ;; Export to Hugo with Org
+  ;; https://github.com/kaushalmodi/ox-hugo
+  (use-package ox-hugo :after ox)
+
+  ;;;;; Batch Export Files with Org-Hugo
+  ;; mark files and then batch export them with this command
+  (with-eval-after-load 'dired
+    (define-key dired-mode-map (kbd "C-+")
+      (lambda()
+        (interactive)
+        (diredp-do-apply/eval 'org-hugo-export-wim-to-md '(4)))))
+
+  ;;;;; Org-Hugo Links
+  ;; New link type for Org-Hugo internal links
+  (defun org-hugo-link-complete ()
+    "Create link with Hugo ref shortcode"
+    (concat "{{% ref " (file-relative-name (read-file-name "File: ")) " %}}"))
+
+  (defun org-hugo-follow (link)
+    (find-file (expand-file-name link)))
+
+  (with-eval-after-load 'org
+    (org-link-set-parameters "hugo"
+                             :complete 'org-hugo-link-complete
+                             :follow 'org-hugo-follow))
+
+  ;;; Org Html Conversion
+  (use-package htmlize
+    :commands (htmlize-buffer))
+
+  ;;; Org Menu
+  ;; A menu for editing org-mode documents and exploring it’s features in a
+  ;; discoverable way via transient menus.
+  (use-package org-menu
+    :straight (:type git :host github :repo "sheijk/org-menu")
+    :bind* (:map org-mode-map
+            ("C-c m" . org-menu)))
+
+  ;;; Org Pomodoro
+  ;; Helps with time tracking
+  (use-package org-pomodoro
+    :commands org-pomodoro
+    :init
+    (progn
+      (setq org-pomodoro-audio-player "/usr/bin/afplay")))
+
+  ;;; Provide Org Extensions
+  (provide 'lem-setup-org-extensions)	;
+#+end_src
+**** TODO COMMENT [final kill]org settings
+#+begin_src emacs-lisp
+  ;;; lem-setup-org-settings.el --- Org-mode settings -*- lexical-binding: t -*-
+
+
+;; Author: Colin McLear
+;; Maintainer: Colin McLear
+;; Version: 0.1
+;; Package-Requires: (dependencies)
+;; Homepage: https://github.com/Lambda-Emacs/lambda-emacs
+;; Keywords: org-mode
+
+
+;; This file is not part of GNU Emacs
+
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
+;;; Commentary:
+
+;; Core settings for org-mode in 𝛌-Emacs This file is for configuring org and
+;; related files that are part of org. Other extensions to org can be found in
+;; lem-setup-org-extensions.
+
+;; Note that configuring that is heavily user-specific, such as capture
+;; templates, is not put here, but should be put in the user's configuration
+;; file (or user library). For an example of how to configure capture templates
+;; see:
+;; https://systemcrafters.cc/emacs-from-scratch/organize-your-life-with-org-mode/#capture-templates
+
+;;; Code:
+
+;;;; Org Agenda
+;;;;; Agenda Settings
+(use-package org-agenda
+  :straight nil
+  :commands (org-agenda)
+  :bind
+  (:map org-agenda-mode-map
+   ("j" . org-agenda-next-item)
+   ("k" . org-agenda-previous-item))
+  :custom
+  ;; Agenda logging
+  (org-agenda-start-with-log-mode t)
+
+  ;; Agenda styling
+  (org-agenda-tags-column 0)
+  (org-agenda-block-separator ?–)
+  (org-agenda-time-grid
+   '((daily today require-timed)
+     (800 1000 1200 1400 1600 1800 2000)
+     " ┄┄┄┄┄ " "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄"))
+  (org-agenda-current-time-string
+   "⭠ now ─────────────────────────────────────────────────")
+
+  ;; Display properties
+  (org-agenda-tags-column org-tags-column)
+  (org-agenda-show-inherited-tags nil)
+  (org-agenda-window-setup 'only-window)
+  (org-agenda-restore-windows-after-quit t)
+
+  ;; from stack overflow https://stackoverflow.com/a/22900459/6277148
+  ;; note that the formatting is nicer that just using '%b'
+  (org-agenda-prefix-format
+   '((agenda . " %-18c%?-10t ")
+     (timeline . "  % s")
+     (todo . " ")
+     (tags . " ")
+     (search . " %i %-12:c")))
+
+  ;; Scheduling
+  (org-agenda-skip-scheduled-if-done t)
+  (org-agenda-skip-timestamp-if-done t)
+  (org-agenda-todo-ignore-scheduled 'future)
+  (org-agenda-todo-ignore-deadlines 'far)
+  (org-agenda-sorting-strategy
+   '((agenda time-up) (todo time-up) (tags time-up) (search time-up)))
+  (calendar-week-start-day 1) ;; Start week on Monday
+
+  ;; Agenda Custom Commands
+  ;; Configure custom agenda views
+  ;; https://orgmode.org/manual/Storing-searches.html#Storing-searches
+  ;; https://systemcrafters.cc/emacs-from-scratch/organize-your-life-with-org-mode/
+
+  (org-agenda-custom-commands
+   '(("d" "Dashboard"
+      ((agenda "" ((org-agenda-span 'day)))
+       (tags-todo "DEADLINE=\"<today>\""
+                  ((org-agenda-overriding-header "Due Today!")))
+       (tags-todo "+DEADLINE<\"<+5d>\"+DEADLINE>\"<today>\""
+                  ((org-agenda-overriding-header "Due Soon")))
+       (todo "NEXT"
+             ((org-agenda-overriding-header "Next Tasks")))
+       (tags-todo "email" ((org-agenda-overriding-header "Email")))
+       ))
+
+     ("n" "Next Tasks"
+      ((todo "NEXT"
+             ((org-agenda-overriding-header "Next Tasks")))))
+
+     ("W" "Work Tasks" tags-todo "+work")
+
+     ;; Low-effort next actions
+     ("e" tags-todo "+TODO=\"NEXT\"+Effort<15&+Effort>0"
+      ((org-agenda-overriding-header "Low Effort Tasks")
+       (org-agenda-max-todos 20)
+       (org-agenda-files org-agenda-files)))
+
+     ("w" "Workflow Status"
+      ((todo "WAIT"
+             ((org-agenda-overriding-header "Waiting on External")
+              (org-agenda-files org-agenda-files)))
+       (todo "REVIEW"
+             ((org-agenda-overriding-header "In Review")
+              (org-agenda-files org-agenda-files)))
+       (todo "PLAN"
+             ((org-agenda-overriding-header "In Planning")
+              (org-agenda-todo-list-sublevels nil)
+              (org-agenda-files org-agenda-files)))
+       (todo "BACKLOG"
+             ((org-agenda-overriding-header "Project Backlog")
+              (org-agenda-todo-list-sublevels nil)
+              (org-agenda-files org-agenda-files)))
+       (todo "READY"
+             ((org-agenda-overriding-header "Ready for Work")
+              (org-agenda-files org-agenda-files)))
+       (todo "ACTIVE"
+             ((org-agenda-overriding-header "Active Projects")
+              (org-agenda-files org-agenda-files)))
+       (todo "COMPLETED"
+             ((org-agenda-overriding-header "Completed Projects")
+              (org-agenda-files org-agenda-files)))
+       (todo "CANCELED"
+             ((org-agenda-overriding-header "Cancelled Projects")
+              (org-agenda-files org-agenda-files))))))))
+
+;;;;; Agenda Jump to Dashboard
+(defun lem-jump-to-org-dashboard ()
+  (interactive)
+  (require 'org)
+  (org-agenda nil "d"))
+
+;;;;; Agenda Refresh
+;; automatically refresh the agenda after adding a task
+(defun lem-org-agenda-refresh ()
+  (interactive)
+  (when (get-buffer "*Org Agenda*")
+    (with-current-buffer "*Org Agenda*"
+      (org-agenda-redo)
+      (message "[org agenda] refreshed!"))))
+(add-hook 'org-capture-after-finalize-hook 'lem-org-agenda-refresh)
+
+;;;;; Hydra for Agenda
+;; Hydra for org agenda (graciously offered by Spacemacs)
+(with-eval-after-load 'org-agenda
+  (defhydra lem-hydra-org-agenda (:color pink :hint none)
+    "
+Org agenda (_q_uit)
+
+^Clock^      ^Visit entry^              ^Date^             ^Other^
+^-----^----  ^-----------^------------  ^----^-----------  ^-----^---------
+_ci_ in      _SPC_ in other window      _ds_ schedule      _gr_ reload
+_co_ out     _TAB_ & go to location     _dd_ set deadline  _._  go to today
+_cq_ cancel  _RET_ & del other windows  _dt_ timestamp     _gd_ go to date
+_cj_ jump    _o_   link                 _+_  do later      ^^
+^^           ^^                         _-_  do earlier    ^^
+^^           ^^                         ^^                 ^^
+^View^          ^Filter^                 ^Headline^         ^Toggle mode^
+^----^--------  ^------^---------------  ^--------^-------  ^-----------^----
+_vd_ day        _ft_ by tag              _ht_ set status    _tf_ follow
+_vw_ week       _fr_ refine by tag       _hk_ kill          _tl_ log
+_vt_ fortnight  _fc_ by category         _hr_ refile        _ta_ archive trees
+_vm_ month      _fh_ by top headline     _hA_ archive       _tA_ archive files
+_vy_ year       _fx_ by regexp           _h:_ set tags      _tr_ clock report
+_vn_ next span  _fd_ delete all filters  _hp_ set priority  _td_ diaries
+_vp_ prev span  ^^                       ^^                 ^^
+_vr_ reset      ^^                       ^^                 ^^
+^^              ^^                       ^^                 ^^
+"
+    ;; Entry
+    ("hA" org-agenda-archive-default)
+    ("hk" org-agenda-kill)
+    ("hp" org-agenda-priority)
+    ("hr" org-agenda-refile)
+    ("h:" org-agenda-set-tags)
+    ("ht" org-agenda-todo)
+    ;; Visit entry
+    ("o"   link-hint-open-link :exit t)
+    ("<tab>" org-agenda-goto :exit t)
+    ("TAB" org-agenda-goto :exit t)
+    ("SPC" org-agenda-show-and-scroll-up)
+    ("RET" org-agenda-switch-to :exit t)
+    ;; Date
+    ("dt" org-agenda-date-prompt)
+    ("dd" org-agenda-deadline)
+    ("+" org-agenda-do-date-later)
+    ("-" org-agenda-do-date-earlier)
+    ("ds" org-agenda-schedule)
+    ;; View
+    ("vd" org-agenda-day-view)
+    ("vw" org-agenda-week-view)
+    ("vt" org-agenda-fortnight-view)
+    ("vm" org-agenda-month-view)
+    ("vy" org-agenda-year-view)
+    ("vn" org-agenda-later)
+    ("vp" org-agenda-earlier)
+    ("vr" org-agenda-reset-view)
+    ;; Toggle mode
+    ("ta" org-agenda-archives-mode)
+    ("tA" (org-agenda-archives-mode 'files))
+    ("tr" org-agenda-clockreport-mode)
+    ("tf" org-agenda-follow-mode)
+    ("tl" org-agenda-log-mode)
+    ("td" org-agenda-toggle-diary)
+    ;; Filter
+    ("fc" org-agenda-filter-by-category)
+    ("fx" org-agenda-filter-by-regexp)
+    ("ft" org-agenda-filter-by-tag)
+    ("fr" org-agenda-filter-by-tag-refine)
+    ("fh" org-agenda-filter-by-top-headline)
+    ("fd" org-agenda-filter-remove-all)
+    ;; Clock
+    ("cq" org-agenda-clock-cancel)
+    ("cj" org-agenda-clock-goto :exit t)
+    ("ci" org-agenda-clock-in :exit t)
+    ("co" org-agenda-clock-out)
+    ;; Other
+    ("q" nil :exit t)
+    ("gd" org-agenda-goto-date)
+    ("." org-agenda-goto-today)
+    ("gr" org-agenda-redo)))
+
+;;;; Org Contrib
+(use-package org-contrib
+  :straight t
+  :after org
+  :config
+  ;; ignore export of headlines marked with :ignore: tag
+  (require 'ox-extra)
+  (ox-extras-activate '(ignore-headlines)))
+
+;;;; Org Export
+;; Useful base export settings
+(use-package ox
+  :straight (:type built-in)
+  :after org
+  :custom
+  ;; Don't use bad hyperref value
+  ;; https://emacs.stackexchange.com/a/46226/11934
+  (org-latex-hyperref-template nil)
+  ;; Export settings
+  (org-table-export-default-format "orgtbl-to-csv") ;; export for org-tables to csv
+  (org-export-with-smart-quotes t)
+  (org-export-with-broken-links t)
+  (org-export-async-debug t)
+  (org-html-postamble nil) ;; dont export postamble
+  (org-export-async-init-file nil)
+  (org-export-backends '(ascii beamer html icalendar latex odt pandoc hugo md))
+  ;; org v8 bundled with Emacs 24.4
+  (org-odt-preferred-output-format "docx")
+  :config
+  ;; Only OSX need below setup
+  (defun lem-setup-odt-org-convert-process ()
+    (interactive)
+    (let ((cmd "/Applications/LibreOffice.app/Contents/MacOS/soffice"))
+      (when (and (eq system-type 'darwin) (file-exists-p cmd))
+        ;; org v8
+        (setq org-odt-convert-processes '(("LibreOffice" "/Applications/LibreOffice.app/Contents/MacOS/soffice --headless --convert-to %f%x --outdir %d %i"))))))
+  (lem-setup-odt-org-convert-process))
+
+;;;; Org ID
+;; Use org ids for reference
+(use-package org-id
+  :straight nil
+  :after org
+  :custom
+  (org-id-locations-file (concat lem-cache-dir ".org-id-locations"))
+  (org-id-method 'ts) ;; use timestamp for id
+  (org-id-link-to-org-use-id 'create-if-interactive)) ;; create ids
+
+
+;;;; Org Modules
+(with-eval-after-load 'org
+;; Load additional org modules
+(add-to-list 'org-modules 'org-habit t)
+(add-to-list 'org-modules 'org-tempo t)
+(add-to-list 'org-modules 'org-protocol t)
+(when sys-mac
+  (add-to-list 'org-modules 'org-mac-link t)))
+
+;;;; Org TODO Keywords
+(customize-set-variable 'org-todo-keywords
+                        '((sequence "TODO(t)" "DOING(g)" "NEXT(n)" "WAITING(w@/!)" "MAYBE(m)" "SOMEDAY(s)" "|" "DONE(d)")
+                          (sequence "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELED(c@/!)")))
+
+;;;; Org Inline Tasks
+(use-package org-inlinetask :straight nil
+  :commands org-inlinetask-insert-task)
+
+;;;; Org Archive
+;; Tell org where to archive completed tasks
+(setq org-archive-location (concat org-directory "/org-archive/archived.org::datetree/"))
+
+;; Also tell org how to archive all the done tasks (DONE or CANCELED) in a file.
+;; From https://changelog.complete.org/archives/9877-emacs-3-more-on-org-mode
+;; Based on a stack overflow answer.
+;; See https://stackoverflow.com/a/27043756
+(defun lem-org-archive-done-tasks ()
+  (interactive)
+  (org-map-entries
+   (lambda ()
+     (org-archive-subtree)
+     (setq org-map-continue-from (outline-previous-heading)))
+   "/DONE" 'file)
+  (org-map-entries
+   (lambda ()
+     (org-archive-subtree)
+     (setq org-map-continue-from (outline-previous-heading)))
+   "/CANCELED" 'file))
+
+;;;; Org Refile
+;; Set refile settings.  I got a lot of help on this from Aaron Bieber's discussion.
+;; See https://blog.aaronbieber.com/2017/03/19/organizing-notes-with-refile.html.
+
+;; With the below settings, you can trigger Refile with C-c C-w in any Org file
+;; and get a completing read of all headings up to three levels deep in all
+;; files in org-agenda-files. You can also refile to the top header in a
+;; document and create new parents.
+(use-package org-refile
+  :straight nil
+  :after org
+  :custom
+  (org-refile-targets '((nil :maxlevel . 9)
+                        (org-agenda-files :maxlevel . 8)))
+  (org-refile-use-cache t)  ;; use cache for org refile
+  (org-refile-use-outline-path 'file)
+  (org-outline-path-complete-in-steps nil)
+  (org-refile-allow-creating-parent-nodes 'confirm))
+
+;;;; Open Files in Default Application
+;;Open files in their default applications (ms word being the prime example)
+(customize-set-variable 'org-file-apps
+                        '(("\\.docx\\'" . default)
+                          ("\\.mm\\'" . default)
+                          ("\\.x?html?\\'" . default)
+                          ("\\.pdf\\'" . emacs)
+                          (auto-mode . emacs)))
+
+;; Bookends is a citation manager for MacOS.
+;; Allow org to open Bookends links.
+(when sys-mac
+  (with-eval-after-load 'org
+    (org-add-link-type
+     "bookends" 'lem-follow-bookends-link)
+    (defun lem-follow-bookends-link (path)
+      "Run bookends link in org files."
+      (shell-command-to-string (concat "open bookends:" path)))))
+
+
+;;;; Org Functions
+;;;;; Org Emphasis Functions
+;; Adapted from https://emacs.stackexchange.com/a/14586
+;; See https://emacstil.com/til/2021/11/29/org-emphasize-dwim/
+(defun org-emphasize-dwim (&optional char)
+  (interactive)
+  (unless (region-active-p)
+    (lem-maybe-mark-word))
+  (org-emphasize char))
+
+(defun org-emphasize-with-verbatim-dwim ()
+  (interactive)
+  (org-emphasize-dwim ?=))
+
+(defun org-emphasize-with-code-dwim ()
+  (interactive)
+  (org-emphasize-dwim ?~))
+
+(defun lem--cursor-outside-of-any-word ()
+  (not (bounds-of-thing-at-point 'word)))
+
+(defun lem--cursor-at-beginning-of-a-word ()
+  (eq (point) (car (bounds-of-thing-at-point 'word))))
+
+(defun lem-maybe-mark-word ()
+  "Mark the current word. If cursor is outside of a word bounds, mark the empty position."
+  (interactive)
+  (unless (or (lem--cursor-outside-of-any-word) (lem--cursor-at-beginning-of-a-word))
+    (backward-word))
+  (unless (lem--cursor-outside-of-any-word)
+    (mark-word)))
+
+;;;;; Narrow & Advance/Retreat
+;; Functions to advance forwards or backwards through narrowed tree
+(defun lem-org-advance ()
+  (interactive)
+  (when (buffer-narrowed-p)
+    (goto-char (point-min))
+    (widen)
+    (org-forward-heading-same-level 1))
+  (org-narrow-to-subtree))
+
+(defun lem-org-retreat ()
+  (interactive)
+  (when (buffer-narrowed-p)
+    (goto-char (point-min))
+    (widen)
+    (org-backward-heading-same-level 1))
+  (org-narrow-to-subtree))
+
+;;;;; Clone and Narrow
+(defun lem-clone-buffer-and-narrow ()
+  "Clone buffer and narrow outline tree"
+  (interactive)
+  (let ((buf (clone-indirect-buffer-other-window nil nil)))
+    (with-current-buffer buf
+      (cond ((derived-mode-p 'org-mode)
+             (org-narrow-to-element))
+            ((derived-mode-p 'markdown-mode)
+             (markdown-narrow-to-subtree))))
+    (switch-to-buffer-other-window buf)))
+
+;;;;; Goto Org Files
+(defun lem-goto-org-files ()
+  "goto org-files directory"
+  (interactive)
+  (let ((default-directory org-directory))
+    (call-interactively 'find-file)))
+(defun lem-goto-inbox.org ()
+  "goto org-inbox"
+  (interactive)
+  (find-file (concat org-directory "inbox.org")))
+(defun lem-goto-todo.org ()
+  "goto org-todo"
+  (interactive)
+  (find-file (concat org-directory "todo.org")))
+(defun lem-goto-conferences.org ()
+  "goto org-conferences"
+  (interactive)
+  (find-file (concat org-directory "conferences.org")))
+(defun lem-goto-referee-reports.org ()
+  "goto org referee reports"
+  (interactive)
+  (find-file (concat org-directory "referee-reports.org")))
+(defun lem-goto-reference.org ()
+  "goto org reference notes"
+  (interactive)
+  (find-file (concat org-directory "reference.org")))
+(defun lem-goto-someday.org ()
+  "goto org-someday"
+  (interactive)
+  (find-file (concat org-directory "someday.org")))
+(defun lem-goto-reading.org ()
+  "goto reading list"
+  (interactive)
+  (find-file (concat org-directory "reading.org")))
+(defun lem-goto-writing.org ()
+  "goto writing list"
+  (interactive)
+  (find-file (concat org-directory "writing.org")))
+(defun lem-goto-teaching.org ()
+  "goto teaching file"
+  (interactive)
+  (find-file (concat org-directory "teaching.org")))
+
+;;;;; Export Headings as Seperate Files
+;; export headlines to separate files
+;; http://pragmaticemacs.com/emacs/export-org-mode-headlines-to-separate-files/ ; see also:
+;; http://emacs.stackexchange.com/questions/2259/how-to-export-top-level-headings-of-org-mode-buffer-to-separate-files
+
+;; FIXME: neither of these functions work right now for some reason.
+(defun lem-org-export-headlines-to-docx ()
+  "Export all subtrees that are *not* tagged with :noexport: to
+    separate docx files.
+
+    Subtrees that do not have the :EXPORT_FILE_NAME: property set
+    are exported to a filename derived from the headline text."
+  (interactive)
+  (save-buffer)
+  (let ((modifiedp (buffer-modified-p)))
+    (save-excursion
+      (goto-char (point-min))
+      (goto-char (re-search-forward "^*"))
+      (set-mark (line-beginning-position))
+      (goto-char (point-max))
+      (org-map-entries
+       (lambda ()
+         (let ((export-file (org-entry-get (point) "EXPORT_FILE_NAME")))
+           (unless export-file
+             (org-set-property
+              "EXPORT_FILE_NAME"
+              (replace-regexp-in-string " " "_" (nth 4 (org-heading-components)))))
+           (deactivate-mark)
+           (org-pandoc-export-to-docx nil t)
+           (unless export-file (org-delete-property "EXPORT_FILE_NAME"))
+           (set-buffer-modified-p modifiedp)))
+       "-noexport" 'region-start-level)))
+  (shell-command-to-string "open ~/Dropbox/Work/Comments/Referee-Reports/ref-report.docx"))
+
+(defun lem-org-export-headlines-to-pdf ()
+  "Export all subtrees that are *not* tagged with :noexport: to
+    separate pdf files.
+
+    Subtrees that do not have the :EXPORT_FILE_NAME: property set
+    are exported to a filename derived from the headline text."
+  (interactive)
+  ;; (require 'ox-pandoc)
+  (save-buffer)
+  (let ((modifiedp (buffer-modified-p)))
+    (save-excursion
+      (goto-char (point-min))
+      (goto-char (re-search-forward "^*"))
+      (set-mark (line-beginning-position))
+      (goto-char (point-max))
+      (org-map-entries
+       (lambda ()
+         (let ((export-file (org-entry-get (point) "EXPORT_FILE_NAME")))
+           (unless export-file
+             (org-set-property
+              "EXPORT_FILE_NAME"
+              (replace-regexp-in-string " " "_" (nth 4 (org-heading-components)))))
+           (deactivate-mark)
+           (org-latex-export-to-pdf nil t nil nil '(:latex-class "org-notes"))
+           ;; (org-pandoc-export-to-latex-pdf nil t)
+           (unless export-file (org-delete-property "EXPORT_FILE_NAME"))
+           (set-buffer-modified-p modifiedp)))
+       "-noexport" 'region-start-level))))
+
+;;;;; Export Top Level Trees to File
+;; From a useful [[https://emacs.stackexchange.com/questions/27226/how-to-export-top-level-trees-in-an-org-file-to-corresponding-files][stack exchange]] post
+(defun lem-org-map-entries (org-file in-tags func)
+  (let ((tags (if (stringp in-tags)
+                  (list in-tags)
+                in-tags)))
+
+    (with-temp-buffer
+      (org-mode)
+      (insert-file-contents org-file-main)
+
+      ;; Execute func at each heading that matches tags.
+      (while (< (point) (point-max))
+
+        ;; If find a heading...
+        (and (search-forward-regexp "^\* " nil "end")
+
+             ;; ...that matches the given tags...
+             (seq-reduce
+              (lambda(a b) (and a b))
+              (mapcar
+               (lambda (tag)
+                 (beginning-of-line)
+                 (search-forward-regexp
+                  (concat ":" tag ":") (line-end-position) "end"))
+               tags)
+              t)
+
+             ;; ... then execute given function with cursor at beginning of
+             ;; heading.
+             (progn
+               (beginning-of-line)
+               (save-excursion
+                 (funcall func))
+               (end-of-line)))))))
+
+;;;;; Org demote/promote region
+(defun lem-demote-everything (number beg end)
+  "Add a NUMBER of * to all headlines between BEG and END.
+    Interactively, NUMBER is the prefix argument and BEG and END are
+    the region boundaries."
+  (interactive "p\nr")
+  (save-excursion
+    (save-restriction
+      (save-match-data
+        (widen)
+        (narrow-to-region beg end)
+        (goto-char (point-min))
+        (let ((string (make-string number ?*)))
+          (while (search-forward-regexp "^\\*" nil t)
+            (insert string)))))))
+
+;;;;; Org Hide Property Drawers
+;; From [[https://www.reddit.com/r/emacs/comments/9htd0r/how_to_completely_hide_the_properties_drawer_in/e6fehiw][Reddit]]
+
+(defun org-toggle-properties ()
+  "Toggle visibility of properties in current header if it exists."
+  (save-excursion
+    (when (not (org-at-heading-p))
+      (org-previous-visible-heading 1))
+    (when (org-header-property-p)
+      (let* ((a (re-search-forward "\n\\:" nil t)))
+        (if (outline-invisible-p (point))
+            (outline-show-entry)
+          (org-cycle-hide-drawers 'all))))))
+
+;;;;; Org Return DWIM
+;; Note that i've disabled this for now as it was causing issues
+;; https://gist.github.com/alphapapa/61c1015f7d1f0d446bc7fd652b7ec4fe
+(defun lem-org-return (&optional ignore)
+  "Add new list item, heading or table row with RET.
+    A double return on an empty element deletes it. Use a prefix arg
+    to get regular RET. "
+  ;; See https://gist.github.com/alphapapa/61c1015f7d1f0d446bc7fd652b7ec4fe and
+  ;; http://kitchingroup.cheme.cmu.edu/blog/2017/04/09/A-better-return-in-org-mode/
+  (interactive "P")
+  (if ignore
+      (org-return)
+    (cond ((eq 'link (car (org-element-context)))
+           ;; Open links like usual
+           (org-open-at-point-global))
+          ((and (fboundp 'org-inlinetask-in-task-p) (org-inlinetask-in-task-p))
+           ;; It doesn't make sense to add headings in inline tasks. Thanks Anders
+           ;; Johansson!
+           (org-return))
+          ((org-at-item-checkbox-p)
+           ;; Add checkboxes
+           (org-insert-todo-heading nil))
+          ((and (org-in-item-p) (not (bolp)))
+           ;; Lists end with two blank lines, so we need to make sure we are also not
+           ;; at the beginning of a line to avoid a loop where a new entry gets
+           ;; created with only one blank line.
+           (if (org-element-property :contents-begin (org-element-context))
+               (org-insert-heading)
+             (beginning-of-line)
+             (delete-region (line-beginning-position) (line-end-position))
+             (org-return)))
+          ((org-at-heading-p)
+           (if (s-present? (org-element-property :title (org-element-context)))
+               (progn
+                 (org-end-of-meta-data)
+                 (org-insert-heading))
+             (beginning-of-line)
+             (delete-region (line-beginning-position) (line-end-position))))
+          ((org-at-table-p)
+           (if (--any? (string-empty-p it)
+                       (nth (- (org-table-current-dline) 1) (org-table-to-lisp)))
+               (org-return)
+             ;; Empty row
+             (beginning-of-line)
+             (delete-region (line-beginning-position) (line-end-position))
+             (org-return)))
+          (t
+           (org-return)))))
+
+;; (general-define-key :keymaps 'org-mode-map "RET" #'lem-org-return)
+
+;;;;; Org Create Check Box From List Item
+;; A useful macro for converting list items to checkboxes
+(fset 'lem-org-checkbox-from-list
+      [?a ?  ?\[ ?  ?\] escape ?\M-x return])
+
+;;;;; Org link Syntax
+(defun org-update-link-syntax (&optional no-query)
+  "Update syntax for links in current buffer.
+Query before replacing a link, unless optional argument NO-QUERY
+is non-nil."
+  (interactive "P")
+  (org-with-point-at 1
+    (let ((case-fold-search t))
+      (while (re-search-forward "\\[\\[[^]]*?%\\(?:2[05]\\|5[BD]\\)" nil t)
+        (let ((object (save-match-data (org-element-context))))
+          (when (and (eq 'link (org-element-type object))
+                     (= (match-beginning 0)
+                        (org-element-property :begin object)))
+            (goto-char (org-element-property :end object))
+            (let* ((uri-start (+ 2 (match-beginning 0)))
+                   (uri-end (save-excursion
+                              (goto-char uri-start)
+                              (re-search-forward "\\][][]" nil t)
+                              (match-beginning 0)))
+                   (uri (buffer-substring-no-properties uri-start uri-end)))
+              (when (or no-query
+                        (y-or-n-p
+                         (format "Possibly obsolete URI syntax: %S.  Fix? "
+                                 uri)))
+                (setf (buffer-substring uri-start uri-end)
+                      (org-link-escape (org-link-decode uri)))))))))))
+
+
+;;;;; Org Table Wrap
+;; see https://emacs.stackexchange.com/a/30871/11934
+(defun org-table-wrap-to-width (width)
+  "Wrap current column to WIDTH."
+  (interactive (list (read-number "Enter column width: ")))
+  (org-table-check-inside-data-field)
+  (org-table-align)
+
+  (let (cline (ccol (org-table-current-column)) new-row-count (more t))
+    (org-table-goto-line 1)
+    (org-table-goto-column ccol)
+
+    (while more
+      (setq cline (org-table-current-line))
+
+      ;; Cut current field
+      (org-table-copy-region (point) (point) 'cut)
+
+      ;; Justify for width
+      (setq org-table-clip
+            (mapcar 'list (org-wrap (caar org-table-clip) width nil)))
+
+      ;; Add new lines and fill
+      (setq new-row-count (1- (length org-table-clip)))
+      (if (> new-row-count 0)
+          (org-table-insert-n-row-below new-row-count))
+      (org-table-goto-line cline)
+      (org-table-goto-column ccol)
+      (org-table-paste-rectangle)
+      (org-table-goto-line (+ cline new-row-count))
+
+      ;; Move to next line
+      (setq more (org-table-goto-line (+ cline new-row-count 1)))
+      (org-table-goto-column ccol))
+
+    (org-table-goto-line 1)
+    (org-table-goto-column ccol)))
+
+(defun org-table-insert-n-row-below (n)
+  "Insert N new lines below the current."
+  (let* ((line (buffer-substring (point-at-bol) (point-at-eol)))
+         (new (org-table-clean-line line)))
+    ;; Fix the first field if necessary
+    (if (string-match "^[ \t]*| *[#$] *|" line)
+        (setq new (replace-match (match-string 0 line) t t new)))
+    (beginning-of-line 2)
+    (setq new
+          (apply 'concat (make-list n (concat new "\n"))))
+    (let (org-table-may-need-update) (insert-before-markers new))  ;;; remove?
+    (beginning-of-line 0)
+    (re-search-forward "| ?" (point-at-eol) t)
+    (and (or org-table-may-need-update org-table-overlay-coordinates) ;;; remove?
+         (org-table-align))
+    (org-table-fix-formulas "@" nil (1- (org-table-current-dline)) n)))
+
+;;;;; Org Export Last Subtree
+;; bind f5 to keyboard macro of export-last-subtree
+(fset 'export-last-subtree
+      "\C-u\C-c\C-e")
+
+(eval-after-load "org"
+  '(progn
+     (define-key org-mode-map (kbd "<f5>") 'export-last-subtree)))
+
+
+;;;;; Org Tag Selection
+
+(defun lem-org-select-tags-completing-read ()
+  "Select tags to add to headline."
+  (interactive)
+  (let* ((current (org-get-tags (point)))
+         (selected (completing-read-multiple "Select org tag(s): " (org-get-buffer-tags))))
+    (alet (-uniq (append (-difference current selected)
+                         (-difference selected current)))
+      (org-set-tags it))))
+
+;;;;; Org Copy Link
+;; see https://emacs.stackexchange.com/a/63038/11934
+(defun lem-org-link-copy-at-point ()
+  (interactive)
+  (save-excursion
+    (let* ((ol-regex "\\[\\[.*?:.*?\\]\\(\\[.*?\\]\\)?\\]")
+           (beg (re-search-backward "\\[\\["))
+           (end (re-search-forward ol-regex))
+           (link-string (buffer-substring-no-properties (match-beginning 0) (match-end 0))))
+      (kill-new link-string)
+      (message "Org link %s is copied." link-string))))
+
+;;;;; Remove Org Links
+;; https://emacs.stackexchange.com/a/10714/11934
+(defun lem-org-replace-link-by-link-description ()
+  "Replace an org link by its description or, if empty, its address"
+  (interactive)
+  (if (org-in-regexp org-link-bracket-re 1)
+      (save-excursion
+        (let ((remove (list (match-beginning 0) (match-end 0)))
+              (description
+               (if (match-end 2)
+                   (org-match-string-no-properties 2)
+                 (org-match-string-no-properties 1))))
+          (apply 'delete-region remove)
+          (insert description)))))
+
+;;;;; Uncheck Org boxes
+;;see https://www.reddit.com/r/emacs/comments/r107bg/comment/hlx54vf/?utm_source=share&utm_medium=web2x&context=3
+(defun lem-copy-and-uncheck (start end)
+  "copy a region of regularly repeating checkbox items forward from
+one week to the next, unchecking them at the same time"
+  (interactive "r")
+  (kill-new (replace-regexp-in-string (rx "[X]") "[ ]" (buffer-substring start end)))
+  (setq deactivate-mark t))
+
+;;;;; Org Archive
+(defun lem-org-archive-done-tasks ()
+  (interactive)
+  (org-map-entries
+   (lambda ()
+     (org-archive-subtree)
+     (setq org-map-continue-from (outline-previous-heading)))
+   "/DONE" 'agenda))
+
+;;;;; Org Tree/Heading to New File
+(defun lem-org-tree-to-new-file ()
+  (interactive)
+  "Move an org subtree to a new file"
+  (org-copy-subtree nil t)
+  (find-file-other-window
+   (read-file-name "Move subtree to file:" ))
+  (org-paste-subtree))
+
+;;;;; Org Wrap in Block Template
+;; A helpful function I found for wrapping text in a block template.
+;; http://pragmaticemacs.com/emacs/wrap-text-in-an-org-mode-block/
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; function to wrap blocks of text in org templates                       ;;
+;; e.g. latex or src etc                                                  ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun org-block-wrap ()
+  "Make a template at point."
+  (interactive)
+  (if (org-at-table-p)
+      (call-interactively 'org-table-rotate-recalc-marks)
+    (let* ((choices '(
+                      ("a" . "ascii")
+                      ("c" . "comment")
+                      ("C" . "center")
+                      ("e" . "example")
+                      ("E" . "src emacs-lisp")
+                      ("h" . "html")
+                      ("l" . "laTeX")
+                      ("n" . "notes")
+                      ("q" . "quote")
+                      ("s" . "src")
+                      ("v" . "verse")
+                      ))
+           (key
+            (key-description
+             (vector
+              (read-key
+               (concat (propertize "Template type: " 'face 'minibuffer-prompt)
+                       (mapconcat (lambda (choice)
+                                    (concat (propertize (car choice) 'face 'font-lock-type-face)
+                                            ": "
+                                            (cdr choice)))
+                                  choices
+                                  ", ")))))))
+      (let ((result (assoc key choices)))
+        (when result
+          (let ((choice (cdr result)))
+            (cond
+             ((region-active-p)
+              (let ((start (region-beginning))
+                    (end (region-end)))
+                (goto-char end)
+                (insert "#+end_" choice "\n")
+                (goto-char start)
+                (insert "#+begin_" choice "\n")))
+             (t
+              (insert "#+begin_" choice "\n")
+              (save-excursion (insert "#+end_" choice))))))))))
+
+
+;;;;; Org Export Body to HTML Buffer
+(defun lem-org-export-to-buffer-html-as-body (&optional async subtreep visible-only body-only ext-plist)
+  "Export org buffer body to html"
+  (interactive)
+  (org-export-to-buffer 'html "*Org HTML Export*"
+    async body-only ext-plist (lambda () (html-mode)))
+  (lem-copy-whole-buffer-to-clipboard)
+  (delete-windows-on "*Org HTML Export*")
+  (message "HTML copied!"))
+;; (lem-previous-user-buffer))
+
+;;; Provide Org-Settings
+(provide 'lem-setup-org-settings)
+;;; lem-setup-org-settings.el ends here
+
+#+end_src
 **** ox-pandoc
 #+begin_src emacs-lisp
   (use-package ox-pandoc
@@ -1915,8 +3499,8 @@ Settings about org-mode & extensions.
   ;; `global-prettify-symbols-mode' is provided by prog-mode.el
   (use-package prog-mode
     :ensure nil
-    :hook (global-prettify-symbols-mode t))
-  (add-hook ' 'goto-address-prog-mode)
+    :config (global-prettify-symbols-mode t))
+  (add-hook 'prog-mode-hook 'goto-address-prog-mode)
 
 #+end_src
 
@@ -1985,13 +3569,30 @@ Settings about org-mode & extensions.
                               (";;;;;;; " . 5))))))
 #+end_src
 
-**** TODO flymake | flycheck
+**** TODO COMMENT flymake | flycheck
 use aspell with ispell & flycheck
 
 ;; flyspell-mode does spell-checking on the fly as you type
 (require 'flyspell)
 (setq ispell-program-name "aspell" ; use aspell instead of ispell
 ispell-extra-args '("--sug-mode=ultra"))
+
+#+begin_src emacs-lisp
+  (use-package flymake
+    :straight (:type built-in)
+    :hook (prog-mode . flymake-mode)
+    :custom
+    (flymake-fringe-indicator-position 'left-fringe)
+    (flymake-suppress-zero-counters t)
+    (flymake-start-on-flymake-mode t)
+    (flymake-no-changes-timeout nil)
+    (flymake-start-on-save-buffer t)
+    (flymake-proc-compilation-prevents-syntax-check t)
+    (flymake-wrap-around nil)
+    ;; Customize mode-line
+    (flymake-mode-line-counter-format '("" flymake-mode-line-error-counter flymake-mode-line-warning-counter flymake-mode-line-note-counter ""))
+    (flymake-mode-line-format '(" " flymake-mode-line-exception flymake-mode-line-counters)))
+#+end_src
 
 **** TODO auto-yasnippets
 
@@ -2104,6 +3705,53 @@ ispell-extra-args '("--sug-mode=ultra"))
 (add-hook 'after-save-hook
 'executable-make-buffer-file-executable-if-script-p)
           
+**** TODO COMMENT rainbow-delimiters & rainbow-identifiers
+#+begin_src emacs-lisp
+  ;;;; Delimiters & Identifiers
+  ;;;;; Visualization of Delimiters (Rainbow Delimiters)
+  ;; https://github.com/Fanael/rainbow-delimiters Useful package that will highlight
+  ;; delimiters such as parentheses, brackets or braces according to their depth. Each
+  ;; successive level is highlighted in a different color. This makes it easy to spot
+  ;; matching delimiters, orient yourself in the code, and tell which statements are at
+  ;; a given depth.
+  (use-package rainbow-delimiters
+    :commands rainbow-delimiters-mode
+    :init
+    (add-hook 'prog-mode-hook 'rainbow-delimiters-mode))
+
+  ;; https://github.com/Fanael/rainbow-identifiers Rainbow identifiers mode is an Emacs
+  ;; minor mode providing highlighting of identifiers based on their names. Each
+  ;; identifier gets a color based on a hash of its name.
+  (use-package rainbow-identifiers
+    :commands rainbow-identifiers-mode)
+#+end_src
+
+**** TODO embrace ??
+
+**** TODO COMMENT highlight-indent-guides-mode
+#+begin_src emacs-lisp
+  (use-package highlight-indent-guides
+    :hook (prog-mode . highlight-indent-guides-mode)
+    :config
+    (setq-default highlight-indent-guides-method 'character
+                  highlight-indent-guides-character ?\│
+                  ;; default is \x2502 but it is very slow on Mac
+                  ;; highlight-indent-guides-character ?\xFFE8
+                  highlight-indent-guides-responsive 'top
+                  highlight-indent-guides-auto-odd-face-perc 5
+                  highlight-indent-guides-auto-even-face-perc 5
+                  highlight-indent-guides-auto-character-face-perc 15
+                  highlight-indent-guides-auto-enabled t))
+#+end_src
+
+**** TODO flymake-collection
+
+**** TODO multi-compile
+
+**** TODO bug-hunter
+
+**** TODO esup
+
 *** TODO COMMENT program languages
 **** TODO python
 ***** cabin's
@@ -2413,8 +4061,6 @@ edit same text in one buffer or region
 
 *** TODO xah-fly-keys | ergoemacs-mode | hydra | meow
 
-*** TODO git gutter & git timemachine
-
 *** TODO dump-jump
 
 *** TODO emmet-mode
@@ -2430,6 +4076,93 @@ edit same text in one buffer or region
 *** TODO dimmer
 
 *** TODO diredfl & diff-hl
+(use-package diff-hl
+  :hook
+  ((prog-mode . diff-hl-mode)
+   (text-mode . diff-hl-mode)
+   (dired-mode . diff-hl-dired-mode)
+   (magit-pre-refresh . diff-hl-magit-pre-refresh)
+   (magit-post-refresh . diff-hl-magit-post-refresh))
+  :custom
+  (diff-hl-side 'left)
+  (diff-hl-fringe-bmp-function 'cpm--diff-hl-fringe-bmp-from-type)
+  (diff-hl-fringe-face-function 'cpm--diff-hl-fringe-face-from-type)
+  (diff-hl-margin-symbols-alist
+   '((insert . "┃")
+     (delete . "┃")
+     (change . "┃")
+     (unknown . "?")
+     (ignored . "i")))
+  :init
+  (defun cpm--diff-hl-fringe-face-from-type (type _pos)
+    (intern (format "cpm--diff-hl-%s" type)))
+
+  (defun cpm--diff-hl-fringe-bmp-from-type(type _pos)
+    (intern (format "cpm--diff-hl-%s" type)))
+
+  (defun cpm--diff-hl-set-render-mode ()
+    (diff-hl-margin-mode (if window-system -1 1)))
+  :config
+  (diff-hl-margin-mode 1)
+  (define-fringe-bitmap 'diff-hl-insert
+    [#b00000011] nil nil '(center repeated))
+  (define-fringe-bitmap 'diff-hl-change
+    [#b00000011] nil nil '(center repeated))
+  (define-fringe-bitmap 'diff-hl-delete
+    [#b00000011] nil nil '(center repeated)))
+    
+*** TODO COMMENT dired-narrow & dired-quick-sort
+#+begin_src emacs-lisp
+;;;; Narrow Dired to Match Filter
+(use-package dired-narrow
+  :bind* (:map dired-mode-map
+          ("/" . dired-narrow)))
+
+;;;; Dired Sort
+(use-package dired-quick-sort
+  :bind* (:map dired-mode-map
+          ("s" . hydra-dired-quick-sort/body)))
+#+end_src
+
+*** TODO COMMENT peep-dired
+#+begin_src emacs-lisp
+;;;; Peep Dired
+(use-package peep-dired
+  :commands (peep-dired)
+  :bind* (:map dired-mode-map
+          ("P" . peep-dired)
+          :map peep-dired-mode-map
+          ("j"    . peep-dired-next-file)
+          ("k"    . peep-dired-prev-file)
+          ("RET"  . lem-peep-dired-open)
+          ("TAB"  . lem-other-window))
+  :config
+  ;; helper function for opening files in full window
+  (defun lem-peep-dired-open ()
+    "open files from peep-dired & clean-up"
+    (interactive)
+    (peep-dired-kill-buffers-without-window)
+    (dired-find-file)
+    (delete-other-windows))
+  (setq peep-dired-ignored-extensions '("mkv" "iso" "mp4" "pdf" "gif"))
+  (setq peep-dired-cleanup-eagerly nil)
+  (setq peep-dired-enable-on-directories t)
+  (setq peep-dired-cleanup-on-disable t))
+#+end_src
+
+*** TODO COMMENT dired-ranger
+#+begin_src emacs-lisp
+;;;; Dired Ranger
+;; https://github.com/Fuco1/dired-hacks#dired-ranger
+;; Very helpful way of copying/moving files
+;; Note that to move first you need to copy the file and then go to the target directory and move
+(use-package dired-ranger
+  :after dired
+  :bind (:map dired-mode-map
+         ("s-c"  . dired-ranger-copy)
+         ("s-m"  . dired-ranger-move)
+         ("s-v"  . dired-ranger-paste)))
+#+end_src
 
 *** TODO scratch
 
@@ -2443,7 +4176,25 @@ edit same text in one buffer or region
 
 *** TODO highlight-escape-sequences
 
-*** TODO git-blame | git-modes | git-timemachine | git-link | git-commit
+*** TODO COMMENT git-blame | git-modes | git-timemachine | git-link | git-commit | git-gutter | gited
+#+begin_src emacs-lisp
+;; settings for committing using magit
+(use-package git-commit
+  :after magit
+  :hook (git-commit-mode . cpm/git-commit-auto-fill-everywhere)
+  :custom (git-commit-summary-max-length 50)
+  :preface
+  (defun cpm/git-commit-auto-fill-everywhere ()
+    "Ensures that the commit body does not exceed 80 characters."
+    (setq fill-column 80)
+    (setq-local comment-auto-fill-only-comments nil))
+  :config
+  (with-eval-after-load 'meow
+    (add-hook 'git-commit-mode-hook
+              (lambda ()
+                (meow-insert-mode)))))
+#+end_src
+
 ;;; init-git.el --- Git SCM support -*- lexical-binding: t -*-
 ;;; Commentary:
 
@@ -2592,8 +4343,67 @@ edit same text in one buffer or region
 
 *** TODO popper
 
-*** TODO magit & transient
+*** TODO COMMENT magit & transient & magit-todos & vdiff-magit
+#+begin_src emacs-lisp
+    ;;;; Magit
+  (use-package magit
+    :commands
+    (magit-blame-mode
+     magit-commit
+     magit-diff
+     magit-log
+     magit-status)
+    :hook (git-commit-mode . turn-on-flyspell)
+    :bind ((:map magit-log-mode-map
+                 ;; Keybindings for use with updating packages interactively
+                 ("Q" . #'exit-recursive-edit)))
+    :init
+    ;; Suppress the message we get about "Turning on
+    ;; magit-auto-revert-mode" when loading Magit.
+    (setq magit-no-message '("Turning on magit-auto-revert-mode..."))
+    :config
+    (setq magit-log-margin '(t "%Y-%m-%d.%H:%M:%S "  magit-log-margin-width nil 18))
+    (setq magit-refresh-status-buffer t)
+    ;; Set git for macos & homebrew
+    (if (and sys-mac homebrew)
+        (setq magit-git-executable (concat homebrew "git"))
+      (setq magit-git-executable "/usr/bin/git"))
+    ;; Fine grained diffs
+    (setq magit-diff-refine-hunk t)
+    ;; control magit initial visibility
+    (setq magit-section-initial-visibility-alist
+          '((stashes . hide) (untracked . hide) (unpushed . hide) ([unpulled status] . show)))
+    (global-git-commit-mode t) ; use emacs as editor for git commits
 
+
+    ;; refresh status buffer
+    (add-hook 'after-save-hook 'magit-after-save-refresh-status t)
+    ;; no magit header line as it conflicts w/bespoke-modeline
+    (advice-add 'magit-set-header-line-format :override #'ignore)
+    ;; display magit setting
+    (setq magit-display-buffer-function #'lem-display-magit-in-other-window)
+    ;; (setq magit-display-buffer-function #'lem-magit-display-buffer-pop-up-frame)
+    )
+
+  ;; optional: display magit status in new frame
+  (defun lem-magit-display-buffer-pop-up-frame (buffer)
+    (if (with-current-buffer buffer (eq major-mode 'magit-status-mode))
+        (display-buffer buffer
+                        '((display-buffer-reuse-window
+                           display-buffer-pop-up-frame)
+                          (reusable-frames . t)))
+      (magit-display-buffer-traditional buffer)))
+
+  ;; optional: display magit in other window & create one if only 1 window
+  (defun lem-display-magit-in-other-window (buffer)
+    (if (one-window-p)
+        (progn
+          (split-window-right)
+          (other-window 1)
+          (display-buffer buffer
+                          '((display-buffer-reuse-window))))
+      (magit-display-buffer-traditional buffer)))
+#+end_src
 *** TODO COMMENT imenu-list
 #+begin_src emacs-lisp
 ;;;; Imenu list outline
@@ -2606,6 +4416,46 @@ edit same text in one buffer or region
         imenu-list-auto-resize t
         imenu-list-position 'left))
 #+end_src
+
+*** TODO COMMENT tab-bookmark & tabspaces
+#+begin_src emacs-lisp
+;;;; Tab Bookmark
+;; Bookmark window configurations in a tab
+;; NOTE: would be good to get this working with tabspaces
+(use-package tab-bookmark
+  :straight (:type git :host github :repo "minad/tab-bookmark")
+  :commands (tab-bookmark tab-bookmark-open)
+  :bind (:map project-prefix-map
+         ("m" . tab-bookmark)))
+
+;;;; Tab Workspaces
+
+(use-package tabspaces
+  :straight (:type git :host github :repo "mclear-tools/tabspaces")
+  :hook (after-init . tabspaces-mode)
+  ;; Add some functions to the project map
+  :bind (:map project-prefix-map
+         ("p" . tabspaces-open-or-create-project-and-workspace))
+  :custom
+  (tabspaces-use-filtered-buffers-as-default t)
+  (tabspaces-default-tab "Home")
+  :config
+  (defun lem--consult-tabspaces ()
+    "Deactivate isolated buffers when not using tabspaces."
+    (require 'consult)
+    (cond (tabspaces-mode
+           ;; hide full buffer list (still available with "b")
+           (consult-customize consult--source-buffer :hidden t :default nil)
+           (add-to-list 'consult-buffer-sources 'consult--source-workspace))
+          (t
+           (consult-customize consult--source-buffer :hidden nil :default t)
+           (setq consult-buffer-sources (remove #'consult--source-workspace consult-buffer-sources)))))
+  (add-hook 'tabspaces-mode-hook #'lem--consult-tabspaces))
+#+end_src
+
+*** TODO pandoc-mode
+
+*** TODO palimpsest
 
 * COMMENT packages may useful later
 ** TODO ibuffer-vc
@@ -3060,6 +4910,14 @@ Windows external keyboard from time to time."
 (use-package s        :straight t :defer 2)
 ;; APIs for files & directories
 (use-package f        :straight t :defer 2)
+#+end_src
+
+** switch to previous buffer
+#+begin_src emacs-lisp
+  (defun inn/switch-to-previous-buffer ()
+    (interactive)
+    (switch-to-buffer (other-buffer (current-buffer) 1)))
+  (global-set-key (kbd "C-<tab>") #'inn/switch-to previous-buffer)
 #+end_src
 
 * /buffer functions & variables/
