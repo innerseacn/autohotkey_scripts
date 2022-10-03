@@ -1,4 +1,4 @@
-#+STARTUP: overview num indent show2levels
+#+STARTUP: overview num indent show2levels logdone
 #+TODO: TODO(t) DONE
 #+TODO: VERBOSE-ON VERBOSE-OFF |
 #+TODO: BASIC SUPER |
@@ -40,6 +40,14 @@ Don't change or move this block!!!
 #+BEGIN_SRC emacs-lisp :comments no
   ;; -*- lexical-binding: t; -*-
 #+END_SRC
+** TODO true init time
+#+begin_src emacs-lisp
+  (defconst emacs-start-time (current-time))
+  (add-hook 'emacs-startup-hook
+            (lambda ()
+              (message "True init time is %s."
+                       (float-time (time-since emacs-start-time)))))
+#+end_src
 
 ** GC stuff [from tenon emacs]
 For speed up the startup, please do NOT forget reset it to default
@@ -49,7 +57,7 @@ after Emacs after-init-hook, or it may cause freezes.
   (add-hook 'emacs-startup-hook #'(lambda () (setq gc-cons-threshold 800000)))
 #+end_src
 
-** TODO COMMENT [from centaur emacs] :uncomment:when:test:OK:
+** COMMENT [from centaur emacs] :uncomment:when:stable:
 Suppress flashing at startup
 #+begin_src emacs-lisp
   (setq-default inhibit-redisplay t
@@ -90,7 +98,7 @@ Suppress flashing at startup
           (fullscreen . fullboth)))
 
   ;; Loads a nice blue theme, avoids the white screen flash on startup.
-  ;; (load-theme 'modus-vivendi t)
+  (load-theme 'modus-vivendi t)
   #+end_src
 
 ** [from lambda emacs]
@@ -114,7 +122,7 @@ Don't change or move this block!!!
   ;; -*- lexical-binding: t; -*-
 #+END_SRC
 
-** /profile startup (should be commented out when stable)/
+** /profile startup/ :comment:when:stable:
 Profile emacs startup
 #+begin_src emacs-lisp
   (add-hook 'emacs-startup-hook
@@ -168,6 +176,7 @@ Allow access from EMACSCLIENT_TRAMP
    '(auto-window-vscroll nil)
    '(abbrev-suggest t)
    '(bidi-paragraph-direction 'left-to-right)
+   '(bookmark-save-flag 1)
    '(completion-cycle-threshold 3)
    '(create-lockfiles nil)
    '(describe-bindings-outline t)
@@ -295,8 +304,8 @@ Backup settings.
   (global-set-key (kbd "C-'") #'goto-last-change)
   (global-set-key (kbd "C-\"") #'goto-last-change-reverse)
   (global-set-key [remap just-one-space] #'cycle-spacing)
-  (global-set-key (kbd "C-`") #'previous-buffer)
-  (global-set-key (kbd "C-<tab>") #'next-buffer)
+  (global-set-key (kbd "C-`") #'next-buffer)
+  (global-set-key (kbd "C-<tab>") #'previous-buffer)
   (global-set-key (kbd "M-u") 'upcase-dwim)
   (global-set-key (kbd "M-l") 'downcase-dwim)
   (global-set-key (kbd "M-c") 'capitalize-dwim)
@@ -433,23 +442,27 @@ From purcel's.
 #+end_src
 
 ** package settings
-*** package initialize & load-path
+*** TODO [about load-path and package-initialize] package initialize & load-path
+1. comment load-path
+2. package-initialize add 'noactivate
+3. package-initialize add message function
 #+BEGIN_SRC emacs-lisp
-  (let ((default-directory (expand-file-name "elpa" user-emacs-directory)))
-    (normal-top-level-add-subdirs-to-load-path))
+    ;; (let ((default-directory (expand-file-name "elpa" user-emacs-directory)))
+      ;; (normal-top-level-add-subdirs-to-load-path))
 
-  (setq package-archives '(("gnu"   . "http://mirrors.bfsu.edu.cn/elpa/gnu/")
-                           ("melpa" . "http://mirrors.bfsu.edu.cn/elpa/melpa/")
-                           ("Org" . "http://mirrors.bfsu.edu.cn/elpa/org/")
-                           ("nongnu" . "http://mirrors.bfsu.edu.cn/elpa/nongnu/")))
+    (setq package-archives '(("gnu"   . "http://mirrors.bfsu.edu.cn/elpa/gnu/")
+                             ("melpa" . "http://mirrors.bfsu.edu.cn/elpa/melpa/")
+                             ("Org" . "http://mirrors.bfsu.edu.cn/elpa/org/")
+                             ("nongnu" . "http://mirrors.bfsu.edu.cn/elpa/nongnu/")))
 
-  (setq package-check-signature nil)
-  (require 'package)
-  (unless (bound-and-true-p package--initialized)
-    (package-initialize))
-  (unless (package-installed-p 'use-package)
-    (package-refresh-contents)
-    (package-install 'use-package))
+    (setq package-check-signature nil)
+    (require 'package)
+    (unless (bound-and-true-p package--initialized)
+      (package-initialize 'noactivate)
+      (message "package-initialize run")
+    (unless (package-installed-p 'use-package)
+      (package-refresh-contents)
+      (package-install 'use-package))
 #+END_SRC
 
 *** VERBOSE-OFF use-package
@@ -496,11 +509,14 @@ Don't forget to use ~:ensure nil~ code for built-in packages.
   (add-hook 'after-init-hook 'line-number-mode)
   (add-hook 'after-init-hook 'save-place-mode)
   (add-hook 'after-init-hook 'size-indication-mode)
+  (add-hook 'eval-expression-minibuffer-setup-hook #'eldoc-mode)
+  ;; (add-hook 'ielm-mode-hook #'eldoc-mode)
 #+end_src
 
-**** turn off blink-cursor
+**** turn off default modes
 #+begin_src emacs-lisp
   (blink-cursor-mode -1)
+  (tooltip-mode -1)
 #+end_src
 
 **** time
@@ -517,11 +533,10 @@ Makes mouse-wheel scroll a line smoothly.
 #+begin_src emacs-lisp
   (use-package pixel-scroll
     :ensure nil
+    :hook (after-init . pixel-scroll-mode)
     :custom
     (pixel-scroll-precision-mode t)
-    (pixel-scroll-precision-interpolate-page t)
-    :config
-    (pixel-scroll-mode 1))
+    (pixel-scroll-precision-interpolate-page t))
 #+end_src
 
 ***** TODO COMMENT [试试这个，可行就删除上面]good scroll
@@ -673,7 +688,7 @@ Centaur's settings.
     :bind ("C-M-<return>" . cua-rectangle-mark-mode))
 #+end_src
 
-**** recentf
+**** TODO recentf
 #+begin_src emacs-lisp
   (use-package recentf
     :ensure nil
@@ -681,7 +696,34 @@ Centaur's settings.
     :bind ("C-x f" . recentf-open-files))
 #+end_src
 
-***** COMMENT centaur settings
+Spacemacs settings
+#+begin_example emacs-lisp
+(use-package recentf
+    :defer (spacemacs/defer)
+    :commands (recentf-save-list)
+    :init
+    (progn
+      (spacemacs|require-when-dumping 'recentf)
+      (when (spacemacs/defer)
+        (add-hook 'find-file-hook (lambda () (unless recentf-mode
+                                               (recentf-mode)
+                                               (recentf-track-opened-file)))))
+      (setq recentf-save-file (concat spacemacs-cache-directory "recentf")
+            recentf-max-saved-items 1000
+            recentf-auto-cleanup 'never
+            recentf-auto-save-timer (run-with-idle-timer 600 t
+                                                         'recentf-save-list)))
+    :config
+    (progn
+      (add-to-list 'recentf-exclude
+                   (recentf-expand-file-name spacemacs-cache-directory))
+      (add-to-list 'recentf-exclude (recentf-expand-file-name package-user-dir))
+      (add-to-list 'recentf-exclude "COMMIT_EDITMSG\\'")
+      (when custom-file
+        (add-to-list 'recentf-exclude (recentf-expand-file-name custom-file)))))
+#+end_example
+
+centaur settings
 #+BEGIN_EXAMPLE emacs-lisp
 (use-package recentf
   :ensure nil
@@ -933,6 +975,27 @@ Centaur's settings.
   ;;; init-dired.el ends here
 #+end_src
 
+**** TODO quickurl
+
+**** TODO COMMENT ediff [why so ugly? how to use correcty]
+#+begin_src emacs-lisp
+  (use-package ediff
+    :defer t
+    :init
+    (progn
+      ;; first we set some sane defaults
+      (setq-default
+       ediff-window-setup-function 'ediff-setup-windows-plain
+       ;; emacs is evil and decrees that vertical shall henceforth be horizontal
+       ediff-split-window-function 'split-window-horizontally
+       ediff-merge-split-window-function 'split-window-horizontally)
+      ;; show org ediffs unfolded
+      (require 'outline)
+      (add-hook 'ediff-prepare-buffer-hook #'show-all)
+      ;; restore window layout when done
+      (add-hook 'ediff-quit-hook #'winner-undo)))
+#+end_src
+
 *** system
 **** gcmh
 Garbage Collector Magic Hack
@@ -967,7 +1030,7 @@ After code is a list of good looking themes, use one of them.
     (doom-themes-org-config))
 #+END_SRC
 
-***** COMMENT good doom-themes list
+***** good doom-themes list
 - doom-badger
 - doom-gruvbox
 - doom-material-dark
@@ -980,7 +1043,7 @@ After code is a list of good looking themes, use one of them.
 - doom-old-hope
 - doom-wilmersdorf
 
-***** COMMENT doom-themes config example
+***** doom-themes config example
 #+BEGIN_EXAMPLE emacs-lisp
   ;; Enable flashing mode-line on errors
   (doom-themes-visual-bell-config)
@@ -1490,7 +1553,7 @@ A utility for creating an informative banner.
     (eshell-prompt-function 'epe-theme-lambda))
 #+end_src
 
-****** TODO COMMENT exec-path-from-shell (under linux or macos)
+***** TODO COMMENT exec-path-from-shell (only under linux or macos)
 Environment
 #+begin_src emacs-lisp
   (when (or sys/mac-x-p sys/linux-x-p (daemonp))
@@ -1498,7 +1561,7 @@ Environment
       :init (exec-path-from-shell-initialize)))
 #+end_src
 
-**** TODO COMMENT avy
+**** TODO COMMENT avy | ace(-jump) | dump-jump
 #+begin_src emacs-lisp
   ;; Jump to things in Emacs tree-style
   (use-package avy
@@ -1559,7 +1622,37 @@ Environment
     :hook (after-init . ace-pinyin-global-mode))
 #+end_src
 
-**** TODO COMMENT popwin
+spacemacs settings
+#+begin_example emacs-lisp
+  (use-package avy
+    :defer t
+    :commands (spacemacs/avy-open-url spacemacs/avy-goto-url avy-pop-mark avy-with)
+    :init
+    (progn
+      (setq avy-all-windows 'all-frames)
+      (setq avy-background t)
+      (spacemacs/set-leader-keys
+        "jb" 'avy-pop-mark
+        "jj" 'evil-avy-goto-char-timer
+        "jl" 'evil-avy-goto-line
+        "ju" 'spacemacs/avy-goto-url
+        "jU" 'spacemacs/avy-open-url
+        "jw" 'evil-avy-goto-word-or-subword-1
+        "xo" 'spacemacs/avy-open-url))
+    :config
+    (progn
+      (defun spacemacs/avy-goto-url ()
+        "Use avy to go to an URL in the buffer."
+        (interactive)
+        (avy-jump "https?://"))
+      (defun spacemacs/avy-open-url ()
+        "Use avy to select an URL in the buffer and open it."
+        (interactive)
+        (save-excursion
+          (spacemacs/avy-goto-url)
+          (browse-url-at-point)))))
+#+end_example
+**** TODO COMMENT popwin | popper | window-purpose
 #+begin_src emacs-lisp
   ;; popwin
   (use-package popwin
@@ -1571,6 +1664,198 @@ Environment
 (push '(occur-mode :position right :width 100) popwin:special-display-config)
 (push '(grep-mode :position right :width 100) popwin:special-display-config)
 (push '(special-mode :position right :width 100) popwin:special-display-config)))
+
+#+begin_src emacs-lisp
+  ;; Enforce rules for popups
+  (use-package popper
+    :defines popper-echo-dispatch-actions
+    :commands popper-group-by-projectile
+    :bind (:map popper-mode-map
+                ("C-h z"     . popper-toggle-latest)
+                ("C-<tab>"   . popper-cycle)
+                ("C-M-<tab>" . popper-toggle-type))
+    :hook (emacs-startup . popper-mode)
+    :init
+    (setq popper-reference-buffers
+          '("\\*Messages\\*"
+            "Output\\*$" "\\*Pp Eval Output\\*$"
+            "\\*Compile-Log\\*"
+            "\\*Completions\\*"
+            "\\*Warnings\\*"
+            "\\*Async Shell Command\\*"
+            "\\*Apropos\\*"
+            "\\*Backtrace\\*"
+            "\\*Calendar\\*"
+            "\\*Embark Actions\\*"
+            "\\*Finder\\*"
+            "\\*Kill Ring\\*"
+            "\\*Go-Translate\\*"
+
+            bookmark-bmenu-mode
+            comint-mode
+            compilation-mode
+            help-mode helpful-mode
+            tabulated-list-mode
+            Buffer-menu-mode
+
+            gnus-article-mode devdocs-mode
+            grep-mode occur-mode rg-mode deadgrep-mode ag-mode pt-mode
+            ivy-occur-mode ivy-occur-grep-mode
+            youdao-dictionary-mode osx-dictionary-mode fanyi-mode
+
+            "^\\*Process List\\*" process-menu-mode
+            list-environment-mode cargo-process-mode
+
+            "^\\*eshell.*\\*.*$"       eshell-mode
+            "^\\*shell.*\\*.*$"        shell-mode
+            "^\\*terminal.*\\*.*$"     term-mode
+            "^\\*vterm[inal]*.*\\*.*$" vterm-mode
+
+            "\\*DAP Templates\\*$" dap-server-log-mode
+            "\\*ELP Profiling Restuls\\*" profiler-report-mode
+            "\\*Flycheck errors\\*$" " \\*Flycheck checker\\*$"
+            "\\*Paradox Report\\*$" "\\*package update results\\*$" "\\*Package-Lint\\*$"
+            "\\*[Wo]*Man.*\\*$"
+            "\\*ert\\*$" overseer-buffer-mode
+            "\\*gud-debug\\*$"
+            "\\*lsp-help\\*$" "\\*lsp session\\*$"
+            "\\*quickrun\\*$"
+            "\\*tldr\\*$"
+            "\\*vc-.*\\*$"
+            "^\\*elfeed-entry\\*$"
+            "^\\*macro expansion\\**"
+
+            "\\*Agenda Commands\\*" "\\*Org Select\\*" "\\*Capture\\*" "^CAPTURE-.*\\.org*"
+            "\\*Gofmt Errors\\*$" "\\*Go Test\\*$" godoc-mode
+            "\\*docker-.+\\*"
+            "\\*prolog\\*" inferior-python-mode inf-ruby-mode swift-repl-mode
+            "\\*rustfmt\\*$" rustic-compilation-mode rustic-cargo-clippy-mode
+            rustic-cargo-outdated-mode rustic-cargo-test-moed))
+
+    (with-eval-after-load 'projectile
+      (setq popper-group-function #'popper-group-by-projectile))
+
+    (when (display-grayscale-p)
+      (setq popper-mode-line
+            '(:eval (format " %s "
+                            (all-the-icons-octicon
+                             "pin"
+                             :height 0.9
+                             :v-adjust 0.0
+                             :face 'mode-line-emphasis)))))
+
+    (setq popper-echo-dispatch-actions t)
+    :config
+    (popper-echo-mode 1)
+
+    (with-no-warnings
+      (defun my-popper-fit-window-height (win)
+        "Determine the height of popup window WIN by fitting it to the buffer's content."
+        (fit-window-to-buffer
+         win
+         (floor (frame-height) 3)
+         (floor (frame-height) 3)))
+      (setq popper-window-height #'my-popper-fit-window-height)
+
+      (defun popper-close-window-hack (&rest _)
+        "Close popper window via `C-g'."
+        ;; `C-g' can deactivate region
+        (when (and (called-interactively-p 'interactive)
+                   (not (region-active-p))
+                   popper-open-popup-alist)
+          (let ((window (caar popper-open-popup-alist)))
+            (when (window-live-p window)
+              (delete-window window)))))
+      (advice-add #'keyboard-quit :before #'popper-close-window-hack)))
+#+end_src
+
+Look at this.
+#+begin_example emacs-lisp
+;; Shell Pop: leverage `popper'
+(with-no-warnings
+  (defvar shell-pop--frame nil)
+  (defvar shell-pop--window nil)
+
+  (defun shell-pop--shell (&optional arg)
+    "Run shell and return the buffer."
+    (cond ((fboundp 'vterm) (vterm arg))
+          (sys/win32p (eshell arg))
+          (t (shell))))
+
+  (defun shell-pop--hide-frame ()
+    "Hide child frame and refocus in parent frame."
+    (when (and (childframe-workable-p)
+               (frame-live-p shell-pop--frame)
+               (frame-visible-p shell-pop--frame))
+      (make-frame-invisible shell-pop--frame)
+      (select-frame-set-input-focus (frame-parent shell-pop--frame))
+      (setq shell-pop--frame nil)))
+
+  (defun shell-pop-toggle ()
+    "Toggle shell."
+    (interactive)
+    (shell-pop--hide-frame)
+    (if (window-live-p shell-pop--window)
+        (progn
+          (delete-window shell-pop--window)
+          (setq shell-pop--window nil))
+      (setq shell-pop--window
+            (get-buffer-window (shell-pop--shell)))))
+  (bind-keys ([f9]  . shell-pop-toggle)
+             ("C-`" . shell-pop-toggle))
+
+  (when (childframe-workable-p)
+    (defun shell-pop-posframe-hidehandler (_)
+      "Hidehandler used by `shell-pop-posframe-toggle'."
+      (not (eq (selected-frame) posframe--frame)))
+
+    (defun shell-pop-posframe-toggle ()
+      "Toggle shell in child frame."
+      (interactive)
+      (let* ((buffer (shell-pop--shell))
+             (window (get-buffer-window buffer)))
+        ;; Hide window: for `popper'
+        (when (window-live-p window)
+          (delete-window window))
+
+        (if (and (frame-live-p shell-pop--frame)
+                 (frame-visible-p shell-pop--frame))
+            (progn
+              ;; Hide child frame and refocus in parent frame
+              (make-frame-invisible shell-pop--frame)
+              (select-frame-set-input-focus (frame-parent shell-pop--frame))
+              (setq shell-pop--frame nil))
+          (let ((width  (max 100 (round (* (frame-width) 0.62))))
+                (height (round (* (frame-height) 0.62))))
+            ;; Shell pop in child frame
+            (setq shell-pop--frame
+                  (posframe-show
+                   buffer
+                   :poshandler #'posframe-poshandler-frame-center
+                   :hidehandler #'shell-pop-posframe-hidehandler
+                   :left-fringe 8
+                   :right-fringe 8
+                   :width width
+                   :height height
+                   :min-width width
+                   :min-height height
+                   :internal-border-width 3
+                   :internal-border-color (face-background 'posframe-border nil t)
+                   :background-color (face-background 'tooltip nil t)
+                   :override-parameters '((cursor-type . t))
+                   :respect-mode-line t
+                   :accept-focus t))
+
+            ;; Focus in child frame
+            (select-frame-set-input-focus shell-pop--frame)
+
+            (with-current-buffer buffer
+              (setq-local cursor-type 'box) ; blink cursor
+              (goto-char (point-max))
+              (when (fboundp 'vterm-reset-cursor-point)
+                (vterm-reset-cursor-point)))))))
+    (bind-key "C-`" #'shell-pop-posframe-toggle)))
+#+end_example
 
 **** TODO COMMENT anzu | visual-regexp
 #+begin_src emacs-lisp
@@ -1764,6 +2049,12 @@ commands undo, yank, kill and delete are supported.
     (pulsing-cursor-blinks 5)
     :config (pulsing-cursor-mode +1))
 #+end_src
+
+**** TODO centaur-tabs
+
+**** TODO Typo Mode
+
+**** TODO ligatures.el
 
 *** minibuffer & complete
 **** vertico
@@ -2256,7 +2547,7 @@ completion UI.
             (list (cape-capf-buster #'some-caching-capf)))
 #+end_example
 
-**** consult
+**** TODO consult (a newer version should have consult-fd and others)
 Consult provides practical commands based on the Emacs completion
 function completing-read.
 #+BEGIN_SRC emacs-lisp
@@ -2491,8 +2782,9 @@ Settings about org-mode & extensions.
     ;; (org-list-indent-offset 1) ;; increase sub-item indentation
 
     ;; Logging
-    (org-log-done 'time)
-    (org-log-into-drawer t)
+    ;; (org-log-done 'time)		   ;or 'note
+    ;; (org-closed-keep-when-no-todo t)
+    ;; (org-log-into-drawer t)
     ;; (org-log-state-notes-insert-after-drawers nil)
     ;; (org-log-redeadline nil) ;; don't log the time a task was rescheduled/redeadlined.
     ;; (org-log-reschedule nil)
@@ -2809,6 +3101,10 @@ Avoid `org-babel-do-load-languages' since it does an eager require.
                 org-tree-slide-skip-comments t
                 org-tree-slide-skip-outline-level 3))
 #+end_src
+
+**** TODO org-present | org-download | org-cliplink | org-rich-yank | valign | org-transclusion
+
+**** TODO outshine | outorg
 
 *** TODO text-mode
 **** TODO COMMENT olivetti
@@ -3141,7 +3437,7 @@ Avoid `org-babel-do-load-languages' since it does an eager require.
 
 #+end_src
 
-**** TODO COMMENT flymake | flycheck
+**** TODO COMMENT flymake | flycheck | flycheck-pos-tip | flycheck-indication-mode
 use aspell with ispell & flycheck
 
 ;; flyspell-mode does spell-checking on the fly as you type
@@ -4005,7 +4301,7 @@ ispell-extra-args '("--sug-mode=ultra"))
 (add-hook 'after-save-hook
 'executable-make-buffer-file-executable-if-script-p)
           
-**** TODO COMMENT rainbow-delimiters & rainbow-identifiers
+**** TODO COMMENT rainbow-delimiters & rainbow-identifiers & rainbow-mode & color-identifiers
 #+begin_src emacs-lisp
   ;;;; Delimiters & Identifiers
   ;;;;; Visualization of Delimiters (Rainbow Delimiters)
@@ -4026,9 +4322,42 @@ ispell-extra-args '("--sug-mode=ultra"))
     :commands rainbow-identifiers-mode)
 #+end_src
 
+#+begin_src emacs-lisp
+  ;; Colorize color names in buffers
+  (use-package rainbow-mode
+    :diminish
+    :defines helpful-mode-map
+    :bind (:map help-mode-map
+                ("w" . rainbow-mode))
+    :hook ((html-mode php-mode helpful-mode) . rainbow-mode)
+    :init (with-eval-after-load 'helpful
+            (bind-key "w" #'rainbow-mode helpful-mode-map))
+    :config
+    (with-no-warnings
+      ;; HACK: Use overlay instead of text properties to override `hl-line' faces.
+      ;; @see https://emacs.stackexchange.com/questions/36420
+      (defun my-rainbow-colorize-match (color &optional match)
+        (let* ((match (or match 0))
+               (ov (make-overlay (match-beginning match) (match-end match))))
+          (overlay-put ov 'ovrainbow t)
+          (overlay-put ov 'face `((:foreground ,(if (> 0.5 (rainbow-x-color-luminance color))
+                                                    "white" "black"))
+                                  (:background ,color)))))
+      (advice-add #'rainbow-colorize-match :override #'my-rainbow-colorize-match)
+
+      (defun my-rainbow-clear-overlays ()
+        "Clear all rainbow overlays."
+        (remove-overlays (point-min) (point-max) 'ovrainbow t))
+      (advice-add #'rainbow-turn-off :after #'my-rainbow-clear-overlays)))
+
+  ;; Highlight brackets according to their depth
+  (use-package rainbow-delimiters
+    :hook (prog-mode . rainbow-delimiters-mode))
+#+end_src
+
 **** TODO embrace ??
 
-**** TODO COMMENT highlight-indent-guides-mode
+**** TODO COMMENT highlight-indent-guides-mode | indent-guide
 #+begin_src emacs-lisp
   (use-package highlight-indent-guides
     :hook (prog-mode . highlight-indent-guides-mode)
@@ -4170,6 +4499,7 @@ ispell-extra-args '("--sug-mode=ultra"))
 #+end_src
 
 *** TODO COMMENT program languages
+May look at spacemacs' [[file:~/emacs.init/spacemacs/layers/LAYERS.org::*Programming languages][Programming languages]]
 **** TODO python
 ***** cabin's
 #+begin_src emacs-lisp
@@ -4469,7 +4799,7 @@ Info-colors, make the info manual as colorful.
     (help-at-pt-display-when-idle '(flymake-diagnostic)))
 #+end_src
 
-*** TODO COMMENT dictionary functions | youdao-dictionary
+*** TODO COMMENT dictionary functions | youdao-dictionary | auto-dictionary-mode | hunspell | define-word | google-translate
 #+begin_src emacs-lisp
   ;; A multi dictionaries interface
   (when emacs/>=27p
@@ -4701,8 +5031,6 @@ edit same text in one buffer or region
 *** TODO dump-jump
 
 *** TODO emmet-mode
-
-*** TODO multiple cursors
 
 *** TODO COMMENT workgroups2 | perspective |persp-mode
 #+begin_src emacs-lisp
@@ -4981,8 +5309,6 @@ edit same text in one buffer or region
 
 *** TODO subword | superword
 
-*** TODO rainbow-delimiters
-
 *** TODO COMMENT multiple-cursors
 #+begin_src emacs-lisp
   ;; Multiple cursors
@@ -5001,7 +5327,7 @@ edit same text in one buffer or region
 
 *** TODO highlight-escape-sequences
 
-*** TODO COMMENT git-blame | git-modes | git-timemachine | git-link | git-commit | git-gutter | gited | git-messenger
+*** TODO COMMENT git-blame | git-modes | git-timemachine | git-link | git-commit | git-gutter | git-gutter+ | git-gutter-fringe | git-gutter-fringe+ | gited | git-messenger | smeargle
 #+begin_src emacs-lisp
   ;; settings for committing using magit
   (use-package git-commit
@@ -5020,6 +5346,7 @@ edit same text in one buffer or region
                   (meow-insert-mode)))))
 #+end_src
 
+#+begin_example emacs-lisp
 ;;; init-git.el --- Git SCM support -*- lexical-binding: t -*-
 ;;; Commentary:
 
@@ -5120,6 +5447,7 @@ edit same text in one buffer or region
 
 (provide 'init-git)
 ;;; init-git.el ends here
+#+end_example
 
 #+begin_src emacs-lisp
   ;; Walk through git revisions of a file
@@ -5240,38 +5568,99 @@ edit same text in one buffer or region
       (advice-add #'git-messenger:popup-message :override #'my-git-messenger:popup-message)))
 #+end_src
 
-*** TODO COMMENT rainbow-mode
 #+begin_src emacs-lisp
-  ;; Colorize color names in buffers
-  (use-package rainbow-mode
-    :diminish
-    :defines helpful-mode-map
-    :bind (:map help-mode-map
-                ("w" . rainbow-mode))
-    :hook ((html-mode php-mode helpful-mode) . rainbow-mode)
-    :init (with-eval-after-load 'helpful
-            (bind-key "w" #'rainbow-mode helpful-mode-map))
-    :config
-    (with-no-warnings
-      ;; HACK: Use overlay instead of text properties to override `hl-line' faces.
-      ;; @see https://emacs.stackexchange.com/questions/36420
-      (defun my-rainbow-colorize-match (color &optional match)
-        (let* ((match (or match 0))
-               (ov (make-overlay (match-beginning match) (match-end match))))
-          (overlay-put ov 'ovrainbow t)
-          (overlay-put ov 'face `((:foreground ,(if (> 0.5 (rainbow-x-color-luminance color))
-                                                    "white" "black"))
-                                  (:background ,color)))))
-      (advice-add #'rainbow-colorize-match :override #'my-rainbow-colorize-match)
+  (defun version-control/init-git-gutter ()
+    (use-package git-gutter
+      :defer t
+      :init
+      (progn
+        ;; If you enable global minor mode
+        (when version-control-global-margin
+          (run-with-idle-timer 1 nil 'global-git-gutter-mode))
+        (setq git-gutter:update-interval 2
+              git-gutter:modified-sign " "
+              git-gutter:added-sign "+"
+              git-gutter:deleted-sign "-"
+              git-gutter:diff-option "-w"
+              git-gutter:hide-gutter t
+              git-gutter:ask-p nil
+              git-gutter:verbosity 0
+              git-gutter:handled-backends '(git hg bzr svn)
+              git-gutter:hide-gutter t))
+      :config
+      (spacemacs|hide-lighter git-gutter-mode)
+      ;; Do not activate git-gutter in pdf-view-mode, see #15106
+      (when (configuration-layer/layer-used-p 'pdf)
+        (add-to-list 'git-gutter:disabled-modes 'pdf-view-mode))))
 
-      (defun my-rainbow-clear-overlays ()
-        "Clear all rainbow overlays."
-        (remove-overlays (point-min) (point-max) 'ovrainbow t))
-      (advice-add #'rainbow-turn-off :after #'my-rainbow-clear-overlays)))
+  (defun version-control/init-git-gutter-fringe ()
+    (use-package git-gutter-fringe
+      :defer t
+      :init
+      (progn
+        (spacemacs|do-after-display-system-init
+         (with-eval-after-load 'git-gutter
+           (require 'git-gutter-fringe)))
+        (setq git-gutter-fr:side (if (eq version-control-diff-side 'left)
+                                     'left-fringe 'right-fringe)))))
 
-  ;; Highlight brackets according to their depth
-  (use-package rainbow-delimiters
-    :hook (prog-mode . rainbow-delimiters-mode))
+  (defun version-control/init-git-gutter+ ()
+    (use-package git-gutter+
+      :if (eq version-control-diff-tool 'git-gutter+)
+      :defer t
+      :init
+      (progn
+        ;; If you enable global minor mode
+        (when version-control-global-margin
+          (add-hook 'magit-pre-refresh-hook
+                    #'spacemacs//git-gutter+-refresh-in-all-buffers)
+          (run-with-idle-timer 1 nil 'global-git-gutter+-mode))
+        (setq
+         git-gutter+-modified-sign " "
+         git-gutter+-added-sign "+"
+         git-gutter+-deleted-sign "-"
+         git-gutter+-diff-option "-w"
+         git-gutter+-hide-gutter t))
+      ;; identify magit changes
+      :config
+      (spacemacs|hide-lighter git-gutter+-mode)
+      ;; Do not activate git-gutter in pdf-view-mode, see #15106
+      (when (configuration-layer/layer-used-p 'pdf)
+        (add-to-list 'git-gutter+-disabled-modes 'pdf-view-mode))))
+
+  (defun version-control/init-git-gutter-fringe+ ()
+    (use-package git-gutter-fringe+
+      :defer t
+      :init
+      (progn
+        (spacemacs|do-after-display-system-init
+         (with-eval-after-load 'git-gutter+
+           (require 'git-gutter-fringe+)))
+        (setq git-gutter-fr+-side (if (eq version-control-diff-side 'left)
+                                      'left-fringe 'right-fringe)))
+      :config
+      (progn
+        ;; custom graphics that works nice with half-width fringes
+        (fringe-helper-define 'git-gutter-fr+-added nil
+                              "..X...."
+                              "..X...."
+                              "XXXXX.."
+                              "..X...."
+                              "..X....")
+
+        (fringe-helper-define 'git-gutter-fr+-deleted nil
+                              "......."
+                              "......."
+                              "XXXXX.."
+                              "......."
+                              ".......")
+
+        (fringe-helper-define 'git-gutter-fr+-modified nil
+                              "..X...."
+                              ".XXX..."
+                              "XX.XX.."
+                              ".XXX..."
+                              "..X...."))))
 #+end_src
 
 *** TODO comint
@@ -5279,8 +5668,6 @@ edit same text in one buffer or region
 *** TODO regex-tool
 
 *** TODO re-builder
-
-*** TODO origami
 
 *** TODO sudo-edit
 
@@ -5314,7 +5701,64 @@ edit same text in one buffer or region
 
 *** TODO move-text
 
-*** TODO smartparens
+*** TODO COMMENT smartparens
+#+begin_src emacs-lisp
+  (use-package smartparens
+    :defer t
+    :commands (sp-point-in-string-or-comment sp-forward-symbol sp-split-sexp sp-newline sp-up-sexp)
+    :init
+    (progn
+      ;; settings
+      (setq sp-show-pair-delay
+            ;; Use this form to allow users to override this setting from
+            ;; dotspacemacs/user-init
+            (or (bound-and-true-p sp-show-pair-delay) 0.2)
+            ;; fix paren highlighting in normal mode
+            sp-show-pair-from-inside t
+            sp-cancel-autoskip-on-backward-movement nil
+            sp-highlight-pair-overlay nil
+            sp-highlight-wrap-overlay nil
+            sp-highlight-wrap-tag-overlay nil)
+      (spacemacs/add-to-hooks #'spacemacs//activate-smartparens
+                              '(prog-mode-hook comint-mode-hook))
+      ;; enable smartparens-mode in `eval-expression'
+      (add-hook 'minibuffer-setup-hook 'spacemacs//conditionally-enable-smartparens-mode)
+      ;; toggles
+      (spacemacs|add-toggle smartparens
+                            :status (or (bound-and-true-p smartparens-mode)
+                                        (bound-and-true-p smartparens-strict-mode))
+                            :on (spacemacs//activate-smartparens)
+                            :off (spacemacs//deactivate-smartparens)
+                            :documentation "Enable smartparens."
+                            :evil-leader "tp")
+      (spacemacs|add-toggle smartparens-globally
+                            :status (or smartparens-global-mode smartparens-global-strict-mode)
+                            :on (spacemacs//activate-smartparens t)
+                            :off (spacemacs//deactivate-smartparens t)
+                            :documentation "Enable smartparens globally."
+                            :evil-leader "t C-p")
+      ;; key bindings
+      (spacemacs/set-leader-keys
+       "js" 'sp-split-sexp
+       "jn" 'sp-newline))
+    :config
+    (progn
+      (require 'smartparens-config)
+      (spacemacs|diminish smartparens-mode " ⓟ" " p")
+      (spacemacs//adaptive-smartparent-pair-overlay-face)
+      (add-hook 'spacemacs-post-theme-change-hook
+                'spacemacs//adaptive-smartparent-pair-overlay-face)
+      (show-smartparens-global-mode +1)
+      ;; don't create a pair with single quote in minibuffer
+      (sp-local-pair 'minibuffer-inactive-mode "'" nil :actions nil)
+      (sp-pair "{" nil :post-handlers
+               '(:add (spacemacs/smartparens-pair-newline-and-indent "RET")))
+      (sp-pair "[" nil :post-handlers
+               '(:add (spacemacs/smartparens-pair-newline-and-indent "RET")))
+      (when dotspacemacs-smart-closing-parenthesis
+        (define-key evil-insert-state-map ")"
+          'spacemacs/smart-closing-parenthesis))))
+#+end_src
 
 *** TODO COMMENT undo-tree
 #+begin_src emacs-lisp
@@ -5344,6 +5788,46 @@ edit same text in one buffer or region
   (diminish 'undo-tree-mode)
 #+end_src
 
+spacemacs settings
+#+begin_example emacs-lisp
+  (use-package undo-tree
+    :defer t
+    :init
+    (progn
+      (setq undo-tree-visualizer-timestamps t
+            undo-tree-visualizer-diff t
+            ;; See `vim-style-enable-undo-region'.
+            undo-tree-enable-undo-in-region t
+            ;; 10X bump of the undo limits to avoid issues with premature
+            ;; Emacs GC which truncages the undo history very aggresively
+            undo-limit 800000
+            undo-strong-limit 12000000
+            undo-outer-limit 120000000
+            undo-tree-history-directory-alist
+            `(("." . ,(let ((dir (expand-file-name "undo-tree-history" spacemacs-cache-directory)))
+                        (if (file-exists-p dir)
+                            (unless (file-accessible-directory-p dir)
+                              (warn "Cannot access directory `%s'.
+ Perhaps you don't have required permissions, or it's not a directory.
+ See variable `undo-tree-history-directory-alist'." dir))
+                          (make-directory dir))
+                        dir))))
+      (global-undo-tree-mode))
+    :config
+    (progn
+      ;; restore diff window after quit.  TODO fix upstream
+      (defun spacemacs/undo-tree-restore-default ()
+        (setq undo-tree-visualizer-diff t))
+      (advice-add 'undo-tree-visualizer-quit :after #'spacemacs/undo-tree-restore-default)
+      (spacemacs|hide-lighter undo-tree-mode)
+      (evilified-state-evilify-map undo-tree-visualizer-mode-map
+        :mode undo-tree-visualizer-mode
+        :bindings
+        (kbd "j") 'undo-tree-visualize-redo
+        (kbd "k") 'undo-tree-visualize-undo
+        (kbd "h") 'undo-tree-visualize-switch-branch-left
+        (kbd "l") 'undo-tree-visualize-switch-branch-right)))
+#+end_example
 *** TODO COMMENT volatile-highlights
 #+begin_src emacs-lisp
   ;; Highlight some operations
@@ -5412,198 +5896,6 @@ edit same text in one buffer or region
 
 *** TODO hippie-expand
 
-*** TODO COMMENT popper
-#+begin_src emacs-lisp
-  ;; Enforce rules for popups
-  (use-package popper
-    :defines popper-echo-dispatch-actions
-    :commands popper-group-by-projectile
-    :bind (:map popper-mode-map
-                ("C-h z"     . popper-toggle-latest)
-                ("C-<tab>"   . popper-cycle)
-                ("C-M-<tab>" . popper-toggle-type))
-    :hook (emacs-startup . popper-mode)
-    :init
-    (setq popper-reference-buffers
-          '("\\*Messages\\*"
-            "Output\\*$" "\\*Pp Eval Output\\*$"
-            "\\*Compile-Log\\*"
-            "\\*Completions\\*"
-            "\\*Warnings\\*"
-            "\\*Async Shell Command\\*"
-            "\\*Apropos\\*"
-            "\\*Backtrace\\*"
-            "\\*Calendar\\*"
-            "\\*Embark Actions\\*"
-            "\\*Finder\\*"
-            "\\*Kill Ring\\*"
-            "\\*Go-Translate\\*"
-
-            bookmark-bmenu-mode
-            comint-mode
-            compilation-mode
-            help-mode helpful-mode
-            tabulated-list-mode
-            Buffer-menu-mode
-
-            gnus-article-mode devdocs-mode
-            grep-mode occur-mode rg-mode deadgrep-mode ag-mode pt-mode
-            ivy-occur-mode ivy-occur-grep-mode
-            youdao-dictionary-mode osx-dictionary-mode fanyi-mode
-
-            "^\\*Process List\\*" process-menu-mode
-            list-environment-mode cargo-process-mode
-
-            "^\\*eshell.*\\*.*$"       eshell-mode
-            "^\\*shell.*\\*.*$"        shell-mode
-            "^\\*terminal.*\\*.*$"     term-mode
-            "^\\*vterm[inal]*.*\\*.*$" vterm-mode
-
-            "\\*DAP Templates\\*$" dap-server-log-mode
-            "\\*ELP Profiling Restuls\\*" profiler-report-mode
-            "\\*Flycheck errors\\*$" " \\*Flycheck checker\\*$"
-            "\\*Paradox Report\\*$" "\\*package update results\\*$" "\\*Package-Lint\\*$"
-            "\\*[Wo]*Man.*\\*$"
-            "\\*ert\\*$" overseer-buffer-mode
-            "\\*gud-debug\\*$"
-            "\\*lsp-help\\*$" "\\*lsp session\\*$"
-            "\\*quickrun\\*$"
-            "\\*tldr\\*$"
-            "\\*vc-.*\\*$"
-            "^\\*elfeed-entry\\*$"
-            "^\\*macro expansion\\**"
-
-            "\\*Agenda Commands\\*" "\\*Org Select\\*" "\\*Capture\\*" "^CAPTURE-.*\\.org*"
-            "\\*Gofmt Errors\\*$" "\\*Go Test\\*$" godoc-mode
-            "\\*docker-.+\\*"
-            "\\*prolog\\*" inferior-python-mode inf-ruby-mode swift-repl-mode
-            "\\*rustfmt\\*$" rustic-compilation-mode rustic-cargo-clippy-mode
-            rustic-cargo-outdated-mode rustic-cargo-test-moed))
-
-    (with-eval-after-load 'projectile
-      (setq popper-group-function #'popper-group-by-projectile))
-
-    (when (display-grayscale-p)
-      (setq popper-mode-line
-            '(:eval (format " %s "
-                            (all-the-icons-octicon
-                             "pin"
-                             :height 0.9
-                             :v-adjust 0.0
-                             :face 'mode-line-emphasis)))))
-
-    (setq popper-echo-dispatch-actions t)
-    :config
-    (popper-echo-mode 1)
-
-    (with-no-warnings
-      (defun my-popper-fit-window-height (win)
-        "Determine the height of popup window WIN by fitting it to the buffer's content."
-        (fit-window-to-buffer
-         win
-         (floor (frame-height) 3)
-         (floor (frame-height) 3)))
-      (setq popper-window-height #'my-popper-fit-window-height)
-
-      (defun popper-close-window-hack (&rest _)
-        "Close popper window via `C-g'."
-        ;; `C-g' can deactivate region
-        (when (and (called-interactively-p 'interactive)
-                   (not (region-active-p))
-                   popper-open-popup-alist)
-          (let ((window (caar popper-open-popup-alist)))
-            (when (window-live-p window)
-              (delete-window window)))))
-      (advice-add #'keyboard-quit :before #'popper-close-window-hack)))
-#+end_src
-
-Look at this.
-#+begin_example emacs-lisp
-;; Shell Pop: leverage `popper'
-(with-no-warnings
-  (defvar shell-pop--frame nil)
-  (defvar shell-pop--window nil)
-
-  (defun shell-pop--shell (&optional arg)
-    "Run shell and return the buffer."
-    (cond ((fboundp 'vterm) (vterm arg))
-          (sys/win32p (eshell arg))
-          (t (shell))))
-
-  (defun shell-pop--hide-frame ()
-    "Hide child frame and refocus in parent frame."
-    (when (and (childframe-workable-p)
-               (frame-live-p shell-pop--frame)
-               (frame-visible-p shell-pop--frame))
-      (make-frame-invisible shell-pop--frame)
-      (select-frame-set-input-focus (frame-parent shell-pop--frame))
-      (setq shell-pop--frame nil)))
-
-  (defun shell-pop-toggle ()
-    "Toggle shell."
-    (interactive)
-    (shell-pop--hide-frame)
-    (if (window-live-p shell-pop--window)
-        (progn
-          (delete-window shell-pop--window)
-          (setq shell-pop--window nil))
-      (setq shell-pop--window
-            (get-buffer-window (shell-pop--shell)))))
-  (bind-keys ([f9]  . shell-pop-toggle)
-             ("C-`" . shell-pop-toggle))
-
-  (when (childframe-workable-p)
-    (defun shell-pop-posframe-hidehandler (_)
-      "Hidehandler used by `shell-pop-posframe-toggle'."
-      (not (eq (selected-frame) posframe--frame)))
-
-    (defun shell-pop-posframe-toggle ()
-      "Toggle shell in child frame."
-      (interactive)
-      (let* ((buffer (shell-pop--shell))
-             (window (get-buffer-window buffer)))
-        ;; Hide window: for `popper'
-        (when (window-live-p window)
-          (delete-window window))
-
-        (if (and (frame-live-p shell-pop--frame)
-                 (frame-visible-p shell-pop--frame))
-            (progn
-              ;; Hide child frame and refocus in parent frame
-              (make-frame-invisible shell-pop--frame)
-              (select-frame-set-input-focus (frame-parent shell-pop--frame))
-              (setq shell-pop--frame nil))
-          (let ((width  (max 100 (round (* (frame-width) 0.62))))
-                (height (round (* (frame-height) 0.62))))
-            ;; Shell pop in child frame
-            (setq shell-pop--frame
-                  (posframe-show
-                   buffer
-                   :poshandler #'posframe-poshandler-frame-center
-                   :hidehandler #'shell-pop-posframe-hidehandler
-                   :left-fringe 8
-                   :right-fringe 8
-                   :width width
-                   :height height
-                   :min-width width
-                   :min-height height
-                   :internal-border-width 3
-                   :internal-border-color (face-background 'posframe-border nil t)
-                   :background-color (face-background 'tooltip nil t)
-                   :override-parameters '((cursor-type . t))
-                   :respect-mode-line t
-                   :accept-focus t))
-
-            ;; Focus in child frame
-            (select-frame-set-input-focus shell-pop--frame)
-
-            (with-current-buffer buffer
-              (setq-local cursor-type 'box) ; blink cursor
-              (goto-char (point-max))
-              (when (fboundp 'vterm-reset-cursor-point)
-                (vterm-reset-cursor-point)))))))
-    (bind-key "C-`" #'shell-pop-posframe-toggle)))
-#+end_example
 *** TODO COMMENT imenu-list
 #+begin_src emacs-lisp
   ;;;; Imenu list outline
@@ -5664,6 +5956,186 @@ Look at this.
     :diminish
     :hook (after-init . global-page-break-lines-mode))
 #+end_src
+
+#+begin_example emacs-lisp
+;;; page-break-lines.el --- Display ^L page breaks as tidy horizontal lines  -*- lexical-binding: t -*-
+
+;; Copyright (C) 2012-2015 Steve Purcell
+
+;; Author: Steve Purcell <steve@sanityinc.com>
+;; URL: https://github.com/purcell/page-break-lines
+;; Package-Version: 0
+;; Package-Requires: ((emacs "24.4"))
+;; Keywords: convenience, faces
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; This library provides a global mode which displays form feed
+;; characters as horizontal rules.
+
+;; Install from Melpa or Marmalade, or add to `load-path' and use
+;; (require 'page-break-lines).
+
+;; Use `page-break-lines-mode' to enable the mode in specific buffers,
+;; or customize `page-break-lines-modes' and enable the mode globally with
+;; `global-page-break-lines-mode'.
+
+;; Issues and limitations:
+
+;; If `page-break-lines-char' is displayed at a different width to
+;; regular characters, the rule may be either too short or too long:
+;; rules may then wrap if `truncate-lines' is nil.  On some systems,
+;; Emacs may erroneously choose a different font for the page break
+;; symbol, which choice can be overridden using code such as:
+
+;; (set-fontset-font "fontset-default"
+;;                   (cons page-break-lines-char page-break-lines-char)
+;;                   (face-attribute 'default :family))
+
+;; Use `describe-char' on a page break char to determine whether this
+;; is the case.
+
+;; Additionally, the use of `text-scale-increase' or
+;; `text-scale-decrease' will cause the rule width to be incorrect,
+;; because the reported window width (in characters) will continue to
+;; be the width in the frame's default font, not the scaled font used to
+;; display the rule.
+
+;; Adapted from code http://www.emacswiki.org/emacs/PageBreaks
+
+;;; Code:
+
+(defgroup page-break-lines nil
+  "Display ugly ^L page breaks as tidy horizontal lines."
+  :prefix "page-break-lines-"
+  :group 'faces)
+
+(defcustom page-break-lines-char ?─
+  "Character used to render page break lines."
+  :type 'character
+  :group 'page-break-lines)
+
+(defcustom page-break-lines-lighter " PgLn"
+  "Mode-line indicator for `page-break-lines-mode'."
+  :type '(choice (const :tag "No lighter" "") string)
+  :group 'page-break-lines)
+
+(defcustom page-break-lines-max-width nil
+  "If non-nil, maximum width (in characters) of page break indicator.
+If nil, indicator will span the width of the frame."
+  :type '(choice integer (const :tag "Full width" nil))
+  :group 'page-break-lines)
+
+(defcustom page-break-lines-modes
+  '(emacs-lisp-mode lisp-mode scheme-mode compilation-mode outline-mode help-mode)
+  "Modes in which to enable `page-break-lines-mode'."
+  :type '(repeat symbol)
+  :group 'page-break-lines)
+
+(defface page-break-lines
+  '((t :inherit font-lock-comment-face :bold nil :italic nil))
+  "Face used to colorize page break lines.
+If using :bold or :italic, please ensure `page-break-lines-char'
+is available in that variant of your font, otherwise it may be
+displayed as a junk character."
+  :group 'page-break-lines)
+
+
+
+;;;###autoload
+(define-minor-mode page-break-lines-mode
+  "Toggle Page Break Lines mode.
+
+In Page Break mode, page breaks (^L characters) are displayed as a
+horizontal line of `page-break-lines-char' characters."
+  :lighter page-break-lines-lighter
+  :group 'page-break-lines
+  (page-break-lines--update-display-tables))
+
+(dolist (hook '(window-configuration-change-hook
+                window-size-change-functions
+                after-setting-font-hook
+                display-line-numbers-mode-hook))
+  (add-hook hook 'page-break-lines--update-display-tables))
+
+
+
+(defun page-break-lines--update-display-table (window)
+  "Modify a display-table that displays page-breaks prettily.
+If the buffer inside WINDOW has `page-break-lines-mode' enabled,
+its display table will be modified as necessary."
+  (with-current-buffer (window-buffer window)
+    (with-selected-window window
+      (if page-break-lines-mode
+          (progn
+            (unless buffer-display-table
+              (setq buffer-display-table (make-display-table)))
+            (let ((default-height (face-attribute 'default :height nil 'default)))
+              (set-face-attribute 'page-break-lines nil :height default-height)
+              (let* ((cwidth (char-width page-break-lines-char))
+                     (wwidth-pix (- (window-width nil t)
+                                    (if (and (bound-and-true-p display-line-numbers)
+                                             (fboundp 'line-number-display-width))
+                                        (line-number-display-width t)
+                                      0)))
+                     (width (- (/ wwidth-pix (frame-char-width) cwidth)
+                               (if (display-graphic-p) 0 1)))
+                     (width (if page-break-lines-max-width
+                                (min width page-break-lines-max-width)
+                              width))
+                     (glyph (make-glyph-code page-break-lines-char 'page-break-lines))
+                     (new-display-entry (vconcat (make-list width glyph))))
+                (unless (equal new-display-entry (elt buffer-display-table ?\^L))
+                  (aset buffer-display-table ?\^L new-display-entry)))))
+        (when (and (apply 'derived-mode-p page-break-lines-modes)
+                   buffer-display-table)
+          (aset buffer-display-table ?\^L nil))))))
+
+(defun page-break-lines--update-display-tables  (&optional frame)
+  "Function called for updating display table in windows of FRAME."
+  (unless (minibufferp)
+    (mapc 'page-break-lines--update-display-table (window-list frame 'no-minibuffer))))
+
+
+
+;;;###autoload
+(defun page-break-lines-mode-maybe ()
+  "Enable `page-break-lines-mode' in the current buffer if desired.
+When `major-mode' is listed in `page-break-lines-modes', then
+`page-break-lines-mode' will be enabled."
+  (if (and (not (minibufferp))
+           (apply 'derived-mode-p page-break-lines-modes))
+      (page-break-lines-mode 1)))
+
+;;;###autoload
+(define-global-minor-mode global-page-break-lines-mode
+  page-break-lines-mode page-break-lines-mode-maybe
+  :require 'page-break-lines
+  :group 'page-break-lines)
+
+
+(provide 'page-break-lines)
+
+;; Local Variables:
+;; coding: utf-8
+;; checkdoc-minor-mode: t
+;; End:
+
+;;; page-break-lines.el ends here
+#+end_example
 
 *** TODO COMMENT beginend
 #+begin_src emacs-lisp
@@ -5995,7 +6467,7 @@ Look at this.
            ([remap mark-sexp] . easy-mark)))
 #+end_src
 
-*** TODO COMMENT treemacs
+*** TODO COMMENT treemacs | neotree
 #+begin_src emacs-lisp
   ;; A tree layout file explorer
   (use-package treemacs
@@ -6135,6 +6607,170 @@ Look at this.
                                       (when smerge-mode
                                         (smerge-mode-hydra/body))))))
 #+end_src
+
+*** TODO spinner
+
+*** TODO evil(fold) | origami | vimish(-fold)
+
+*** TODO clean-aindent-mode (maybe not useful)
+
+*** TODO COMMENT unfill
+#+begin_src emacs-lisp
+  (use-package unfill
+    :defer t
+    :commands (unfill-region unfill-paragraph unfill-toggle)
+    :init
+    (global-set-key [remap fill-paragraph] #'unfill-toggle))
+#+end_src
+
+*** TODO chinese-pyim
+
+*** TODO dtrt-indent
+
+*** TODO nav-flash
+
+*** TODO eyebrowse
+
+*** TODO golden-ratio-mode
+
+*** TODO toc-org
+
+*** TODO ansi-colors
+
+*** TODO dired-quick-sort
+
+*** TODO drag-stuff
+
+*** TODO link-hint
+
+*** TODO string-edit
+
+*** TODO multi-line
+
+*** TODO highlight-indentation & highlight-numbers & highlight-parentheses
+
+*** TODO langtool
+
+*** TODO browse-at-remote
+
+*** TODO COMMENT dap-mode (like lsp) | realgud
+#+begin_src emacs-lisp
+  (use-package dap-mode
+    :after (lsp-mode)
+    :hook ((dap-ui-sessions-mode . evil-evilified-state)
+           (dap-ui-breakpoints-ui-list-mode . evil-evilified-state)
+           (dap-ui-locals-mode . evil-evilified-state)
+           (dap-ui-inspect-mode . evil-evilified-state))
+    :config
+    (progn
+      (dap-mode 1)
+      (dap-ui-mode 1)
+      ;; mouse support
+      (spacemacs|add-toggle dap-mouse
+                            :status dap-tooltip-mode
+                            :on (progn (dap-tooltip-mode)
+                                       (tooltip-mode))
+                            :off (progn (dap-tooltip-mode -1)
+                                        (tooltip-mode -1))
+                            :documentation "Enable mouse support in DAP mode.")
+      (when dap-enable-mouse-support
+        (spacemacs/toggle-dap-mouse-on))
+
+      (spacemacs|add-toggle dap-ui-controls
+                            :status dap-ui-controls-mode
+                            :on (dap-ui-controls-mode)
+                            :off (dap-ui-controls-mode -1)
+                            :documentation "Enable dap-ui-controls-mode")
+
+      (when dap-enable-ui-controls
+        (spacemacs/toggle-dap-ui-controls-on))
+
+      ;; key bindings
+      (let ((bindings (list
+                       ;; transient state
+                       "d."  #'dap-hydra
+                       ;; repl
+                       "d'"  #'dap-ui-repl
+                       ;; abandon
+                       "da"  #'dap-disconnect
+                       "dA"  #'dap-delete-all-sessions
+                       ;; breakpoints
+                       "dbb" #'dap-breakpoint-toggle
+                       "dbc" #'dap-breakpoint-condition
+                       "dbl" #'dap-breakpoint-log-message
+                       "dbh" #'dap-breakpoint-hit-condition
+                       "dba" #'dap-breakpoint-add
+                       "dbd" #'dap-breakpoint-delete
+                       "dbD" #'dap-breakpoint-delete-all
+                       ;; debuging/running
+                       "ddd" #'dap-debug
+                       "dde" #'dap-debug-edit-template
+                       "ddl" #'dap-debug-last
+                       "ddr" #'dap-debug-recent
+                       ;; eval
+                       "dee" #'dap-eval
+                       "der" #'dap-eval-region
+                       "det" #'dap-eval-thing-at-point
+                       "det" #'dap-ui-expressions-add
+                       ;; inspect
+                       "dIi" #'dap-ui-inspect
+                       "dIr" #'dap-ui-inspect-region
+                       "dIt" #'dap-ui-inspect-thing-at-point
+                       ;; stepping
+                       "dc"  #'dap-continue
+                       "di"  #'dap-step-in
+                       "do"  #'dap-step-out
+                       "dr"  #'dap-restart-frame
+                       "ds"  #'dap-next
+                       "dv"  #'dap-ui-inspect-thing-at-point
+                       ;; switching
+                       "dSs" #'dap-switch-session
+                       "dSt" #'dap-switch-thread
+                       "dSf" #'dap-switch-frame
+                       ;; toggles
+                       "dTm" 'spacemacs/toggle-dap-mouse
+                       ;; windows
+                       "dwo" #'dap-go-to-output-buffer
+                       "dwl" #'dap-ui-locals
+                       "dws" #'dap-ui-sessions
+                       "dwb" #'dap-ui-breakpoints))
+            (prefixes '("d"  "debug"
+                        "db" "breakpoints"
+                        "dd" "debugging"
+                        "de" "eval"
+                        "dI" "inspect"
+                        "dS" "switch"
+                        "dT" "toggles"
+                        "dw" "debug windows")))
+
+        ;; Set global prefixes
+        (apply #'spacemacs/declare-prefix prefixes)
+
+        ;; Set global key bindings
+        (apply #'spacemacs/set-leader-keys bindings)
+
+        ;; Do all mode specific dap bindings
+        (dolist (mode spacemacs--dap-supported-modes)
+
+          ;; avoid clash with other debug key bindings
+          (spacemacs/set-leader-keys-for-major-mode mode "db" nil)
+          (spacemacs/set-leader-keys-for-major-mode mode "dd" nil)
+
+          ;; Set prefixes
+          (cl-do* ((x prefixes (cddr x))
+                   (y (cdr x) (cdr x)))
+              ((or (null x) (null y)))
+            (spacemacs/declare-prefix-for-mode mode
+                                               (concat "m" (car x)) (car y)))
+
+          ;; Set bindings
+          (apply #'spacemacs/set-leader-keys-for-major-mode mode bindings)))))
+ #+end_src
+
+*** TODO docker & docker-tramp & dockerfile-mode
+
+* TODO /try dump if stable/
+可参考spacemacs的实现（core/core-dumper.el: spacemacs/dump-emacs）
 
 * COMMENT packages may useful later
 All this packages down here should be rechecked before using.
@@ -6810,6 +7446,12 @@ Compatibility
       (advice-add #'list-environment-entries :override #'my-list-environment-entries)))
 #+end_src
 
+** TODO japanese related
+
+*** TODO migemo
+
+*** TODO ddskk
+
 ** htmlize
 Html Conversion
 #+begin_src emacs-lisp
@@ -7025,7 +7667,7 @@ or (from lambda emacs)
     :bind ([remap goto-line] . goto-line-preview))
 #+end_src
 
-** TODO magit & transient & magit-todos & vdiff-magit
+** TODO magit & transient & magit-todos & vdiff-magit & forge & orgit & git-flow
 #+begin_src emacs-lisp
     ;;;; Magit
   (use-package magit
@@ -7150,7 +7792,11 @@ or (from lambda emacs)
 
 #+end_src
 
-** savehist
+** TODO clean-aindent-mode
+
+** TODO aggressive-indent
+
+** TODO savehist
 Saves recorded minibuffer histories to a file (`~/.emacs.d/history' by
 default).
 
@@ -7183,12 +7829,63 @@ Centaur settings.
               savehist-autosave-interval 300))
 #+end_example
 
+Spacemacs settings
+#+begin_example emacs-lisp
+ (use-package savehist
+    :init
+    (progn
+      ;; Minibuffer history
+      (setq savehist-file (concat spacemacs-cache-directory "savehist")
+            enable-recursive-minibuffers t ; Allow commands in minibuffers
+            history-length 1000
+            savehist-additional-variables '(mark-ring
+                                            global-mark-ring
+                                            search-ring
+                                            regexp-search-ring
+                                            extended-command-history
+                                            kill-ring)
+            savehist-autosave-interval 60)
+      (savehist-mode t)))
+#+end_example
+
 ** minions
 A minor-mode menu for mode-line
 #+begin_src emacs-lisp
   (use-package minions
     :hook (doom-modeline-mode . minions-mode))
 #+end_src
+
+** TODO editorconfig
+
+** TODO eval-sexp-fu
+
+** TODO hexl
+
+** TODO hungry-delete
+
+** TODO password-generator
+
+** TODO string-inflection
+
+** TODO uuidgen
+
+** TODO unkillable-scratch
+#+begin_src emacs-lisp
+  (use-package unkillable-scratch
+    :defer t
+    :init
+    (progn
+      (setq unkillable-scratch-do-not-reset-scratch-buffer t)
+      (unkillable-scratch dotspacemacs-scratch-buffer-unkillable)))
+#+end_src
+
+** TODO column-enforce-mode
+
+** TODO writeroom-mode
+
+** TODO EXWM
+
+** TODO fasd (no need for eshell-z but no windows)
 
 * COMMENT backup snippets for future
 :PROPERTIES:
@@ -7404,6 +8101,19 @@ S-s-<up><down><left><right>
     "Emacs is 29 or above.")
 #+end_src
 
+#+begin_example emacs-lisp
+(defun spacemacs/system-is-mac ()
+  (eq system-type 'darwin))
+(defun spacemacs/system-is-linux ()
+  (eq system-type 'gnu/linux))
+(defun spacemacs/system-is-mswindows ()
+  (eq system-type 'windows-nt))
+
+(defun spacemacs/window-system-is-mac ()
+  ;; ns is returned instead of mac on Emacs 25+
+  (memq (window-system) '(mac ns)))
+#+end_example
+
 *** macOS
 (require 'exec-path-from-shell)
 (exec-path-from-shell-initialize)
@@ -7572,6 +8282,21 @@ Windows external keyboard from time to time."
                         (set-fontset-font t '(#x4e00 . #x9fff) (font-spec :family font))))))
 #+end_src
 
+#+begin_example emacs-lisp
+;; window numbers (ding bang circled digits)
+(set-fontset-font "fontset-default"
+                  '(#x2776 . #x2793) fallback-spec nil 'prepend)
+;; mode-line circled letters (circled latin capital/small letters)
+(set-fontset-font "fontset-default"
+                  '(#x24b6 . #x24e9) fallback-spec nil 'prepend)
+;; mode-line additional characters (circled/squared mathematical operators)
+(set-fontset-font "fontset-default"
+                  '(#x2295 . #x22a1) fallback-spec nil 'prepend)
+;; new version lighter (arrow block)
+(set-fontset-font "fontset-default"
+                  '(#x2190 . #x21ff) fallback-spec2 nil 'prepend)
+#+end_example
+
 ** libraries
 #+begin_src emacs-lisp
 ;; Asynchronous commands. Adds the ability to call asynchronous functions and
@@ -7654,6 +8379,7 @@ S-<left> or S-<right> to switch code branches.
 
 ** /buffer local variables (must be the last)/
 # Local Variables:
+# org-closed-keep-when-no-todo: t
 # org-num-skip-unnumbered: t
 # tangle-dir: "C:\\Users\\InnerSea\\emacs.init\\vanilla\\"
 # org-confirm-babel-evaluate: nil
