@@ -9,25 +9,33 @@
 :UNNUMBERED: t
 :END:
 
-1. *DO THIS FIRST*: Setting the tangle target directory at [[*buffer local variables (must be the last)][here]].
+1. This is a init setting for =Emacs 28.1=.
 
-2. Type M-x all-the-icons-install-fonts RET and follow the instructions
+2. *DO THIS FIRST*: Setting the tangle target directory at [[*buffer local variables (must be the last)][here]].
+
+3. Type M-x all-the-icons-install-fonts RET and follow the instructions
    to get a better UI looking.
 
-3. Install =Symbola= font via
+4. Install =Symbola= font via
    https://dn-works.com/wp-content/uploads/2020/UFAS-Fonts/Symbola.zip
 
-4. This init file uses =JetBrainsMono NF= & =Sarasa Term SC= fonts,
+5. This init file uses =JetBrainsMono NF= & =Sarasa Term SC= fonts,
    install them first.
 
-5. If there's a special tag on the heading. Type S-<left><right> to
+6. If there's a special tag on the heading. Type S-<left><right> to
    switch code branches.
 
-6. Type C-c C-v t to tangle emacs init files.
+7. Type C-c C-v t to tangle emacs init files.
 
-7. There are special SEQ_TODOs for choosing tangling code from the list
-   of branches under 1) 2) etc+. Use S-<left><right> on headline to switch.
+8. There are special SEQ_TODOs for choosing tangling code from the list
+   of branches under 1) 2) etc. Use S-<left><right> on headline to switch.
    
+
+* TODO /read from doomemacs for hack codes when version 3 released/
+尤其是lisp/doom.el和lisp/doom-start.el有许多好的启动加速方法。
+
+* TODO /try dump if stable/
+可参考spacemacs的实现（core/core-dumper.el: spacemacs/dump-emacs）
 
 * early-init.el
 :PROPERTIES:
@@ -40,6 +48,13 @@ Don't change or move this block!!!
 #+BEGIN_SRC emacs-lisp :comments no
   ;; -*- lexical-binding: t; -*-
 #+END_SRC
+** init file debug :comment:when:stable:
+Enable debugging on startup, should be commented out when stable.
+#+begin_src emacs-lisp
+  (setq init-file-debug t
+        debug-on-error t))
+#+end_src
+
 ** TODO true init time
 #+begin_src emacs-lisp
   (defconst emacs-start-time (current-time))
@@ -7094,9 +7109,6 @@ When `major-mode' is listed in `page-break-lines-modes', then
                (engine-keywords (plist-get (cdr engine) :keywords)))
           (eval `(defengine ,cur-engine ,engine-url ,@engine-keywords))))))
 #+end_src
-
-* TODO /try dump if stable/
-可参考spacemacs的实现（core/core-dumper.el: spacemacs/dump-emacs）
 
 * COMMENT packages may useful later
 All this packages down here should be rechecked before using.
