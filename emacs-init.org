@@ -125,6 +125,8 @@ Suppress flashing at startup
   (customize-set-variable 'max-specpdl-size 13000)
 #+end_src
 
+* TODO /FIXME: multi-times of dired-flagged face warning/
+
 * init.el
 :PROPERTIES:
 :header-args: :tangle (concat tangle-dir (car (org-get-outline-path t t)))
@@ -2118,7 +2120,7 @@ Look at this.
     (add-hook 'markdown-mode-hook #'hl-todo-mode))
 #+end_src
 
-**** TODO COMMENT goggles | pulse
+**** TODO COMMENT goggles | pulse | pulsar
 Goggles highlights the modified region using pulse. Currently the
 commands undo, yank, kill and delete are supported.
 #+begin_src emacs-lisp
@@ -2186,6 +2188,163 @@ commands undo, yank, kill and delete are supported.
 **** TODO Typo Mode
 
 **** TODO ligatures.el
+
+**** TODO sublimity
+
+**** TODO ace-popup-menu
+
+**** TODO yascroll-el
+
+**** TODO COMMENT volatile-highlights
+#+begin_src emacs-lisp
+  ;; Highlight some operations
+  (use-package volatile-highlights
+    :diminish
+    :hook (after-init . volatile-highlights-mode)
+    :config
+    (with-no-warnings
+      (when (fboundp 'pulse-momentary-highlight-region)
+        (defun my-vhl-pulse (beg end &optional _buf face)
+          "Pulse the changes."
+          (pulse-momentary-highlight-region beg end face))
+        (advice-add #'vhl/.make-hl :override #'my-vhl-pulse))))
+
+  ;; Pulse current line
+  (use-package pulse
+    :ensure nil
+    :custom-face
+    (pulse-highlight-start-face ((t (:inherit region))))
+    (pulse-highlight-face ((t (:inherit region :extend t))))
+    :hook (((dumb-jump-after-jump imenu-after-jump) . my-recenter-and-pulse)
+           ((bookmark-after-jump magit-diff-visit-file next-error) . my-recenter-and-pulse-line))
+    :init
+    (with-no-warnings
+      (defun my-pulse-momentary-line (&rest _)
+        "Pulse the current line."
+        (pulse-momentary-highlight-one-line (point)))
+
+      (defun my-pulse-momentary (&rest _)
+        "Pulse the region or the current line."
+        (if (fboundp 'xref-pulse-momentarily)
+            (xref-pulse-momentarily)
+          (my-pulse-momentary-line)))
+
+      (defun my-recenter-and-pulse(&rest _)
+        "Recenter and pulse the region or the current line."
+        (recenter)
+        (my-pulse-momentary))
+
+      (defun my-recenter-and-pulse-line (&rest _)
+        "Recenter and pulse the current line."
+        (recenter)
+        (my-pulse-momentary-line))
+
+      (dolist (cmd '(recenter-top-bottom
+                     other-window windmove-do-window-select
+                     ace-window aw--select-window
+                     pager-page-down pager-page-up
+                     treemacs-select-window
+                     symbol-overlay-basic-jump))
+        (advice-add cmd :after #'my-pulse-momentary-line))
+
+      (dolist (cmd '(pop-to-mark-command
+                     pop-global-mark
+                     goto-last-change))
+        (advice-add cmd :after #'my-recenter-and-pulse))))
+#+end_src
+
+**** TODO COMMENT winum | switch-window | ace-window | window-numbering
+#+begin_src emacs-lisp
+  ;; Quickly switch windows
+  (use-package ace-window
+    :pretty-hydra
+    ((:title (pretty-hydra-title "Window Management" 'faicon "th" :height 1.1 :v-adjust -0.1)
+             :foreign-keys warn :quit-key "q")
+     ("Actions"
+      (("TAB" other-window "switch")
+       ("x" ace-delete-window "delete" :exit t)
+       ("X" ace-delete-other-windows "delete other" :exit t)
+       ("s" ace-swap-window "swap" :exit t)
+       ("a" ace-select-window "select" :exit t)
+       ("m" toggle-frame-maximized "maximize" :exit t)
+       ("f" toggle-frame-fullscreen "fullscreen" :exit t))
+      "Resize"
+      (("h" shrink-window-horizontally "←")
+       ("j" enlarge-window "↓")
+       ("k" shrink-window "↑")
+       ("l" enlarge-window-horizontally "→")
+       ("n" balance-windows "balance" :exit t))
+      "Split"
+      (("r" split-window-right "horizontally")
+       ("R" split-window-horizontally-instead "horizontally instead")
+       ("v" split-window-below "vertically")
+       ("V" split-window-vertically-instead "vertically instead")
+       ("t" toggle-window-split "toggle"))
+      "Zoom"
+      (("+" text-scale-increase "in")
+       ("=" text-scale-increase "in")
+       ("-" text-scale-decrease "out")
+       ("0" (text-scale-increase 0) "reset"))
+      "Appearance"
+      (("F" set-frame-font "font")
+       ("T" centaur-load-theme "theme"))))
+    :custom-face
+    (aw-leading-char-face ((t (:inherit font-lock-keyword-face :bold t :height 2.0))))
+    (aw-minibuffer-leading-char-face ((t (:inherit font-lock-keyword-face :bold t :height 1.0))))
+    (aw-mode-line-face ((t (:inherit mode-line-emphasis :bold t))))
+    :bind (([remap other-window] . ace-window)
+           ("C-c w" . ace-window-hydra/body))
+    :hook (emacs-startup . ace-window-display-mode)
+    :config
+    (defun toggle-window-split ()
+      (interactive)
+      (if (= (count-windows) 2)
+          (let* ((this-win-buffer (window-buffer))
+                 (next-win-buffer (window-buffer (next-window)))
+                 (this-win-edges (window-edges (selected-window)))
+                 (next-win-edges (window-edges (next-window)))
+                 (this-win-2nd (not (and (<= (car this-win-edges)
+                                             (car next-win-edges))
+                                         (<= (cadr this-win-edges)
+                                             (cadr next-win-edges)))))
+                 (splitter
+                  (if (= (car this-win-edges)
+                         (car (window-edges (next-window))))
+                      'split-window-horizontally
+                    'split-window-vertically)))
+            (delete-other-windows)
+            (let ((first-win (selected-window)))
+              (funcall splitter)
+              (if this-win-2nd (other-window 1))
+              (set-window-buffer (selected-window) this-win-buffer)
+              (set-window-buffer (next-window) next-win-buffer)
+              (select-window first-win)
+              (if this-win-2nd (other-window 1))))
+        (user-error "`toggle-window-split' only supports two windows")))
+
+    ;; Bind hydra to dispatch list
+    (add-to-list 'aw-dispatch-alist '(?w ace-window-hydra/body) t)
+
+    ;; Select widnow via `M-1'...`M-9'
+    (defun aw--select-window (number)
+      "Slecet the specified window."
+      (when (numberp number)
+        (let ((found nil))
+          (dolist (win (aw-window-list))
+            (when (and (window-live-p win)
+                       (eq number
+                           (string-to-number
+                            (window-parameter win 'ace-window-path))))
+              (setq found t)
+              (aw-switch-to-window win)))
+          (unless found
+            (message "No specified window: %d" number)))))
+    (dotimes (n 9)
+      (bind-key (format "M-%d" (1+ n))
+                (lambda ()
+                  (interactive)
+                  (aw--select-window (1+ n))))))
+#+end_src
 
 *** minibuffer & complete
 **** vertico
@@ -2894,7 +3053,7 @@ Settings about org-mode & extensions.
     ;; (org-pretty-entities-include-sub-superscripts t) ;; prettify sub/superscripts
     ;; (org-read-date-prefer-future 'time) ;; Incomplete dates refer to future dates & times
     ;; (org-startup-folded t) ;; start org in outline
-    ;; (org-startup-indented t) ;; start with indentation of headlines
+    (org-startup-indented t) ;; start with indentation of headlines
     ;; (org-auto-align-tags nil) ;; don't auto-align tags
     (org-tags-column 0) ;; place tags directly next to headline text
 
@@ -5034,99 +5193,6 @@ Info-colors, make the info manual as colorful.
                   :override #'my-youdao-dictionary--posframe-tip)))
 #+end_src
 
-*** TODO COMMENT winum | switch-window | ace-window | window-numbering
-#+begin_src emacs-lisp
-  ;; Quickly switch windows
-  (use-package ace-window
-    :pretty-hydra
-    ((:title (pretty-hydra-title "Window Management" 'faicon "th" :height 1.1 :v-adjust -0.1)
-             :foreign-keys warn :quit-key "q")
-     ("Actions"
-      (("TAB" other-window "switch")
-       ("x" ace-delete-window "delete" :exit t)
-       ("X" ace-delete-other-windows "delete other" :exit t)
-       ("s" ace-swap-window "swap" :exit t)
-       ("a" ace-select-window "select" :exit t)
-       ("m" toggle-frame-maximized "maximize" :exit t)
-       ("f" toggle-frame-fullscreen "fullscreen" :exit t))
-      "Resize"
-      (("h" shrink-window-horizontally "←")
-       ("j" enlarge-window "↓")
-       ("k" shrink-window "↑")
-       ("l" enlarge-window-horizontally "→")
-       ("n" balance-windows "balance" :exit t))
-      "Split"
-      (("r" split-window-right "horizontally")
-       ("R" split-window-horizontally-instead "horizontally instead")
-       ("v" split-window-below "vertically")
-       ("V" split-window-vertically-instead "vertically instead")
-       ("t" toggle-window-split "toggle"))
-      "Zoom"
-      (("+" text-scale-increase "in")
-       ("=" text-scale-increase "in")
-       ("-" text-scale-decrease "out")
-       ("0" (text-scale-increase 0) "reset"))
-      "Appearance"
-      (("F" set-frame-font "font")
-       ("T" centaur-load-theme "theme"))))
-    :custom-face
-    (aw-leading-char-face ((t (:inherit font-lock-keyword-face :bold t :height 2.0))))
-    (aw-minibuffer-leading-char-face ((t (:inherit font-lock-keyword-face :bold t :height 1.0))))
-    (aw-mode-line-face ((t (:inherit mode-line-emphasis :bold t))))
-    :bind (([remap other-window] . ace-window)
-           ("C-c w" . ace-window-hydra/body))
-    :hook (emacs-startup . ace-window-display-mode)
-    :config
-    (defun toggle-window-split ()
-      (interactive)
-      (if (= (count-windows) 2)
-          (let* ((this-win-buffer (window-buffer))
-                 (next-win-buffer (window-buffer (next-window)))
-                 (this-win-edges (window-edges (selected-window)))
-                 (next-win-edges (window-edges (next-window)))
-                 (this-win-2nd (not (and (<= (car this-win-edges)
-                                             (car next-win-edges))
-                                         (<= (cadr this-win-edges)
-                                             (cadr next-win-edges)))))
-                 (splitter
-                  (if (= (car this-win-edges)
-                         (car (window-edges (next-window))))
-                      'split-window-horizontally
-                    'split-window-vertically)))
-            (delete-other-windows)
-            (let ((first-win (selected-window)))
-              (funcall splitter)
-              (if this-win-2nd (other-window 1))
-              (set-window-buffer (selected-window) this-win-buffer)
-              (set-window-buffer (next-window) next-win-buffer)
-              (select-window first-win)
-              (if this-win-2nd (other-window 1))))
-        (user-error "`toggle-window-split' only supports two windows")))
-
-    ;; Bind hydra to dispatch list
-    (add-to-list 'aw-dispatch-alist '(?w ace-window-hydra/body) t)
-
-    ;; Select widnow via `M-1'...`M-9'
-    (defun aw--select-window (number)
-      "Slecet the specified window."
-      (when (numberp number)
-        (let ((found nil))
-          (dolist (win (aw-window-list))
-            (when (and (window-live-p win)
-                       (eq number
-                           (string-to-number
-                            (window-parameter win 'ace-window-path))))
-              (setq found t)
-              (aw-switch-to-window win)))
-          (unless found
-            (message "No specified window: %d" number)))))
-    (dotimes (n 9)
-      (bind-key (format "M-%d" (1+ n))
-                (lambda ()
-                  (interactive)
-                  (aw--select-window (1+ n))))))
-#+end_src
-
 *** TODO COMMENT iedit | symbol-overlay
 edit same text in one buffer or region
 #+begin_src emacs-lisp
@@ -5980,64 +6046,6 @@ spacemacs settings
         (kbd "h") 'undo-tree-visualize-switch-branch-left
         (kbd "l") 'undo-tree-visualize-switch-branch-right)))
 #+end_example
-*** TODO COMMENT volatile-highlights
-#+begin_src emacs-lisp
-  ;; Highlight some operations
-  (use-package volatile-highlights
-    :diminish
-    :hook (after-init . volatile-highlights-mode)
-    :config
-    (with-no-warnings
-      (when (fboundp 'pulse-momentary-highlight-region)
-        (defun my-vhl-pulse (beg end &optional _buf face)
-          "Pulse the changes."
-          (pulse-momentary-highlight-region beg end face))
-        (advice-add #'vhl/.make-hl :override #'my-vhl-pulse))))
-
-  ;; Pulse current line
-  (use-package pulse
-    :ensure nil
-    :custom-face
-    (pulse-highlight-start-face ((t (:inherit region))))
-    (pulse-highlight-face ((t (:inherit region :extend t))))
-    :hook (((dumb-jump-after-jump imenu-after-jump) . my-recenter-and-pulse)
-           ((bookmark-after-jump magit-diff-visit-file next-error) . my-recenter-and-pulse-line))
-    :init
-    (with-no-warnings
-      (defun my-pulse-momentary-line (&rest _)
-        "Pulse the current line."
-        (pulse-momentary-highlight-one-line (point)))
-
-      (defun my-pulse-momentary (&rest _)
-        "Pulse the region or the current line."
-        (if (fboundp 'xref-pulse-momentarily)
-            (xref-pulse-momentarily)
-          (my-pulse-momentary-line)))
-
-      (defun my-recenter-and-pulse(&rest _)
-        "Recenter and pulse the region or the current line."
-        (recenter)
-        (my-pulse-momentary))
-
-      (defun my-recenter-and-pulse-line (&rest _)
-        "Recenter and pulse the current line."
-        (recenter)
-        (my-pulse-momentary-line))
-
-      (dolist (cmd '(recenter-top-bottom
-                     other-window windmove-do-window-select
-                     ace-window aw--select-window
-                     pager-page-down pager-page-up
-                     treemacs-select-window
-                     symbol-overlay-basic-jump))
-        (advice-add cmd :after #'my-pulse-momentary-line))
-
-      (dolist (cmd '(pop-to-mark-command
-                     pop-global-mark
-                     goto-last-change))
-        (advice-add cmd :after #'my-recenter-and-pulse))))
-#+end_src
-
 *** TODO zop-to-char
 
 *** TODO key-chord
@@ -7109,6 +7117,9 @@ When `major-mode' is listed in `page-break-lines-modes', then
                (engine-keywords (plist-get (cdr engine) :keywords)))
           (eval `(defengine ,cur-engine ,engine-url ,@engine-keywords))))))
 #+end_src
+
+*** TODO Hyperbole
+https://emacs-china.org/t/hyperbole-emacs-emacs/3014
 
 * COMMENT packages may useful later
 All this packages down here should be rechecked before using.
@@ -8243,7 +8254,56 @@ A minor-mode menu for mode-line
 
 ** TODO hackernews
 
-* COMMENT backup snippets for future
+** APPEARANCES
+*** TODO ElScreen
+Utility for multiple screens
+
+*** TODO Zoom
+Fixed and automatic balanced window layout for Emacs.
+
+*** TODO awesome-tab | centaur-tabs
+
+*** windmove-mode keybindings
+default no bindings set, uncomment to apply.
+need redesign to use direct keybinding as such functions are very slow.
+
+#+begin_src emacs-lisp
+  ;; Directional window-selection routines
+  (use-package windmove
+    :ensure nil
+    :hook (after-init . (lambda ()
+                          (windmove-default-keybindings 'super))))
+#+end_src
+
+**** COMMENT windmove-default-keybindings
+S-<up><down><left><right>
+
+#+begin_src emacs-lisp
+  (windmove-default-keybindings)
+#+end_src
+
+**** COMMENT windmove-delete-default-keybindings
+C-x S-<up><down><left><right>
+
+#+begin_src emacs-lisp
+  (windmove-delete-default-keybindings)
+#+end_src
+
+**** COMMENT windmove-display-default-keybindings
+M-S-<up><down><left><right>
+
+#+begin_src emacs-lisp
+  (windmove-display-default-keybindings)
+#+end_src
+
+**** COMMENT windmove-swap-states-default-keybindings
+S-s-<up><down><left><right>
+
+#+begin_src emacs-lisp
+  (windmove-swap-states-default-keybindings)
+#+end_src
+
+* backup snippets for future
 :PROPERTIES:
 :VISIBILITY: folded
 :header-args: :tangle no
@@ -8336,46 +8396,6 @@ A minor-mode menu for mode-line
                 (kbd "C-c C-x a")
                 #'org-attach-dired-to-subtree)))
 #+END_SRC
-
-** windmove-mode keybindings (default, delete, display, swap)
-default no bindings set, uncomment to apply.
-need redesign to use direct keybinding as such functions are very slow.
-
-#+begin_src emacs-lisp
-  ;; Directional window-selection routines
-  (use-package windmove
-    :ensure nil
-    :hook (after-init . (lambda ()
-                          (windmove-default-keybindings 'super))))
-#+end_src
-
-*** COMMENT windmove-default-keybindings
-S-<up><down><left><right>
-
-#+begin_src emacs-lisp
-  (windmove-default-keybindings)
-#+end_src
-
-*** COMMENT windmove-delete-default-keybindings
-C-x S-<up><down><left><right>
-
-#+begin_src emacs-lisp
-  (windmove-delete-default-keybindings)
-#+end_src
-
-*** COMMENT windmove-display-default-keybindings
-M-S-<up><down><left><right>
-
-#+begin_src emacs-lisp
-  (windmove-display-default-keybindings)
-#+end_src
-
-*** COMMENT windmove-swap-states-default-keybindings
-S-s-<up><down><left><right>
-
-#+begin_src emacs-lisp
-  (windmove-swap-states-default-keybindings)
-#+end_src
 
 ** OS specific settings
 #+begin_src emacs-lisp
