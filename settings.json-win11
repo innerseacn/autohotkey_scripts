@@ -39,7 +39,7 @@
         {
             "antialiasingMode": "cleartype",
             "colorScheme": "Tango Dark",
-            "cursorShape": "bar",
+            "cursorShape": "filledBox",
             "font": 
             {
                 "face": "Cascadia Code",
