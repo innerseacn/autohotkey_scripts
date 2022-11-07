@@ -1,5 +1,5 @@
+oh-my-posh --init --shell pwsh --config C:\Users\inner\pyprojs\autohotkey_scripts\.myposhtheme.json | Invoke-Expression
 Import-Module "$($(Get-Item $(Get-Command scoop.ps1).Path).Directory.Parent.FullName)\modules\scoop-completion"
 Set-PSReadLineOption -EditMode Emacs
 Set-PSReadLineOption -BellStyle None
-Set-PSReadLineKeyHandler -Chord 'Ctrl+d' -Function DeleteChar
 Set-PSReadLineOption -PredictionSource History
