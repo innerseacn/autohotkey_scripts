@@ -7,7 +7,7 @@
 
 因为维护工作量巨大，暂停emacs配置文件搭建。下一步工作：
 - 查看emacs最新版本changelog，更新配置
-- 围绕doom-modeline最新版更新插件套装，修复时间和电量显示崩溃问题（[xx:xx] batteryicon xx%）
+- 围绕doom-modeline最新版更新插件套装，修复图标显示（参考最新文档），修复时间和电量显示崩溃问题（[xx:xx] batteryicon xx%）
 - 目前orgmode，eshell，字体，补全框架（vertico、embark、consult相关）基本可用
 - 编程相关不可用
 - 根据todo标志完善相关问题

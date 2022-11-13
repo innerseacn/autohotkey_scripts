@@ -9,7 +9,7 @@
 <^e:: Send {END}
 <^p:: Send {Up}
 <^n:: Send {Down}
-<^v:: Send {PgDn}
-!v:: Send {PgUp}
-!+,:: Send {CtrlDown}{Home}{CtrlUp}
-!+.:: Send {CtrlDown}{End}{CtrlUp}
+;<^v:: Send {PgDn}
+;!v:: Send {PgUp}
+;!+,:: Send {CtrlDown}{Home}{CtrlUp}
+;!+.:: Send {CtrlDown}{End}{CtrlUp}
