@@ -4,14 +4,24 @@
 #+TODO: BASIC SUPER |
 #+TODO: TAB-INSERT TAB-SELECT |
 
+
+因为维护工作量巨大，暂停emacs配置文件搭建。下一步工作：
+- 查看emacs最新版本changelog，更新配置
+- 围绕doom-modeline最新版更新插件套装，修复时间和电量显示崩溃问题（[xx:xx] batteryicon xx%）
+- 目前orgmode，eshell，补全框架（vertico、embark、consult相关）基本可用
+- 编程相关不可用
+- 根据todo标志完善相关问题
+- 需要行操作（类似vim的复制、删除等）代码或包
+- emacs-chinese(github)
+
 * *READ THIS FIRST*
 :PROPERTIES:
 :UNNUMBERED: t
 :END:
 
-1. This is a init setting for =Emacs 28.1=.
+1. This is a init setting for =Emacs 28.2=.
 
-2. *DO THIS FIRST*: Setting the tangle target directory at [[*buffer local variables (must be the last)][here]].
+2. *DO THIS FIRST*: Setting the tangle target directory at [[*/buffer local variables (must be the last)/][here]].
 
 3. Type M-x all-the-icons-install-fonts RET and follow the instructions
    to get a better UI looking.
@@ -22,14 +32,11 @@
 5. This init file uses =JetBrainsMono NF= & =Sarasa Term SC= fonts,
    install them first.
 
-6. If there's a special tag on the heading. Type S-<left><right> to
-   switch code branches.
+6. There are special SEQ_TODOs for choosing tangling code from the list
+   of branches under 1) 2) etc. Use S-<left><right> on headline to switch.
 
 7. Type C-c C-v t to tangle emacs init files.
 
-8. There are special SEQ_TODOs for choosing tangling code from the list
-   of branches under 1) 2) etc. Use S-<left><right> on headline to switch.
-   
 
 * TODO /read from doomemacs for hack codes when version 3 released/
 尤其是lisp/doom.el和lisp/doom-start.el有许多好的启动加速方法。
@@ -52,8 +59,8 @@ Don't change or move this block!!!
 Enable debugging on startup, should be commented out when stable.
 #+begin_src emacs-lisp
   (setq init-file-debug t
-        debug-on-error t))
-#+end_src
+        debug-on-error t)
+        #+end_src
 
 ** TODO true init time
 #+begin_src emacs-lisp
@@ -113,8 +120,8 @@ Suppress flashing at startup
           (fullscreen . fullboth)))
 
   ;; Loads a nice blue theme, avoids the white screen flash on startup.
-  (load-theme 'modus-vivendi t)
-  #+end_src
+  ;; (load-theme 'modus-vivendi t)
+#+end_src
 
 ** [from lambda emacs]
 #+begin_src emacs-lisp
@@ -164,7 +171,7 @@ Allow access from EMACSCLIENT_TRAMP
 #+begin_src emacs-lisp
   (add-hook 'after-init-hook 'server-mode)
   ;; (add-hook 'after-init-hook
-            ;; (lambda () (server-mode)))
+  ;; (lambda () (server-mode)))
 #+end_src
 
 ** w32 settings
@@ -289,8 +296,7 @@ Using custom-set-faces mechanism. Look nice in doom-badger theme.
   (set-face-attribute 'default nil :font "JetBrainsMono NF 12")
   (when (display-graphic-p)
     (setq face-font-rescale-alist `(("Sarasa Term SC" . 1)))
-    (set-fontset-font t '(#x4e00 . #x9fff) "Sarasa Term SC")
-    )
+    (set-fontset-font t '(#x4e00 . #x9fff) "Sarasa Term SC"))
 #+END_SRC
 
 Backup settings.
@@ -359,7 +365,7 @@ using :noweb to call ORG-INIT-FILE library.
           (propertize (format-time-string "[%F %R]")
                       'face 'custom-state))
     (message (concat time-string battery-string)))
-  (global-set-key (kbd "C-M-<f22>") 'inn/echo-time-battery)
+  (global-set-key (kbd "<f12>") 'inn/echo-time-battery)
 #+end_src
 
 *** open newline like vim
@@ -460,26 +466,27 @@ From purcel's.
 
 ** package settings
 *** TODO [about load-path and package-initialize] package initialize & load-path
-1. comment load-path
-2. package-initialize add 'noactivate
-3. package-initialize add message function
+1. comment load-path?
+2. package-initialize add 'noactivate?
+3. package-initialize add message function?
 #+BEGIN_SRC emacs-lisp
-    ;; (let ((default-directory (expand-file-name "elpa" user-emacs-directory)))
-      ;; (normal-top-level-add-subdirs-to-load-path))
+  (let ((default-directory (expand-file-name "elpa" user-emacs-directory)))
+    (normal-top-level-add-subdirs-to-load-path))
 
-    (setq package-archives '(("gnu"   . "http://mirrors.bfsu.edu.cn/elpa/gnu/")
-                             ("melpa" . "http://mirrors.bfsu.edu.cn/elpa/melpa/")
-                             ("Org" . "http://mirrors.bfsu.edu.cn/elpa/org/")
-                             ("nongnu" . "http://mirrors.bfsu.edu.cn/elpa/nongnu/")))
+  (setq package-archives '(("gnu"   . "http://mirrors.bfsu.edu.cn/elpa/gnu/")
+                           ("melpa" . "http://mirrors.bfsu.edu.cn/elpa/melpa/")
+                           ("Org" . "http://mirrors.bfsu.edu.cn/elpa/org/")
+                           ("nongnu" . "http://mirrors.bfsu.edu.cn/elpa/nongnu/")))
 
-    (setq package-check-signature nil)
-    (require 'package)
-    (unless (bound-and-true-p package--initialized)
-      (package-initialize 'noactivate)
-      (message "package-initialize run")
-    (unless (package-installed-p 'use-package)
-      (package-refresh-contents)
-      (package-install 'use-package))
+  (setq package-check-signature nil)
+  (require 'package)
+  (unless (bound-and-true-p package--initialized)
+    (package-initialize))
+;    (package-initialize 'noactivate)
+ ;   (message "package-initialize run"))
+  (unless (package-installed-p 'use-package)
+    (package-refresh-contents)
+    (package-install 'use-package))
 #+END_SRC
 
 *** VERBOSE-OFF use-package
@@ -515,7 +522,7 @@ Don't forget to use ~:ensure nil~ code for built-in packages.
   (add-hook 'after-init-hook 'column-number-mode)
   (add-hook 'after-init-hook 'delete-selection-mode)
   (add-hook 'after-init-hook 'display-battery-mode)
-  (add-hook 'after-init-hook 'dired-async-mode)
+;  (add-hook 'after-init-hook 'dired-async-mode)
   ;; (add-hook 'after-init-hook 'electric-quote-mode)
   (add-hook 'after-init-hook 'electric-pair-mode)
   (add-hook 'after-init-hook 'global-goto-address-mode)
@@ -1073,7 +1080,7 @@ After code is a list of good looking themes, use one of them.
   (doom-themes-org-config))
 #+END_EXAMPLE
 
-**** modeline
+**** TODO modeline :need:debug:
 Modeline derived from DOOM emacs.
 #+BEGIN_SRC emacs-lisp
   (use-package doom-modeline
@@ -1084,6 +1091,7 @@ Modeline derived from DOOM emacs.
     (doom-modeline-gnus nil)
     (doom-modeline-irc nil)
     (doom-modeline-modal-icon nil)
+    (doom-modeline-height 15)
     (doom-modeline-bar-width 6))
 #+END_SRC
 
@@ -8718,7 +8726,7 @@ So we use :noweb as below.
 #+end_src
 
 #+RESULTS: ORG-INIT-FILE
-: c:/Users/InnerSea/pyprojs/autohotkey_scripts/emacs-init.org
+: c:/Users/inner/pyprojs/autohotkey_scripts/emacs-init.org
 ** named kbd macros
 Open project file at point.
 #+begin_src emacs-lisp
@@ -8757,7 +8765,7 @@ S-<left> or S-<right> to switch code branches.
 # Local Variables:
 # org-closed-keep-when-no-todo: t
 # org-num-skip-unnumbered: t
-# tangle-dir: "C:\\Users\\InnerSea\\emacs.init\\vanilla\\"
+# tangle-dir: "C:\\Users\\inner\\emacs.init\\vanilla\\"
 # org-confirm-babel-evaluate: nil
 # org-todo-keyword-faces: (("TODO" . org-dispatcher-highlight))
 # eval: (org-babel-ref-resolve "confirm-branch")
