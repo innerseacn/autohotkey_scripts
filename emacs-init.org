@@ -66,7 +66,7 @@ Enable debugging on startup, should be commented out when stable.
         debug-on-error t)
         #+end_src
 
-** true init time
+** /true init time/
 #+begin_src emacs-lisp
   (defconst emacs-start-time (current-time))
   (add-hook 'emacs-startup-hook
@@ -543,7 +543,7 @@ Don't forget to use ~:ensure nil~ code for built-in packages.
   (setq display-time-string-forms
         '((propertize (format-time-string "[%F %R]")
                       'face 'dired-flagged)))
-  (display-time-mode)
+  (add-hook 'after-init-hook 'display-time-mode)
 #+end_src
 
 **** smooth scroll
