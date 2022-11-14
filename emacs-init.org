@@ -24,19 +24,22 @@
 
 2. *DO THIS FIRST*: Setting the tangle target directory at [[*/buffer local variables (must be the last)/][here]].
 
-3. Type M-x all-the-icons-install-fonts RET and follow the instructions
+3. set $HOME environment variable where you want to put your .emacs.d,
+   or emacs will use ~\AppData\Roaming\... as default.
+
+4. Type M-x all-the-icons-install-fonts RET and follow the instructions
    to get a better UI looking.
 
-4. Install =Symbola= font via
+5. Install =Symbola= font via
    https://dn-works.com/wp-content/uploads/2020/UFAS-Fonts/Symbola.zip
 
-5. This init file uses =JetBrainsMono NF= & =Sarasa Term SC= fonts,
+6. This init file uses =JetBrainsMono NF= & =Sarasa Term SC= fonts,
    install them first.
 
-6. There are special SEQ_TODOs for choosing tangling code from the list
+7. There are special SEQ_TODOs for choosing tangling code from the list
    of branches under 1) 2) etc. Use S-<left><right> on headline to switch.
 
-7. Type C-c C-v t to tangle emacs init files.
+8. Type C-c C-v t to tangle emacs init files.
 
 
 * TODO /read from doomemacs for hack codes when version 3 released/
@@ -63,7 +66,7 @@ Enable debugging on startup, should be commented out when stable.
         debug-on-error t)
         #+end_src
 
-** TODO true init time
+** true init time
 #+begin_src emacs-lisp
   (defconst emacs-start-time (current-time))
   (add-hook 'emacs-startup-hook
@@ -146,15 +149,6 @@ Don't change or move this block!!!
 #+BEGIN_SRC emacs-lisp :comments no
   ;; -*- lexical-binding: t; -*-
 #+END_SRC
-
-** /profile startup/ :comment:when:stable:
-Profile emacs startup
-#+begin_src emacs-lisp
-  (add-hook 'emacs-startup-hook
-            (lambda ()
-              (message "Emacs loaded in %s."
-                       (emacs-init-time))))
-#+end_src
 
 ** COMMENT native compile
 #+begin_src emacs-lisp
