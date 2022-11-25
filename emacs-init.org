@@ -7,7 +7,6 @@
 
 因为维护工作量巨大，暂停emacs配置文件搭建。下一步工作：
 - 查看emacs最新版本changelog，更新配置
-- 围绕doom-modeline最新版更新插件套装，修复图标显示（参考最新文档），修复时间和电量显示崩溃问题（[xx:xx] batteryicon xx%）
 - 目前orgmode，eshell，字体，补全框架（vertico、embark、consult相关）基本可用
 - 编程相关不可用
 - 根据todo标志完善相关问题
@@ -304,6 +303,7 @@ Backup settings.
 ** key bindings
 *** built-in function key bindings
 #+BEGIN_SRC emacs-lisp
+  (global-set-key (kbd "<M-f1>") #'restart-emacs)
   (global-set-key (kbd "C-x k") #'kill-current-buffer)
   (global-set-key (kbd "C-M-<backspace>") #'backward-kill-sexp)
   ;; (global-set-key (kbd "C-x C-1") #'delete-windows-on)
@@ -460,10 +460,7 @@ From purcel's.
 #+end_src
 
 ** package settings
-*** TODO [about load-path and package-initialize] package initialize & load-path
-1. comment load-path?
-2. package-initialize add 'noactivate?
-3. package-initialize add message function?
+*** package initialize & load-path
 #+BEGIN_SRC emacs-lisp
   (let ((default-directory (expand-file-name "elpa" user-emacs-directory)))
     (normal-top-level-add-subdirs-to-load-path))
@@ -540,9 +537,10 @@ Don't forget to use ~:ensure nil~ code for built-in packages.
 
 **** time
 #+begin_src emacs-lisp
-  (setq display-time-string-forms
-        '((propertize (format-time-string "[%F %R]")
-                      'face 'dired-flagged)))
+  ;(setq display-time-string-forms
+   ;     '((propertize (format-time-string "[%F %R]")
+    ;                  'face 'dired-flagged)))
+  (setq display-time-24hr-format t)
   (add-hook 'after-init-hook 'display-time-mode)
 #+end_src
 
@@ -1037,6 +1035,107 @@ Provides a simple command to restart Emacs from within Emacs.
 #+end_src
 
 *** appearances
+**** all-the-icons (the package)
+#+begin_src emacs-lisp
+  (use-package all-the-icons)
+#+end_src
+
+***** COMMENT /Centaur's config (only example)/
+#+begin_example emacs-lisp
+  ;; NOTE: Must run `M-x all-the-icons-install-fonts', and install fonts manually on Windows
+  (when centaur-icon
+    (use-package all-the-icons
+      :custom (all-the-icons-scale-factor 1.1)
+      :init (unless (or sys/win32p
+                        (daemonp)
+                        (font-installed-p "all-the-icons"))
+              (centaur-install-fonts))
+      :config
+      ;; Support more icons
+      (let ((extension-icon-alist
+             '(("bat"  all-the-icons-alltheicon "terminal" :face all-the-icons-lsilver)
+               ("cmd"  all-the-icons-alltheicon "terminal" :face all-the-icons-lsilver)
+               ("conf" all-the-icons-octicon "settings"    :v-adjust 0.0 :face all-the-icons-yellow)
+               ("eln"  all-the-icons-octicon "file-binary" :v-adjust 0.0 :face all-the-icons-dsilver)
+               ("epub" all-the-icons-faicon "book"         :height 1.0 :v-adjust -0.1 :face all-the-icons-green)
+               ("exe"  all-the-icons-octicon "file-binary" :v-adjust 0.0 :face all-the-icons-dsilver)
+               ("make" all-the-icons-fileicon "gnu"        :face all-the-icons-dorange)
+               ("rss"  all-the-icons-octicon "rss"         :height 1.1 :v-adjust 0.0 :face all-the-icons-lorange)
+               ("toml" all-the-icons-octicon "settings"    :v-adjust 0.0 :face all-the-icons-yellow)
+               ("tsx"  all-the-icons-fileicon "tsx"        :height 1.0 :v-adjust -0.1 :face all-the-icons-cyan-alt)
+               ("xpm"  all-the-icons-octicon "file-media"  :v-adjust 0.0 :face all-the-icons-dgreen))))
+        (dolist (icon extension-icon-alist)
+          (add-to-list 'all-the-icons-extension-icon-alist icon)))
+
+      (let ((regexp-icon-alist
+             '(("\\.[bB][iI][nN]$"               all-the-icons-octicon "file-binary" :v-adjust 0.0 :face all-the-icons-yellow)
+               ("^config$"                       all-the-icons-octicon "settings"    :v-adjust 0.0 :face all-the-icons-dorange)
+               ("\\.\\(ba\\|z\\)shrc$"           all-the-icons-alltheicon "script"   :height 0.9 :face all-the-icons-dpink)
+               ("\\.\\(bash\\|zsh\\)*_?profile$" all-the-icons-alltheicon "script"   :height 0.9 :face all-the-icons-dred)
+               ("\\.\\(ba\\|z\\)sh_history$"     all-the-icons-alltheicon "script"   :height 0.9 :face all-the-icons-dsilver)
+               ("\\.zshenv$"                     all-the-icons-alltheicon "script"   :height 0.9 :face all-the-icons-dred)
+               ("Cask\\'"                        all-the-icons-fileicon "elisp"      :height 1.0 :v-adjust -0.2 :face all-the-icons-blue)
+               ("NEWS$"                          all-the-icons-faicon "newspaper-o"  :height 0.9 :v-adjust -0.2)
+               ("^Rakefile$"                     all-the-icons-alltheicon "ruby-alt" :face all-the-icons-red))))
+        (dolist (icon regexp-icon-alist)
+          (add-to-list 'all-the-icons-regexp-icon-alist icon)))
+
+      (let ((mode-icon-alist
+             '((xwidget-webkit-mode           all-the-icons-faicon "chrome"          :v-adjust -0.1 :face all-the-icons-blue)
+               (bongo-playlist-mode           all-the-icons-material "queue_music"   :height 1.2 :face all-the-icons-green)
+               (bongo-library-mode            all-the-icons-material "library_music" :height 1.1 :face all-the-icons-green)
+               (simple-mpc-mode               all-the-icons-faicon "music"           :v-adjust -0.1 :face all-the-icons-green)
+               (gnus-group-mode               all-the-icons-fileicon "gnu"           :face all-the-icons-silver)
+               (gnus-summary-mode             all-the-icons-octicon "inbox"          :height 1.0 :v-adjust 0.0 :face all-the-icons-orange)
+               (gnus-article-mode             all-the-icons-octicon "mail"           :height 1.1 :v-adjust 0.0 :face all-the-icons-lblue)
+               (message-mode                  all-the-icons-octicon "mail"           :height 1.1 :v-adjust 0.0 :face all-the-icons-lblue)
+               (diff-mode                     all-the-icons-octicon "git-compare"    :v-adjust 0.0 :face all-the-icons-lred)
+               (flycheck-error-list-mode      all-the-icons-octicon "checklist"      :height 1.1 :v-adjust 0.0 :face all-the-icons-lred)
+               (newsticker-mode               all-the-icons-faicon "rss-square"      :v-adjust -0.1 :face all-the-icons-orange)
+               (newsticker-treeview-mode      all-the-icons-faicon "rss-square"      :v-adjust -0.1 :face all-the-icons-orange)
+               (newsticker-treeview-list-mode all-the-icons-octicon "rss"            :height 1.1 :v-adjust 0.0 :face all-the-icons-orange)
+               (newsticker-treeview-item-mode all-the-icons-octicon "rss"            :height 1.1 :v-adjust 0.0 :face all-the-icons-lorange)
+               (conf-mode                     all-the-icons-octicon "settings"       :v-adjust 0.0 :face all-the-icons-yellow)
+               (conf-space-mode               all-the-icons-octicon "settings"       :v-adjust 0.0 :face all-the-icons-yellow)
+               (gitconfig-mode                all-the-icons-octicon "settings"       :v-adjust 0.0 :face all-the-icons-dorange)
+               (forge-topic-mode              all-the-icons-alltheicon "git"         :face all-the-icons-blue)
+               (help-mode                     all-the-icons-faicon "info-circle"     :height 1.1 :v-adjust -0.1 :face all-the-icons-purple)
+               (helpful-mode                  all-the-icons-faicon "info-circle"     :height 1.1 :v-adjust -0.1 :face all-the-icons-purple)
+               (Info-mode                     all-the-icons-faicon "info-circle"     :height 1.1 :v-adjust -0.1)
+               (cask-mode                     all-the-icons-fileicon "elisp"         :height 1.0 :v-adjust -0.2 :face all-the-icons-blue)
+               (ein:notebooklist-mode         all-the-icons-faicon "book"            :face all-the-icons-lorange)
+               (ein:notebook-mode             all-the-icons-fileicon "jupyter"       :height 1.2 :face all-the-icons-orange)
+               (ein:notebook-multilang-mode   all-the-icons-fileicon "jupyter"       :height 1.2 :face all-the-icons-dorange)
+               (nov-mode                      all-the-icons-faicon "book"            :height 1.0 :v-adjust -0.1 :face all-the-icons-green)
+               (gfm-mode                      all-the-icons-octicon "markdown"       :face all-the-icons-lblue)
+               (osx-dictionary-mode           all-the-icons-material "library_books" :face all-the-icons-lblue)
+               (youdao-dictionary-mode        all-the-icons-material "library_books" :face all-the-icons-lblue)
+               (fanyi-mode                    all-the-icons-material "library_books" :face all-the-icons-lblue))))
+        (dolist (icon mode-icon-alist)
+          (add-to-list 'all-the-icons-mode-icon-alist icon)))))
+#+end_example
+
+***** COMMENT all-the-icons-completion
+#+begin_src emacs-lisp
+  (use-package all-the-icons-completion
+    :after (all-the-icons marginalia)
+    :hook (markdown-mode . all-the-icons-completion-marginalia-setup))
+#+end_src
+
+***** COMMENT all-the-icons-dired
+#+begin_src emacs-lisp
+  (use-package all-the-icons-dired
+    :after all-the-icons
+    :hook (dired-mode . all-the-icons-dired-mode))
+#+end_src
+
+***** COMMENT all-the-icons-ibuffer
+#+begin_src emacs-lisp
+  (use-package all-the-icons-ibuffer
+    :after all-the-icons
+    :hook (ibuffer-mode . all-the-icons-ibuffer-mode))
+#+end_src
+
 **** theme
 After code is a list of good looking themes, use one of them.
 #+BEGIN_SRC emacs-lisp
@@ -1075,155 +1174,213 @@ After code is a list of good looking themes, use one of them.
   (doom-themes-org-config))
 #+END_EXAMPLE
 
-**** TODO modeline :need:debug:
+**** modeline
 Modeline derived from DOOM emacs.
 #+BEGIN_SRC emacs-lisp
   (use-package doom-modeline
     :hook (after-init . doom-modeline-mode)
     :custom
-    (doom-modeline-hud t)
     (doom-modeline-buffer-file-name-style 'truncate-except-project)
-    (doom-modeline-gnus nil)
-    (doom-modeline-irc nil)
+    (doom-modeline-time-icon nil)
+    (doom-modeline-unicode-fallback t)
+    ;; (doom-modeline-github t)
     (doom-modeline-modal-icon nil)
-    (doom-modeline-height 15)
-    (doom-modeline-bar-width 6))
+    (doom-modeline-display-misc-in-all-mode-lines nil)
+    (doom-modeline-enable-word-count t)
+    (doom-modeline-continuous-word-count-modes nil))
 #+END_SRC
 
-***** doom-modeline config example
-#+BEGIN_EXAMPLE emacs-lisp
-  ;; If non-nil, cause imenu to see `doom-modeline' declarations.
-  ;; This is done by adjusting `lisp-imenu-generic-expression' to
-  ;; include support for finding `doom-modeline-def-*' forms.
-  ;; Must be set before loading doom-modeline.
-  (setq doom-modeline-support-imenu t)
-  ;; How tall the mode-line should be. It's only respected in GUI.
-  ;; If the actual char height is larger, it respects the actual height.
-  (setq doom-modeline-height 25)
-  ;; How wide the mode-line bar should be. It's only respected in GUI.
-  (setq doom-modeline-bar-width 4)
-  ;; Whether to use hud instead of default bar. It's only respected in GUI.
-  (setq doom-modeline-hud nil)
-  ;; The limit of the window width.
-  ;; If `window-width' is smaller than the limit, some information won't be
-  ;; displayed. It can be an integer or a float number. `nil' means no limit.
-  (setq doom-modeline-window-width-limit 0.25)
-  ;; How to detect the project root.
-  ;; nil means to use `default-directory'.
-  ;; The project management packages have some issues on detecting project root.
-  ;; e.g. `projectile' doesn't handle symlink folders well, while `project' is unable
-  ;; to hanle sub-projects.
-  ;; You can specify one if you encounter the issue.
-  (setq doom-modeline-project-detection 'auto)
-  ;; Determines the style used by `doom-modeline-buffer-file-name'.
-  ;;
-  ;; Given ~/Projects/FOSS/emacs/lisp/comint.el
-  ;;   auto => emacs/lisp/comint.el (in a project) or comint.el
-  ;;   truncate-upto-project => ~/P/F/emacs/lisp/comint.el
-  ;;   truncate-from-project => ~/Projects/FOSS/emacs/l/comint.el
-  ;;   truncate-with-project => emacs/l/comint.el
-  ;;   truncate-except-project => ~/P/F/emacs/l/comint.el
-  ;;   truncate-upto-root => ~/P/F/e/lisp/comint.el
-  ;;   truncate-all => ~/P/F/e/l/comint.el
-  ;;   truncate-nil => ~/Projects/FOSS/emacs/lisp/comint.el
-  ;;   relative-from-project => emacs/lisp/comint.el
-  ;;   relative-to-project => lisp/comint.el
-  ;;   file-name => comint.el
-  ;;   buffer-name => comint.el<2> (uniquify buffer name)
-  ;;
-  ;; If you are experiencing the laggy issue, especially while editing remote files
-  ;; with tramp, please try `file-name' style.
-  ;; Please refer to https://github.com/bbatsov/projectile/issues/657.
-  (setq doom-modeline-buffer-file-name-style 'auto)
-  ;; Whether display icons in the mode-line.
-  ;; While using the server mode in GUI, should set the value explicitly.
-  (setq doom-modeline-icon (display-graphic-p))
-  ;; Whether display the icon for `major-mode'. It respects `doom-modeline-icon'.
-  (setq doom-modeline-major-mode-icon t)
-  ;; Whether display the colorful icon for `major-mode'.
-  ;; It respects `all-the-icons-color-icons'.
-  (setq doom-modeline-major-mode-color-icon t)
-  ;; Whether display the icon for the buffer state. It respects `doom-modeline-icon'.
-  (setq doom-modeline-buffer-state-icon t)
-  ;; Whether display the modification icon for the buffer.
-  ;; It respects `doom-modeline-icon' and `doom-modeline-buffer-state-icon'.
-  (setq doom-modeline-buffer-modification-icon t)
-  ;; Whether to use unicode as a fallback (instead of ASCII) when not using icons.
-  (setq doom-modeline-unicode-fallback nil)
-  ;; Whether display the buffer name.
-  (setq doom-modeline-buffer-name t)
-  ;; Whether display the minor modes in the mode-line.
-  (setq doom-modeline-minor-modes nil)
-  ;; If non-nil, a word count will be added to the selection-info modeline segment.
-  (setq doom-modeline-enable-word-count nil)
-  ;; Major modes in which to display word count continuously.
-  ;; Also applies to any derived modes. Respects `doom-modeline-enable-word-count'.
-  ;; If it brings the sluggish issue, disable `doom-modeline-enable-word-count' or
-  ;; remove the modes from `doom-modeline-continuous-word-count-modes'.
-  (setq doom-modeline-continuous-word-count-modes '(markdown-mode gfm-mode org-mode))
-  ;; Whether display the buffer encoding.
-  (setq doom-modeline-buffer-encoding t)
-  ;; Whether display the indentation information.
-  (setq doom-modeline-indent-info nil)
-  ;; If non-nil, only display one number for checker information if applicable.
-  (setq doom-modeline-checker-simple-format t)
-  ;; The maximum number displayed for notifications.
-  (setq doom-modeline-number-limit 99)
-  ;; The maximum displayed length of the branch name of version control.
-  (setq doom-modeline-vcs-max-length 12)
-  ;; Whether display the workspace name. Non-nil to display in the mode-line.
-  (setq doom-modeline-workspace-name t)
-  ;; Whether display the perspective name. Non-nil to display in the mode-line.
-  (setq doom-modeline-persp-name t)
-  ;; If non nil the default perspective name is displayed in the mode-line.
-  (setq doom-modeline-display-default-persp-name nil)
-  ;; If non nil the perspective name is displayed alongside a folder icon.
-  (setq doom-modeline-persp-icon t)
-  ;; Whether display the `lsp' state. Non-nil to display in the mode-line.
-  (setq doom-modeline-lsp t)
-  ;; Whether display the GitHub notifications. It requires `ghub' package.
-  (setq doom-modeline-github nil)
-  ;; The interval of checking GitHub.
-  (setq doom-modeline-github-interval (* 30 60))
-  ;; Whether display the modal state icon.
-  ;; Including `evil', `overwrite', `god', `ryo' and `xah-fly-keys', etc.
-  (setq doom-modeline-modal-icon t)
-  ;; Whether display the mu4e notifications. It requires `mu4e-alert' package.
-  (setq doom-modeline-mu4e nil)
-  ;; also enable the start of mu4e-alert
-  (mu4e-alert-enable-mode-line-display)
-  ;; Whether display the gnus notifications.
-  (setq doom-modeline-gnus t)
-  ;; Whether gnus should automatically be updated and how often (set to 0 or smaller than 0 to disable)
-  (setq doom-modeline-gnus-timer 2)
-  ;; Wheter groups should be excludede when gnus automatically being updated.
-  (setq doom-modeline-gnus-excluded-groups '("dummy.group"))
-  ;; Whether display the IRC notifications. It requires `circe' or `erc' package.
-  (setq doom-modeline-irc t)
-  ;; Function to stylize the irc buffer names.
-  (setq doom-modeline-irc-stylize 'identity)
-  ;; Whether display the environment version.
-  (setq doom-modeline-env-version t)
-  ;; Or for individual languages
-  (setq doom-modeline-env-enable-python t)
-  (setq doom-modeline-env-enable-ruby t)
-  (setq doom-modeline-env-enable-perl t)
-  (setq doom-modeline-env-enable-go t)
-  (setq doom-modeline-env-enable-elixir t)
-  (setq doom-modeline-env-enable-rust t)
-  ;; Change the executables to use for the language version string
-  (setq doom-modeline-env-python-executable "python") ; or `python-shell-interpreter'
-  (setq doom-modeline-env-ruby-executable "ruby")
-  (setq doom-modeline-env-perl-executable "perl")
-  (setq doom-modeline-env-go-executable "go")
-  (setq doom-modeline-env-elixir-executable "iex")
-  (setq doom-modeline-env-rust-executable "rustc")
-  ;; What to display as the version while a new one is being loaded
-  (setq doom-modeline-env-load-string "...")
-  ;; Hooks that run before/after the modeline version string is updated
-  (setq doom-modeline-before-update-env-hook nil)
-  (setq doom-modeline-after-update-env-hook nil)
-#+END_EXAMPLE
+***** /doom-modeline official config (example)/
+#+begin_example emacs-lisp
+;; If non-nil, cause imenu to see `doom-modeline' declarations.
+;; This is done by adjusting `lisp-imenu-generic-expression' to
+;; include support for finding `doom-modeline-def-*' forms.
+;; Must be set before loading doom-modeline.
+(setq doom-modeline-support-imenu t)
+
+;; How tall the mode-line should be. It's only respected in GUI.
+;; If the actual char height is larger, it respects the actual height.
+(setq doom-modeline-height 25)
+
+;; How wide the mode-line bar should be. It's only respected in GUI.
+(setq doom-modeline-bar-width 4)
+
+;; Whether to use hud instead of default bar. It's only respected in GUI.
+(setq doom-modeline-hud nil)
+
+;; The limit of the window width.
+;; If `window-width' is smaller than the limit, some information won't be
+;; displayed. It can be an integer or a float number. `nil' means no limit."
+(setq doom-modeline-window-width-limit 85)
+
+;; How to detect the project root.
+;; nil means to use `default-directory'.
+;; The project management packages have some issues on detecting project root.
+;; e.g. `projectile' doesn't handle symlink folders well, while `project' is unable
+;; to hanle sub-projects.
+;; You can specify one if you encounter the issue.
+(setq doom-modeline-project-detection 'auto)
+
+;; Determines the style used by `doom-modeline-buffer-file-name'.
+;;
+;; Given ~/Projects/FOSS/emacs/lisp/comint.el
+;;   auto => emacs/l/comint.el (in a project) or comint.el
+;;   truncate-upto-project => ~/P/F/emacs/lisp/comint.el
+;;   truncate-from-project => ~/Projects/FOSS/emacs/l/comint.el
+;;   truncate-with-project => emacs/l/comint.el
+;;   truncate-except-project => ~/P/F/emacs/l/comint.el
+;;   truncate-upto-root => ~/P/F/e/lisp/comint.el
+;;   truncate-all => ~/P/F/e/l/comint.el
+;;   truncate-nil => ~/Projects/FOSS/emacs/lisp/comint.el
+;;   relative-from-project => emacs/lisp/comint.el
+;;   relative-to-project => lisp/comint.el
+;;   file-name => comint.el
+;;   buffer-name => comint.el<2> (uniquify buffer name)
+;;
+;; If you are experiencing the laggy issue, especially while editing remote files
+;; with tramp, please try `file-name' style.
+;; Please refer to https://github.com/bbatsov/projectile/issues/657.
+(setq doom-modeline-buffer-file-name-style 'auto)
+
+;; Whether display icons in the mode-line.
+;; While using the server mode in GUI, should set the value explicitly.
+(setq doom-modeline-icon t)
+
+;; Whether display the icon for `major-mode'. It respects `doom-modeline-icon'.
+(setq doom-modeline-major-mode-icon t)
+
+;; Whether display the colorful icon for `major-mode'.
+;; It respects `all-the-icons-color-icons'.
+(setq doom-modeline-major-mode-color-icon t)
+
+;; Whether display the icon for the buffer state. It respects `doom-modeline-icon'.
+(setq doom-modeline-buffer-state-icon t)
+
+;; Whether display the modification icon for the buffer.
+;; It respects `doom-modeline-icon' and `doom-modeline-buffer-state-icon'.
+(setq doom-modeline-buffer-modification-icon t)
+
+;; Whether display the time icon. It respects variable `doom-modeline-icon'.
+(setq doom-modeline-time-icon t)
+
+;; Whether to use unicode as a fallback (instead of ASCII) when not using icons.
+(setq doom-modeline-unicode-fallback nil)
+
+;; Whether display the buffer name.
+(setq doom-modeline-buffer-name t)
+
+;; Whether display the minor modes in the mode-line.
+(setq doom-modeline-minor-modes nil)
+
+;; If non-nil, a word count will be added to the selection-info modeline segment.
+(setq doom-modeline-enable-word-count nil)
+
+;; Major modes in which to display word count continuously.
+;; Also applies to any derived modes. Respects `doom-modeline-enable-word-count'.
+;; If it brings the sluggish issue, disable `doom-modeline-enable-word-count' or
+;; remove the modes from `doom-modeline-continuous-word-count-modes'.
+(setq doom-modeline-continuous-word-count-modes '(markdown-mode gfm-mode org-mode))
+
+;; Whether display the buffer encoding.
+(setq doom-modeline-buffer-encoding t)
+
+;; Whether display the indentation information.
+(setq doom-modeline-indent-info nil)
+
+;; If non-nil, only display one number for checker information if applicable.
+(setq doom-modeline-checker-simple-format t)
+
+;; The maximum number displayed for notifications.
+(setq doom-modeline-number-limit 99)
+
+;; The maximum displayed length of the branch name of version control.
+(setq doom-modeline-vcs-max-length 12)
+
+;; Whether display the workspace name. Non-nil to display in the mode-line.
+(setq doom-modeline-workspace-name t)
+
+;; Whether display the perspective name. Non-nil to display in the mode-line.
+(setq doom-modeline-persp-name t)
+
+;; If non nil the default perspective name is displayed in the mode-line.
+(setq doom-modeline-display-default-persp-name nil)
+
+;; If non nil the perspective name is displayed alongside a folder icon.
+(setq doom-modeline-persp-icon t)
+
+;; Whether display the `lsp' state. Non-nil to display in the mode-line.
+(setq doom-modeline-lsp t)
+
+;; Whether display the GitHub notifications. It requires `ghub' package.
+(setq doom-modeline-github nil)
+
+;; The interval of checking GitHub.
+(setq doom-modeline-github-interval (* 30 60))
+
+;; Whether display the modal state.
+;; Including `evil', `overwrite', `god', `ryo' and `xah-fly-keys', etc.
+(setq doom-modeline-modal t)
+
+;; Whether display the modal state icon.
+;; Including `evil', `overwrite', `god', `ryo' and `xah-fly-keys', etc.
+(setq doom-modeline-modal-icon t)
+
+;; Whether display the mu4e notifications. It requires `mu4e-alert' package.
+(setq doom-modeline-mu4e nil)
+;; also enable the start of mu4e-alert
+(mu4e-alert-enable-mode-line-display)
+
+;; Whether display the gnus notifications.
+(setq doom-modeline-gnus t)
+
+;; Whether gnus should automatically be updated and how often (set to 0 or smaller than 0 to disable)
+(setq doom-modeline-gnus-timer 2)
+
+;; Wheter groups should be excludede when gnus automatically being updated.
+(setq doom-modeline-gnus-excluded-groups '("dummy.group"))
+
+;; Whether display the IRC notifications. It requires `circe' or `erc' package.
+(setq doom-modeline-irc t)
+
+;; Function to stylize the irc buffer names.
+(setq doom-modeline-irc-stylize 'identity)
+
+;; Whether display the time. It respects `display-time-mode'.
+(setq doom-modeline-time t)
+
+;; Whether display the misc segment on all mode lines.
+;; If nil, display only if the mode line is active.
+(setq doom-modeline-display-misc-in-all-mode-lines t)
+
+;; Whether display the environment version.
+(setq doom-modeline-env-version t)
+;; Or for individual languages
+(setq doom-modeline-env-enable-python t)
+(setq doom-modeline-env-enable-ruby t)
+(setq doom-modeline-env-enable-perl t)
+(setq doom-modeline-env-enable-go t)
+(setq doom-modeline-env-enable-elixir t)
+(setq doom-modeline-env-enable-rust t)
+
+;; Change the executables to use for the language version string
+(setq doom-modeline-env-python-executable "python") ; or `python-shell-interpreter'
+(setq doom-modeline-env-ruby-executable "ruby")
+(setq doom-modeline-env-perl-executable "perl")
+(setq doom-modeline-env-go-executable "go")
+(setq doom-modeline-env-elixir-executable "iex")
+(setq doom-modeline-env-rust-executable "rustc")
+
+;; What to display as the version while a new one is being loaded
+(setq doom-modeline-env-load-string "...")
+
+;; By default, almost all segments are displayed only in the active window. To
+;; display such segments in all windows, specify e.g.
+(setq doom-modeline-always-visible-segments '(mu4e irc))
+
+;; Hooks that run before/after the modeline version string is updated
+(setq doom-modeline-before-update-env-hook nil)
+(setq doom-modeline-after-update-env-hook nil)
+#+end_example
 
 **** shell
 ***** TODO shell-pop
@@ -1697,6 +1854,23 @@ Environment
       :init (exec-path-from-shell-initialize)))
 #+end_src
 
+**** anzu
+Provides a minor mode which displays 'current match/total
+matches' in the mode-line in various search modes. This makes it easy
+to understand how many matches there are in the current buffer for
+your search query.
+#+begin_src emacs-lisp
+  (use-package anzu
+    :bind (([remap query-replace] . anzu-query-replace)
+           ([remap query-replace-regexp] . anzu-query-replace-regexp)
+           ("C-;" . anzu-replace-at-cursor-thing)
+           :map isearch-mode-map
+           ([remap isearch-query-replace] . anzu-isearch-query-replace)
+           ([remap isearch-query-replace-regexp] . anzu-isearch-query-replace-regexp))
+    ;:hook (after-init . global-anzu-mode)
+    )
+#+end_src
+
 **** TODO COMMENT avy | ace(-jump) | dump-jump
 #+begin_src emacs-lisp
   ;; Jump to things in Emacs tree-style
@@ -1993,17 +2167,7 @@ Look at this.
     (bind-key "C-`" #'shell-pop-posframe-toggle)))
 #+end_example
 
-**** TODO COMMENT anzu | visual-regexp
-#+begin_src emacs-lisp
-  ;; Show number of matches in mode-line while searching
-  (use-package anzu
-    :bind (([remap query-replace] . anzu-query-replace)
-           ([remap query-replace-regexp] . anzu-query-replace-regexp)
-           :map isearch-mode-map
-           ([remap isearch-query-replace] . anzu-isearch-query-replace)
-           ([remap isearch-query-replace-regexp] . anzu-isearch-query-replace-regexp))
-    :hook (after-init . global-anzu-mode))
-#+end_src
+**** TODO visual-regexp
 
 **** TODO font-lock+
 
@@ -2186,8 +2350,6 @@ commands undo, yank, kill and delete are supported.
     :config (pulsing-cursor-mode +1))
 #+end_src
 
-**** TODO centaur-tabs
-
 **** TODO Typo Mode
 
 **** TODO ligatures.el
@@ -2354,11 +2516,12 @@ commands undo, yank, kill and delete are supported.
 Vertico provides a performant and minimalistic vertical completion UI
 based on the default completion system.
 #+BEGIN_SRC emacs-lisp
-  (use-package vertico
-    :hook (after-init . vertico-mode))
+    (use-package vertico
+      :hook (after-init . vertico-mode)
+      :custom (vertico-cycle t))
 #+END_SRC
 
-***** COMMENT config example
+***** COMMENT /config (example)/
 #+begin_example emacs-lisp
 ;; Different scroll margin
 (setq vertico-scroll-margin 0)
@@ -5196,57 +5359,6 @@ Info-colors, make the info manual as colorful.
                   :override #'my-youdao-dictionary--posframe-tip)))
 #+end_src
 
-*** TODO COMMENT iedit | symbol-overlay
-edit same text in one buffer or region
-#+begin_src emacs-lisp
-  ;; Edit multiple regions in the same way simultaneously
-  (use-package iedit
-    :defines desktop-minor-mode-table
-    :bind (("C-;" . iedit-mode)
-           ("C-x r RET" . iedit-rectangle-mode)
-           :map isearch-mode-map ("C-;" . iedit-mode-from-isearch)
-           :map esc-map ("C-;" . iedit-execute-last-modification)
-           :map help-map ("C-;" . iedit-mode-toggle-on-function))
-    :config
-    ;; Avoid restoring `iedit-mode'
-    (with-eval-after-load 'desktop
-      (add-to-list 'desktop-minor-mode-table
-                   '(iedit-mode nil))))
-#+end_src
-
-#+begin_src emacs-lisp
-  ;; Highlight symbols
-  (use-package symbol-overlay
-    :diminish
-    :functions (turn-off-symbol-overlay turn-on-symbol-overlay)
-    :custom-face (symbol-overlay-default-face ((t (:inherit (region bold)))))
-    :bind (("M-i" . symbol-overlay-put)
-           ("M-n" . symbol-overlay-jump-next)
-           ("M-p" . symbol-overlay-jump-prev)
-           ("M-N" . symbol-overlay-switch-forward)
-           ("M-P" . symbol-overlay-switch-backward)
-           ("M-C" . symbol-overlay-remove-all)
-           ([M-f3] . symbol-overlay-remove-all))
-    :hook (((prog-mode yaml-mode) . symbol-overlay-mode)
-           (iedit-mode            . turn-off-symbol-overlay)
-           (iedit-mode-end        . turn-on-symbol-overlay))
-    :init (setq symbol-overlay-idle-time 0.1)
-    :config
-    ;; Disable symbol highlighting while selecting
-    (defun turn-off-symbol-overlay (&rest _)
-      "Turn off symbol highlighting."
-      (interactive)
-      (symbol-overlay-mode -1))
-    (advice-add #'set-mark :after #'turn-off-symbol-overlay)
-
-    (defun turn-on-symbol-overlay (&rest _)
-      "Turn on symbol highlighting."
-      (interactive)
-      (when (derived-mode-p 'prog-mode 'yaml-mode)
-        (symbol-overlay-mode 1)))
-    (advice-add #'deactivate-mark :after #'turn-on-symbol-overlay))
-#+end_src
-
 *** TODO xah-fly-keys | ergoemacs-mode | hydra | meow
 
 *** TODO dump-jump
@@ -5548,7 +5660,7 @@ edit same text in one buffer or region
 
 *** TODO highlight-escape-sequences
 
-*** TODO COMMENT git-blame | git-modes | git-timemachine | git-link | git-commit | git-gutter | git-gutter+ | git-gutter-fringe | git-gutter-fringe+ | gited | git-messenger | smeargle
+*** TODO COMMENT git-blame | git-modes | git-timemachine | git-link | git-commit | git-gutter | git-gutter+ | git-gutter-fringe | git-gutter-fringe+ | gited | git-messenger | smeargle | ghub
 #+begin_src emacs-lisp
   ;; settings for committing using magit
   (use-package git-commit
@@ -7125,6 +7237,9 @@ When `major-mode' is listed in `page-break-lines-modes', then
 https://emacs-china.org/t/hyperbole-emacs-emacs/3014
 
 * COMMENT packages may useful later
+:PROPERTIES:
+:VISIBILITY: folded
+:END:
 All this packages down here should be rechecked before using.
 ** TODO ibuffer-vc
 Auto grouping ibuffer contents & git status. we'll see if it's useful.
@@ -7841,104 +7956,6 @@ Not like it.
     :init (global-org-modern-mode))
 #+end_src
 
-** all-the-icons (the package)
-Somehow it just doesn't work.
-Here's centaur's config.
-#+begin_src emacs-lisp
-  ;; NOTE: Must run `M-x all-the-icons-install-fonts', and install fonts manually on Windows
-  (when centaur-icon
-    (use-package all-the-icons
-      :custom (all-the-icons-scale-factor 1.1)
-      :init (unless (or sys/win32p
-                        (daemonp)
-                        (font-installed-p "all-the-icons"))
-              (centaur-install-fonts))
-      :config
-      ;; Support more icons
-      (let ((extension-icon-alist
-             '(("bat"  all-the-icons-alltheicon "terminal" :face all-the-icons-lsilver)
-               ("cmd"  all-the-icons-alltheicon "terminal" :face all-the-icons-lsilver)
-               ("conf" all-the-icons-octicon "settings"    :v-adjust 0.0 :face all-the-icons-yellow)
-               ("eln"  all-the-icons-octicon "file-binary" :v-adjust 0.0 :face all-the-icons-dsilver)
-               ("epub" all-the-icons-faicon "book"         :height 1.0 :v-adjust -0.1 :face all-the-icons-green)
-               ("exe"  all-the-icons-octicon "file-binary" :v-adjust 0.0 :face all-the-icons-dsilver)
-               ("make" all-the-icons-fileicon "gnu"        :face all-the-icons-dorange)
-               ("rss"  all-the-icons-octicon "rss"         :height 1.1 :v-adjust 0.0 :face all-the-icons-lorange)
-               ("toml" all-the-icons-octicon "settings"    :v-adjust 0.0 :face all-the-icons-yellow)
-               ("tsx"  all-the-icons-fileicon "tsx"        :height 1.0 :v-adjust -0.1 :face all-the-icons-cyan-alt)
-               ("xpm"  all-the-icons-octicon "file-media"  :v-adjust 0.0 :face all-the-icons-dgreen))))
-        (dolist (icon extension-icon-alist)
-          (add-to-list 'all-the-icons-extension-icon-alist icon)))
-
-      (let ((regexp-icon-alist
-             '(("\\.[bB][iI][nN]$"               all-the-icons-octicon "file-binary" :v-adjust 0.0 :face all-the-icons-yellow)
-               ("^config$"                       all-the-icons-octicon "settings"    :v-adjust 0.0 :face all-the-icons-dorange)
-               ("\\.\\(ba\\|z\\)shrc$"           all-the-icons-alltheicon "script"   :height 0.9 :face all-the-icons-dpink)
-               ("\\.\\(bash\\|zsh\\)*_?profile$" all-the-icons-alltheicon "script"   :height 0.9 :face all-the-icons-dred)
-               ("\\.\\(ba\\|z\\)sh_history$"     all-the-icons-alltheicon "script"   :height 0.9 :face all-the-icons-dsilver)
-               ("\\.zshenv$"                     all-the-icons-alltheicon "script"   :height 0.9 :face all-the-icons-dred)
-               ("Cask\\'"                        all-the-icons-fileicon "elisp"      :height 1.0 :v-adjust -0.2 :face all-the-icons-blue)
-               ("NEWS$"                          all-the-icons-faicon "newspaper-o"  :height 0.9 :v-adjust -0.2)
-               ("^Rakefile$"                     all-the-icons-alltheicon "ruby-alt" :face all-the-icons-red))))
-        (dolist (icon regexp-icon-alist)
-          (add-to-list 'all-the-icons-regexp-icon-alist icon)))
-
-      (let ((mode-icon-alist
-             '((xwidget-webkit-mode           all-the-icons-faicon "chrome"          :v-adjust -0.1 :face all-the-icons-blue)
-               (bongo-playlist-mode           all-the-icons-material "queue_music"   :height 1.2 :face all-the-icons-green)
-               (bongo-library-mode            all-the-icons-material "library_music" :height 1.1 :face all-the-icons-green)
-               (simple-mpc-mode               all-the-icons-faicon "music"           :v-adjust -0.1 :face all-the-icons-green)
-               (gnus-group-mode               all-the-icons-fileicon "gnu"           :face all-the-icons-silver)
-               (gnus-summary-mode             all-the-icons-octicon "inbox"          :height 1.0 :v-adjust 0.0 :face all-the-icons-orange)
-               (gnus-article-mode             all-the-icons-octicon "mail"           :height 1.1 :v-adjust 0.0 :face all-the-icons-lblue)
-               (message-mode                  all-the-icons-octicon "mail"           :height 1.1 :v-adjust 0.0 :face all-the-icons-lblue)
-               (diff-mode                     all-the-icons-octicon "git-compare"    :v-adjust 0.0 :face all-the-icons-lred)
-               (flycheck-error-list-mode      all-the-icons-octicon "checklist"      :height 1.1 :v-adjust 0.0 :face all-the-icons-lred)
-               (newsticker-mode               all-the-icons-faicon "rss-square"      :v-adjust -0.1 :face all-the-icons-orange)
-               (newsticker-treeview-mode      all-the-icons-faicon "rss-square"      :v-adjust -0.1 :face all-the-icons-orange)
-               (newsticker-treeview-list-mode all-the-icons-octicon "rss"            :height 1.1 :v-adjust 0.0 :face all-the-icons-orange)
-               (newsticker-treeview-item-mode all-the-icons-octicon "rss"            :height 1.1 :v-adjust 0.0 :face all-the-icons-lorange)
-               (conf-mode                     all-the-icons-octicon "settings"       :v-adjust 0.0 :face all-the-icons-yellow)
-               (conf-space-mode               all-the-icons-octicon "settings"       :v-adjust 0.0 :face all-the-icons-yellow)
-               (gitconfig-mode                all-the-icons-octicon "settings"       :v-adjust 0.0 :face all-the-icons-dorange)
-               (forge-topic-mode              all-the-icons-alltheicon "git"         :face all-the-icons-blue)
-               (help-mode                     all-the-icons-faicon "info-circle"     :height 1.1 :v-adjust -0.1 :face all-the-icons-purple)
-               (helpful-mode                  all-the-icons-faicon "info-circle"     :height 1.1 :v-adjust -0.1 :face all-the-icons-purple)
-               (Info-mode                     all-the-icons-faicon "info-circle"     :height 1.1 :v-adjust -0.1)
-               (cask-mode                     all-the-icons-fileicon "elisp"         :height 1.0 :v-adjust -0.2 :face all-the-icons-blue)
-               (ein:notebooklist-mode         all-the-icons-faicon "book"            :face all-the-icons-lorange)
-               (ein:notebook-mode             all-the-icons-fileicon "jupyter"       :height 1.2 :face all-the-icons-orange)
-               (ein:notebook-multilang-mode   all-the-icons-fileicon "jupyter"       :height 1.2 :face all-the-icons-dorange)
-               (nov-mode                      all-the-icons-faicon "book"            :height 1.0 :v-adjust -0.1 :face all-the-icons-green)
-               (gfm-mode                      all-the-icons-octicon "markdown"       :face all-the-icons-lblue)
-               (osx-dictionary-mode           all-the-icons-material "library_books" :face all-the-icons-lblue)
-               (youdao-dictionary-mode        all-the-icons-material "library_books" :face all-the-icons-lblue)
-               (fanyi-mode                    all-the-icons-material "library_books" :face all-the-icons-lblue))))
-        (dolist (icon mode-icon-alist)
-          (add-to-list 'all-the-icons-mode-icon-alist icon)))))
-#+end_src
-
-*** all-the-icons-completion
-#+begin_src emacs-lisp
-  (use-package all-the-icons-completion
-    :after (all-the-icons marginalia)
-    :hook (markdown-mode . all-the-icons-completion-marginalia-setup))
-#+end_src
-
-*** all-the-icons-dired
-#+begin_src emacs-lisp
-  (use-package all-the-icons-dired
-    :after all-the-icons
-    :hook (dired-mode . all-the-icons-dired-mode))
-#+end_src
-
-*** all-the-icons-ibuffer
-#+begin_src emacs-lisp
-  (use-package all-the-icons-ibuffer
-    :after all-the-icons
-    :hook (ibuffer-mode . all-the-icons-ibuffer-mode))
-#+end_src
-
 ** whole-line-or-region
 Operate on current line if region undefined.
 #+begin_src emacs-lisp
@@ -8304,6 +8321,57 @@ S-s-<up><down><left><right>
 
 #+begin_src emacs-lisp
   (windmove-swap-states-default-keybindings)
+#+end_src
+
+*** iedit | symbol-overlay
+edit same text in one buffer or region
+#+begin_src emacs-lisp
+  ;; Edit multiple regions in the same way simultaneously
+  (use-package iedit
+    :defines desktop-minor-mode-table
+    :bind (("C-;" . iedit-mode)
+           ("C-x r RET" . iedit-rectangle-mode)
+           :map isearch-mode-map ("C-;" . iedit-mode-from-isearch)
+           :map esc-map ("C-;" . iedit-execute-last-modification)
+           :map help-map ("C-;" . iedit-mode-toggle-on-function))
+    :config
+    ;; Avoid restoring `iedit-mode'
+    (with-eval-after-load 'desktop
+      (add-to-list 'desktop-minor-mode-table
+                   '(iedit-mode nil))))
+#+end_src
+
+#+begin_src emacs-lisp
+  ;; Highlight symbols
+  (use-package symbol-overlay
+    :diminish
+    :functions (turn-off-symbol-overlay turn-on-symbol-overlay)
+    :custom-face (symbol-overlay-default-face ((t (:inherit (region bold)))))
+    :bind (("M-i" . symbol-overlay-put)
+           ("M-n" . symbol-overlay-jump-next)
+           ("M-p" . symbol-overlay-jump-prev)
+           ("M-N" . symbol-overlay-switch-forward)
+           ("M-P" . symbol-overlay-switch-backward)
+           ("M-C" . symbol-overlay-remove-all)
+           ([M-f3] . symbol-overlay-remove-all))
+    :hook (((prog-mode yaml-mode) . symbol-overlay-mode)
+           (iedit-mode            . turn-off-symbol-overlay)
+           (iedit-mode-end        . turn-on-symbol-overlay))
+    :init (setq symbol-overlay-idle-time 0.1)
+    :config
+    ;; Disable symbol highlighting while selecting
+    (defun turn-off-symbol-overlay (&rest _)
+      "Turn off symbol highlighting."
+      (interactive)
+      (symbol-overlay-mode -1))
+    (advice-add #'set-mark :after #'turn-off-symbol-overlay)
+
+    (defun turn-on-symbol-overlay (&rest _)
+      "Turn on symbol highlighting."
+      (interactive)
+      (when (derived-mode-p 'prog-mode 'yaml-mode)
+        (symbol-overlay-mode 1)))
+    (advice-add #'deactivate-mark :after #'turn-on-symbol-overlay))
 #+end_src
 
 * backup snippets for future
