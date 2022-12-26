@@ -363,7 +363,7 @@ using :noweb to call ORG-INIT-FILE library.
   (global-set-key (kbd "<f12>") 'inn/echo-time-battery)
 #+end_src
 
-*** open newline like vim
+*** COMMENT open newline like vim
 #+begin_src emacs-lisp
   (defun inn/newline-blow-point ()
     (interactive)
