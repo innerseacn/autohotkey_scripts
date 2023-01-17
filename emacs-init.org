@@ -123,7 +123,7 @@ Suppress flashing at startup
           (fullscreen . fullboth)))
 
   ;; Loads a nice blue theme, avoids the white screen flash on startup.
-  ;; (load-theme 'modus-vivendi t)
+  (load-theme 'wombat t)
 #+end_src
 
 ** [from lambda emacs]
@@ -244,7 +244,7 @@ Allow access from EMACSCLIENT_TRAMP
    '(set-mark-command-repeat-pop t)
    '(shift-select-mode 'permanent)
    '(show-trailing-whitespace t)
-   '(split-width-threshold 120)
+   ;; '(split-width-threshold 120)
    '(tab-bar-new-tab-choice 'bookmark-bmenu-get-buffer)
    '(use-dialog-box nil)
    '(use-file-dialog nil)
@@ -363,7 +363,7 @@ using :noweb to call ORG-INIT-FILE library.
   (global-set-key (kbd "<f12>") 'inn/echo-time-battery)
 #+end_src
 
-*** COMMENT open newline like vim
+*** open newline like vim
 #+begin_src emacs-lisp
   (defun inn/newline-blow-point ()
     (interactive)
@@ -1013,7 +1013,7 @@ centaur settings
       (add-hook 'ediff-quit-hook #'winner-undo)))
 #+end_src
 
-*** system
+*** SYSTEM
 **** gcmh
 Garbage Collector Magic Hack
 #+begin_src emacs-lisp
@@ -1034,7 +1034,7 @@ Provides a simple command to restart Emacs from within Emacs.
     :commands restart-emacs)
 #+end_src
 
-*** appearances
+*** APPEARANCES
 **** all-the-icons (the package)
 #+begin_src emacs-lisp
   (use-package all-the-icons)
@@ -2511,7 +2511,7 @@ commands undo, yank, kill and delete are supported.
                   (aw--select-window (1+ n))))))
 #+end_src
 
-*** minibuffer & complete
+*** MINIBUFFER & COMPLETE
 **** vertico
 Vertico provides a performant and minimalistic vertical completion UI
 based on the default completion system.
@@ -3182,6 +3182,55 @@ file buffer like sed interactively.
 #+end_src
 
 **** TODO tempel
+
+*** COMMENT INPUT METHODS
+**** pyim
+#+begin_src emacs-lisp
+  (use-package pyim
+    :demand t
+    :config
+    ;; 激活 basedict 拼音词库，五笔用户请继续阅读 README
+    (use-package pyim-basedict
+      :demand t
+      :config (pyim-basedict-enable))
+
+    (setq default-input-method "pyim")
+
+    ;; 我使用全拼
+    (setq pyim-default-scheme 'quanpin)
+
+    ;; 设置 pyim 探针设置，这是 pyim 高级功能设置，可以实现 *无痛* 中英文切换 :-)
+    ;; 我自己使用的中英文动态切换规则是：
+    ;; 1. 光标只有在注释里面时，才可以输入中文。
+    ;; 2. 光标前是汉字字符时，才能输入中文。
+    ;; 3. 使用 M-j 快捷键，强制将光标前的拼音字符串转换为中文。
+    (setq-default pyim-english-input-switch-functions
+                  '(pyim-probe-dynamic-english
+                    pyim-probe-isearch-mode
+                    pyim-probe-program-mode
+                    pyim-probe-org-structure-template))
+
+    ;; (setq-default pyim-punctuation-half-width-functions
+    ;;               '(pyim-probe-punctuation-line-beginning
+    ;;                 pyim-probe-punctuation-after-punctuation))
+
+    ;; 开启拼音搜索功能
+    (pyim-isearch-mode 1)
+
+    ;; 使用 popup-el 来绘制选词框, 如果用 emacs26, 建议设置
+    ;; 为 'posframe, 速度很快并且菜单不会变形，不过需要用户
+    ;; 手动安装 posframe 包。
+    ;; (setq pyim-page-tooltip 'posframe)
+    ;; (setq pyim-page-tooltip 'popup)
+
+    ;; 选词框显示5个候选词
+    ;; (setq pyim-page-length 5)
+
+    :bind
+    (("C-M-j" . pyim-convert-string-at-point) ;与 pyim-probe-dynamic-english 配合
+     ;; ("C-;" . pyim-delete-word-from-personal-buffer)
+     ))
+#+end_src
 
 *** TODO make packages in after-init-hook or defer N
 *** TODO direddred
@@ -8372,6 +8421,39 @@ edit same text in one buffer or region
       (when (derived-mode-p 'prog-mode 'yaml-mode)
         (symbol-overlay-mode 1)))
     (advice-add #'deactivate-mark :after #'turn-on-symbol-overlay))
+#+end_src
+
+** smart input source (not working perfect)
+Sis (smart input source) enables less manual switch for native or OS
+input source (input method)
+#+begin_src emacs-lisp
+  (use-package sis
+    ;; :hook
+    ;; enable the /context/ and /inline region/ mode for specific buffers
+    ;; (((text-mode prog-mode) . sis-context-mode)
+    ;;  ((text-mode prog-mode) . sis-inline-mode))
+
+    :config
+    ;; For MacOS
+    ;; (sis-ism-lazyman-config
+    ;;  ;; English input source may be: "ABC", "US" or another one.
+    ;;  ;; "com.apple.keylayout.ABC"
+    ;;  "com.apple.keylayout.US"
+    ;;  ;; Other language input source: "rime", "sogou" or another one.
+    ;;  ;; "im.rime.inputmethod.Squirrel.Rime"
+    ;;  "com.sogou.inputmethod.sogou.pinyin")
+
+    (setq sis-other-cursor-color "yellow")
+    (sis-ism-lazyman-config nil t 'w32)
+    ;; enable the /cursor color/ mode
+    (sis-global-cursor-color-mode t)
+    ;; enable the /respect/ mode
+    (sis-global-respect-mode t)
+    ;; enable the /context/ mode for all buffers
+    (sis-global-context-mode t)
+    ;; enable the /inline english/ mode for all buffers
+    (sis-global-inline-mode t)
+    )
 #+end_src
 
 * backup snippets for future
