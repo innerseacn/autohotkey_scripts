@@ -3183,7 +3183,7 @@ file buffer like sed interactively.
 
 **** TODO tempel
 
-*** COMMENT INPUT METHODS
+*** TODO COMMENT INPUT METHODS
 **** pyim
 #+begin_src emacs-lisp
   (use-package pyim
