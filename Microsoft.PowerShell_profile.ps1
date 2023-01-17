@@ -4,6 +4,7 @@ Import-Module DockerCompletion
 Set-PSReadLineOption -EditMode Emacs
 Set-PSReadLineOption -BellStyle None
 Set-PSReadLineOption -PredictionSource History
+function em {emacs -nw -Q}
 $variables = [ordered]@{
 			POWERSHELL_CLI_TELEMETRY_OPTOUT = "1"
 			POWERSHELL_TELEMETRY_OPTOUT     = "1"
