@@ -1,9 +1,10 @@
-oh-my-posh --init --shell pwsh --config C:\Users\inner\pyprojs\autohotkey_scripts\.myposhtheme.json | Invoke-Expression
 Import-Module "$($(Get-Item $(Get-Command scoop.ps1).Path).Directory.Parent.FullName)\modules\scoop-completion"
-Import-Module DockerCompletion
 Set-PSReadLineOption -EditMode Emacs
 Set-PSReadLineOption -BellStyle None
 Set-PSReadLineOption -PredictionSource History
+invoke-Expression (&starship init powershell)
+# Import-Module DockerCompletion
+# oh-my-posh init pwsh --config D:\gitcodes\autohotkey_scripts\.myposhtheme.json | Invoke-Expression
 # function em {emacs -nw -Q}
 # $variables = [ordered]@{
 # 			POWERSHELL_CLI_TELEMETRY_OPTOUT = "1"
