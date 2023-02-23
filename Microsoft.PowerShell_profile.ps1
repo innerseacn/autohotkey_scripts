@@ -4,20 +4,20 @@ Import-Module DockerCompletion
 Set-PSReadLineOption -EditMode Emacs
 Set-PSReadLineOption -BellStyle None
 Set-PSReadLineOption -PredictionSource History
-function em {emacs -nw -Q}
-$variables = [ordered]@{
-			POWERSHELL_CLI_TELEMETRY_OPTOUT = "1"
-			POWERSHELL_TELEMETRY_OPTOUT     = "1"
-			POWERSHELL_UPDATECHECK          = "Off"
-			POWERSHELL_UPDATECHECK_OPTOUT   = "1"
-			DOTNET_CLI_TELEMETRY_OPTOUT     = "1"
-			DOTNET_TELEMETRY_OPTOUT         = "1"
-			COMPlus_EnableDiagnostics       = "0"
-}
-foreach ($target in "User") {
-	write-Host "Disable new version check." -foregroundcolor cyan
-	foreach ($key in $variables.Keys) {
-		# write-Host "  $key = $($variables.$Key)"
-		[Environment]::SetEnvironmentVariable($key,$variables.$Key, $target)
-	}
-}
+# function em {emacs -nw -Q}
+# $variables = [ordered]@{
+# 			POWERSHELL_CLI_TELEMETRY_OPTOUT = "1"
+# 			POWERSHELL_TELEMETRY_OPTOUT     = "1"
+# 			POWERSHELL_UPDATECHECK          = "Off"
+# 			POWERSHELL_UPDATECHECK_OPTOUT   = "1"
+# 			DOTNET_CLI_TELEMETRY_OPTOUT     = "1"
+# 			DOTNET_TELEMETRY_OPTOUT         = "1"
+# 			COMPlus_EnableDiagnostics       = "0"
+# }
+# foreach ($target in "User") {
+# 	write-Host "Disable new version check." -foregroundcolor cyan
+# 	foreach ($key in $variables.Keys) {
+# 		# write-Host "  $key = $($variables.$Key)"
+# 		[Environment]::SetEnvironmentVariable($key,$variables.$Key, $target)
+# 	}
+# }
