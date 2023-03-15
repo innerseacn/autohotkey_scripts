@@ -3,6 +3,8 @@ Set-PSReadLineOption -EditMode Emacs
 Set-PSReadLineOption -BellStyle None
 Set-PSReadLineOption -PredictionSource History
 invoke-Expression (&starship init powershell)
+Invoke-Expression (&scoop-search-multisource.exe --hook)
+Set-Alias "vi" "nvim"
 # Import-Module DockerCompletion
 # oh-my-posh init pwsh --config D:\gitcodes\autohotkey_scripts\.myposhtheme.json | Invoke-Expression
 # function em {emacs -nw -Q}

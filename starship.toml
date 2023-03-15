@@ -1,8 +1,10 @@
-format = '$battery$time$all'
+"$schema" = 'https://starship.rs/config-schema.json'
+format = '$username$battery$time$all'
 
 [time]
 disabled = false
-format = '[\[ $time \]]($style) '
+format = '[\[$time\]](bold white) '
+time_format = '%R'
 
 [[battery.display]]
 threshold = 20
