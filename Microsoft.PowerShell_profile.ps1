@@ -3,7 +3,6 @@ Set-PSReadLineOption -EditMode Emacs
 Set-PSReadLineOption -BellStyle None
 Set-PSReadLineOption -PredictionSource History
 invoke-Expression (&starship init powershell)
-Invoke-Expression (&scoop-search-multisource.exe --hook)
 Invoke-Expression (& { (lua D:\gitcodes\z.lua\z.lua --init powershell enhanced) -join "`n" })
 Set-Alias "vi" "nvim"
 # Import-Module DockerCompletion
