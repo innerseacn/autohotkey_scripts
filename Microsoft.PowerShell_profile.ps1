@@ -5,7 +5,6 @@ Set-PSReadLineOption -PredictionSource History
 invoke-Expression (&starship init powershell)
 Invoke-Expression (& { (lua D:\gitcodes\z.lua\z.lua --init powershell enhanced) -join "`n" })
 Set-Alias "vi" "nvim"
-Set-Alias "ls" "lsd"
 Function vim($file) {nvim --clean $file}
 # Import-Module DockerCompletion
 # oh-my-posh init pwsh --config D:\gitcodes\autohotkey_scripts\.myposhtheme.json | Invoke-Expression
