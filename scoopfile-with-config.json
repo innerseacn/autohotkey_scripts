@@ -1,4 +1,380 @@
 {
+    "buckets": [
+        {
+            "Name": "extras",
+            "Source": "https://github.com/ScoopInstaller/Extras",
+            "Updated": "2023-08-21T20:30:10+08:00",
+            "Manifests": 1888
+        },
+        {
+            "Name": "hoilc_scoop-lemon",
+            "Source": "https://github.com/hoilc/scoop-lemon",
+            "Updated": "2023-08-21T20:27:05+08:00",
+            "Manifests": 733
+        },
+        {
+            "Name": "main",
+            "Source": "https://github.com/ScoopInstaller/Main",
+            "Updated": "2023-08-21T20:30:37+08:00",
+            "Manifests": 1217
+        },
+        {
+            "Name": "nerd-fonts",
+            "Source": "https://github.com/matthewjberger/scoop-nerd-fonts",
+            "Updated": "2023-08-19T22:14:17+08:00",
+            "Manifests": 280
+        },
+        {
+            "Name": "nonportable",
+            "Source": "https://github.com/ScoopInstaller/Nonportable",
+            "Updated": "2023-08-20T20:44:06+08:00",
+            "Manifests": 127
+        },
+        {
+            "Name": "okibcn_ScoopMaster",
+            "Source": "https://github.com/okibcn/ScoopMaster",
+            "Updated": "2023-08-21T22:59:41+08:00",
+            "Manifests": 43950
+        }
+    ],
+    "apps": [
+        {
+            "Source": "main",
+            "Updated": "2023-07-15T22:27:03.1730943+08:00",
+            "Info": "",
+            "Name": "7zip",
+            "Version": "23.01"
+        },
+        {
+            "Source": "extras",
+            "Updated": "2023-08-19T23:07:55.9744017+08:00",
+            "Info": "",
+            "Name": "aimp",
+            "Version": "5.11.2434"
+        },
+        {
+            "Source": "main",
+            "Updated": "2023-01-09T22:13:23.6372986+08:00",
+            "Info": "",
+            "Name": "aria2",
+            "Version": "1.36.0-1"
+        },
+        {
+            "Source": "okibcn_ScoopMaster",
+            "Updated": "2023-08-19T23:14:56.9632655+08:00",
+            "Info": "",
+            "Name": "bilibili-desktop",
+            "Version": "1.11.2"
+        },
+        {
+            "Source": "main",
+            "Updated": "2023-08-19T23:17:21.5288527+08:00",
+            "Info": "",
+            "Name": "busybox",
+            "Version": "5181-g5c1a3b00e"
+        },
+        {
+            "Source": "extras",
+            "Updated": "2023-08-19T23:21:15.2243309+08:00",
+            "Info": "",
+            "Name": "ccleaner",
+            "Version": "6.14.10584"
+        },
+        {
+            "Source": "okibcn_ScoopMaster",
+            "Updated": "2023-08-20T23:16:27.6423972+08:00",
+            "Info": "",
+            "Name": "chatall",
+            "Version": "1.39.62"
+        },
+        {
+            "Source": "okibcn_ScoopMaster",
+            "Updated": "2023-07-15T23:46:42.3952457+08:00",
+            "Info": "",
+            "Name": "clash-for-windows",
+            "Version": "0.20.28"
+        },
+        {
+            "Source": "extras",
+            "Updated": "2023-01-09T22:13:25.7175532+08:00",
+            "Info": "",
+            "Name": "compactgui",
+            "Version": "2.6.2"
+        },
+        {
+            "Source": "main",
+            "Updated": "2023-01-09T22:13:26.2197901+08:00",
+            "Info": "",
+            "Name": "dark",
+            "Version": "3.11.2"
+        },
+        {
+            "Source": "extras",
+            "Updated": "2023-07-15T22:27:21.0768639+08:00",
+            "Info": "",
+            "Name": "dismplusplus",
+            "Version": "10.1.1002.1B"
+        },
+        {
+            "Source": "extras",
+            "Updated": "2023-05-20T23:13:29.6634288+08:00",
+            "Info": "",
+            "Name": "dupeguru",
+            "Version": "4.3.1"
+        },
+        {
+            "Source": "extras",
+            "Updated": "2023-05-28T21:34:51.5425851+08:00",
+            "Info": "",
+            "Name": "everything",
+            "Version": "1.4.1.1024"
+        },
+        {
+            "Source": "main",
+            "Updated": "2023-05-05T23:21:18.8937043+08:00",
+            "Info": "",
+            "Name": "fd",
+            "Version": "8.7.0"
+        },
+        {
+            "Source": "nerd-fonts",
+            "Updated": "2023-06-07T20:44:44.4884143+08:00",
+            "Info": "",
+            "Name": "FiraCode-NF",
+            "Version": "3.0.2"
+        },
+        {
+            "Source": "main",
+            "Updated": "2023-07-16T00:03:49.2811158+08:00",
+            "Info": "",
+            "Name": "git",
+            "Version": "2.41.0"
+        },
+        {
+            "Source": "extras",
+            "Updated": "2023-08-06T20:39:18.8821647+08:00",
+            "Info": "",
+            "Name": "hibit-uninstaller",
+            "Version": "3.1.40"
+        },
+        {
+            "Source": "okibcn_ScoopMaster",
+            "Updated": "2023-08-20T19:03:10.4982014+08:00",
+            "Info": "",
+            "Name": "im-select-imm",
+            "Version": "1.0.1"
+        },
+        {
+            "Source": "main",
+            "Updated": "2023-01-09T22:15:31.6736636+08:00",
+            "Info": "",
+            "Name": "innounp",
+            "Version": "0.50"
+        },
+        {
+            "Source": "nerd-fonts",
+            "Updated": "2023-06-07T20:45:10.1929162+08:00",
+            "Info": "",
+            "Name": "JetBrainsMono-NF",
+            "Version": "3.0.2"
+        },
+        {
+            "Source": "main",
+            "Updated": "2023-05-21T21:45:39.3757842+08:00",
+            "Info": "",
+            "Name": "lf",
+            "Version": "r30"
+        },
+        {
+            "Source": "extras",
+            "Updated": "2023-07-30T14:33:23.1076761+08:00",
+            "Info": "",
+            "Name": "localsend",
+            "Version": "1.10.0"
+        },
+        {
+            "Source": "main",
+            "Updated": "2023-03-16T23:18:44.3414167+08:00",
+            "Info": "",
+            "Name": "lua",
+            "Version": "5.4.2"
+        },
+        {
+            "Source": "main",
+            "Updated": "2023-07-15T23:10:30.6458757+08:00",
+            "Info": "",
+            "Name": "miller",
+            "Version": "6.8.0"
+        },
+        {
+            "Source": "extras",
+            "Updated": "2022-11-03T22:56:14.2649227+08:00",
+            "Info": "",
+            "Name": "neatdownloadmanager",
+            "Version": "1.4"
+        },
+        {
+            "Source": "main",
+            "Updated": "2023-08-19T23:32:18.1859935+08:00",
+            "Info": "",
+            "Name": "neovim",
+            "Version": "0.9.1"
+        },
+        {
+            "Source": "extras",
+            "Updated": "2023-02-23T21:21:47.7262076+08:00",
+            "Info": "",
+            "Name": "notepad3",
+            "Version": "6.23.203.2"
+        },
+        {
+            "Source": "main",
+            "Updated": "2023-08-19T23:41:14.5644293+08:00",
+            "Info": "",
+            "Name": "pandoc",
+            "Version": "3.1.6.1"
+        },
+        {
+            "Source": "extras",
+            "Updated": "2023-08-06T21:35:08.639953+08:00",
+            "Info": "",
+            "Name": "powertoys",
+            "Version": "0.72.0"
+        },
+        {
+            "Source": "main",
+            "Updated": "2023-07-16T00:11:41.2193397+08:00",
+            "Info": "",
+            "Name": "pwsh",
+            "Version": "7.3.6"
+        },
+        {
+            "Source": "main",
+            "Updated": "2023-08-19T23:37:34.1154375+08:00",
+            "Info": "",
+            "Name": "pypy3",
+            "Version": "7.3.12"
+        },
+        {
+            "Source": "main",
+            "Updated": "2023-08-19T23:28:59.3893764+08:00",
+            "Info": "",
+            "Name": "python",
+            "Version": "3.11.4"
+        },
+        {
+            "Source": "main",
+            "Updated": "2023-05-05T23:21:19.2324968+08:00",
+            "Info": "",
+            "Name": "ripgrep",
+            "Version": "13.0.0"
+        },
+        {
+            "Source": "nerd-fonts",
+            "Updated": "2023-07-15T23:23:18.0519841+08:00",
+            "Info": "",
+            "Name": "SarasaGothic-SC",
+            "Version": "0.41.3"
+        },
+        {
+            "Source": "extras",
+            "Updated": "2023-01-09T22:37:30.2413688+08:00",
+            "Info": "",
+            "Name": "scoop-completion",
+            "Version": "0.2.4"
+        },
+        {
+            "Source": "main",
+            "Updated": "2023-03-05T23:01:38.9632691+08:00",
+            "Info": "",
+            "Name": "scoop-search",
+            "Version": "1.3.1"
+        },
+        {
+            "Source": "main",
+            "Updated": "2023-08-06T21:39:29.6362861+08:00",
+            "Info": "",
+            "Name": "starship",
+            "Version": "1.16.0"
+        },
+        {
+            "Source": "main",
+            "Updated": "2022-10-29T21:55:43.9934873+08:00",
+            "Info": "",
+            "Name": "sudo",
+            "Version": "0.2020.01.26"
+        },
+        {
+            "Source": "nonportable",
+            "Updated": "2023-07-15T23:01:25.3412429+08:00",
+            "Info": "",
+            "Name": "teracopy-np",
+            "Version": "3.10"
+        },
+        {
+            "Source": "okibcn_ScoopMaster",
+            "Updated": "2023-08-21T23:12:14.5224041+08:00",
+            "Info": "",
+            "Name": "tgpt",
+            "Version": "1.7.2"
+        },
+        {
+            "Source": "okibcn_ScoopMaster",
+            "Updated": "2023-08-06T20:27:52.1470898+08:00",
+            "Info": "",
+            "Name": "umi-ocr",
+            "Version": "1.3.5"
+        },
+        {
+            "Source": "extras",
+            "Updated": "2023-02-26T19:52:09.3397234+08:00",
+            "Info": "",
+            "Name": "unlocker",
+            "Version": "1.9.0"
+        },
+        {
+            "Source": "okibcn_ScoopMaster",
+            "Updated": "2023-03-29T23:50:39.3932699+08:00",
+            "Info": "",
+            "Name": "veracrypt",
+            "Version": "1.25.9"
+        },
+        {
+            "Source": "extras",
+            "Updated": "2023-08-19T23:43:29.2639744+08:00",
+            "Info": "",
+            "Name": "vscode",
+            "Version": "1.81.1"
+        },
+        {
+            "Source": "hoilc_scoop-lemon",
+            "Updated": "2023-07-30T15:09:54.2488975+08:00",
+            "Info": "",
+            "Name": "whisper-cli",
+            "Version": "1.12.0"
+        },
+        {
+            "Source": "hoilc_scoop-lemon",
+            "Updated": "2023-07-30T15:09:55.4169086+08:00",
+            "Info": "",
+            "Name": "whisper-desktop",
+            "Version": "1.12.0"
+        },
+        {
+            "Source": "extras",
+            "Updated": "2023-08-19T23:41:25.5268402+08:00",
+            "Info": "",
+            "Name": "wiztree",
+            "Version": "4.15"
+        },
+        {
+            "Source": "main",
+            "Updated": "2023-08-20T11:18:32.1444226+08:00",
+            "Info": "",
+            "Name": "zig",
+            "Version": "0.11.0"
+        }
+    ],
     "config": {
         "aria2-split": "16",
         "aria2-max-connection-per-server": "16",
@@ -7,360 +383,5 @@
         "aria2-enabled": true,
         "scoop_repo": "https://github.com/ScoopInstaller/Scoop",
         "scoop_branch": "master"
-    },
-    "buckets": [
-        {
-            "Name": "extras",
-            "Source": "https://github.com/ScoopInstaller/Extras",
-            "Updated": "2023-07-30T12:25:27+08:00",
-            "Manifests": 1884
-        },
-        {
-            "Name": "hoilc_scoop-lemon",
-            "Source": "https://github.com/hoilc/scoop-lemon",
-            "Updated": "2023-07-30T11:14:50+08:00",
-            "Manifests": 733
-        },
-        {
-            "Name": "main",
-            "Source": "https://github.com/ScoopInstaller/Main",
-            "Updated": "2023-07-30T12:25:54+08:00",
-            "Manifests": 1213
-        },
-        {
-            "Name": "nerd-fonts",
-            "Source": "https://github.com/matthewjberger/scoop-nerd-fonts",
-            "Updated": "2023-07-29T23:15:56+08:00",
-            "Manifests": 279
-        },
-        {
-            "Name": "nonportable",
-            "Source": "https://github.com/ScoopInstaller/Nonportable",
-            "Updated": "2023-07-30T09:44:20+08:00",
-            "Manifests": 127
-        },
-        {
-            "Name": "okibcn_ScoopMaster",
-            "Source": "https://github.com/okibcn/ScoopMaster",
-            "Updated": "2023-07-30T16:38:45+08:00",
-            "Manifests": 43654
-        }
-    ],
-    "apps": [
-        {
-            "Source": "main",
-            "Version": "23.01",
-            "Updated": "2023-07-15T22:27:03.1730943+08:00",
-            "Info": "",
-            "Name": "7zip"
-        },
-        {
-            "Source": "extras",
-            "Version": "5.11.2432",
-            "Updated": "2023-07-30T16:50:38.1788271+08:00",
-            "Info": "",
-            "Name": "aimp"
-        },
-        {
-            "Source": "main",
-            "Version": "1.36.0-1",
-            "Updated": "2023-01-09T22:13:23.6372986+08:00",
-            "Info": "",
-            "Name": "aria2"
-        },
-        {
-            "Source": "okibcn_ScoopMaster",
-            "Version": "1.10.1",
-            "Updated": "2023-06-04T22:42:40.1398716+08:00",
-            "Info": "",
-            "Name": "bilibili-desktop"
-        },
-        {
-            "Source": "main",
-            "Version": "5007-g82accfc19",
-            "Updated": "2023-07-15T22:27:12.1637439+08:00",
-            "Info": "",
-            "Name": "busybox"
-        },
-        {
-            "Source": "extras",
-            "Version": "6.13.10517",
-            "Updated": "2023-07-15T22:27:18.3676325+08:00",
-            "Info": "",
-            "Name": "ccleaner"
-        },
-        {
-            "Source": "okibcn_ScoopMaster",
-            "Version": "0.20.28",
-            "Updated": "2023-07-15T23:46:42.3952457+08:00",
-            "Info": "",
-            "Name": "clash-for-windows"
-        },
-        {
-            "Source": "extras",
-            "Version": "2.6.2",
-            "Updated": "2023-01-09T22:13:25.7175532+08:00",
-            "Info": "",
-            "Name": "compactgui"
-        },
-        {
-            "Source": "main",
-            "Version": "3.11.2",
-            "Updated": "2023-01-09T22:13:26.2197901+08:00",
-            "Info": "",
-            "Name": "dark"
-        },
-        {
-            "Source": "extras",
-            "Version": "10.1.1002.1B",
-            "Updated": "2023-07-15T22:27:21.0768639+08:00",
-            "Info": "",
-            "Name": "dismplusplus"
-        },
-        {
-            "Source": "extras",
-            "Version": "4.3.1",
-            "Updated": "2023-05-20T23:13:29.6634288+08:00",
-            "Info": "",
-            "Name": "dupeguru"
-        },
-        {
-            "Source": "extras",
-            "Version": "1.4.1.1024",
-            "Updated": "2023-05-28T21:34:51.5425851+08:00",
-            "Info": "",
-            "Name": "everything"
-        },
-        {
-            "Source": "main",
-            "Version": "8.7.0",
-            "Updated": "2023-05-05T23:21:18.8937043+08:00",
-            "Info": "",
-            "Name": "fd"
-        },
-        {
-            "Source": "nerd-fonts",
-            "Version": "3.0.2",
-            "Updated": "2023-06-07T20:44:44.4884143+08:00",
-            "Info": "",
-            "Name": "FiraCode-NF"
-        },
-        {
-            "Source": "main",
-            "Version": "2.41.0",
-            "Updated": "2023-07-16T00:03:49.2811158+08:00",
-            "Info": "",
-            "Name": "git"
-        },
-        {
-            "Source": "extras",
-            "Version": "3.1.25",
-            "Updated": "2023-05-28T21:31:54.6786998+08:00",
-            "Info": "",
-            "Name": "hibit-uninstaller"
-        },
-        {
-            "Source": "main",
-            "Version": "0.50",
-            "Updated": "2023-01-09T22:15:31.6736636+08:00",
-            "Info": "",
-            "Name": "innounp"
-        },
-        {
-            "Source": "nerd-fonts",
-            "Version": "3.0.2",
-            "Updated": "2023-06-07T20:45:10.1929162+08:00",
-            "Info": "",
-            "Name": "JetBrainsMono-NF"
-        },
-        {
-            "Source": "main",
-            "Version": "r30",
-            "Updated": "2023-05-21T21:45:39.3757842+08:00",
-            "Info": "",
-            "Name": "lf"
-        },
-        {
-            "Source": "extras",
-            "Version": "1.10.0",
-            "Updated": "2023-07-30T14:33:23.1076761+08:00",
-            "Info": "",
-            "Name": "localsend"
-        },
-        {
-            "Source": "main",
-            "Version": "5.4.2",
-            "Updated": "2023-03-16T23:18:44.3414167+08:00",
-            "Info": "",
-            "Name": "lua"
-        },
-        {
-            "Source": "main",
-            "Version": "6.8.0",
-            "Updated": "2023-07-15T23:10:30.6458757+08:00",
-            "Info": "",
-            "Name": "miller"
-        },
-        {
-            "Source": "extras",
-            "Version": "1.4",
-            "Updated": "2022-11-03T22:56:14.2649227+08:00",
-            "Info": "",
-            "Name": "neatdownloadmanager"
-        },
-        {
-            "Source": "main",
-            "Version": "0.9.0",
-            "Updated": "2023-04-10T22:26:18.7204503+08:00",
-            "Info": "",
-            "Name": "neovim"
-        },
-        {
-            "Source": "extras",
-            "Version": "6.23.203.2",
-            "Updated": "2023-02-23T21:21:47.7262076+08:00",
-            "Info": "",
-            "Name": "notepad3"
-        },
-        {
-            "Source": "main",
-            "Version": "3.1.5",
-            "Updated": "2023-07-15T23:28:16.7342974+08:00",
-            "Info": "",
-            "Name": "pandoc"
-        },
-        {
-            "Source": "extras",
-            "Version": "0.71.0",
-            "Updated": "2023-07-15T23:32:33.7855682+08:00",
-            "Info": "",
-            "Name": "powertoys"
-        },
-        {
-            "Source": "main",
-            "Version": "7.3.6",
-            "Updated": "2023-07-16T00:11:41.2193397+08:00",
-            "Info": "",
-            "Name": "pwsh"
-        },
-        {
-            "Source": "main",
-            "Version": "7.3.11",
-            "Updated": "2023-03-15T22:20:30.1547433+08:00",
-            "Info": "",
-            "Name": "pypy3"
-        },
-        {
-            "Source": "main",
-            "Version": "13.0.0",
-            "Updated": "2023-05-05T23:21:19.2324968+08:00",
-            "Info": "",
-            "Name": "ripgrep"
-        },
-        {
-            "Source": "nerd-fonts",
-            "Version": "0.41.3",
-            "Updated": "2023-07-15T23:23:18.0519841+08:00",
-            "Info": "",
-            "Name": "SarasaGothic-SC"
-        },
-        {
-            "Source": "extras",
-            "Version": "0.2.4",
-            "Updated": "2023-01-09T22:37:30.2413688+08:00",
-            "Info": "",
-            "Name": "scoop-completion"
-        },
-        {
-            "Source": "main",
-            "Version": "1.3.1",
-            "Updated": "2023-03-05T23:01:38.9632691+08:00",
-            "Info": "",
-            "Name": "scoop-search"
-        },
-        {
-            "Source": "main",
-            "Version": "1.15.0",
-            "Updated": "2023-06-07T20:42:27.9999356+08:00",
-            "Info": "",
-            "Name": "starship"
-        },
-        {
-            "Source": "main",
-            "Version": "0.2020.01.26",
-            "Updated": "2022-10-29T21:55:43.9934873+08:00",
-            "Info": "",
-            "Name": "sudo"
-        },
-        {
-            "Source": "nonportable",
-            "Version": "3.10",
-            "Updated": "2023-07-15T23:01:25.3412429+08:00",
-            "Info": "",
-            "Name": "teracopy-np"
-        },
-        {
-            "Source": "extras",
-            "Version": "1.9.0",
-            "Updated": "2023-02-26T19:52:09.3397234+08:00",
-            "Info": "",
-            "Name": "unlocker"
-        },
-        {
-            "Source": "okibcn_ScoopMaster",
-            "Version": "1.25.9",
-            "Updated": "2023-03-29T23:50:39.3932699+08:00",
-            "Info": "",
-            "Name": "veracrypt"
-        },
-        {
-            "Source": "extras",
-            "Version": "1.80.1",
-            "Updated": "2023-07-16T00:01:58.2781867+08:00",
-            "Info": "",
-            "Name": "vscode"
-        },
-        {
-            "Source": "hoilc_scoop-lemon",
-            "Version": "1.12.0",
-            "Updated": "2023-07-30T15:09:54.2488975+08:00",
-            "Info": "",
-            "Name": "whisper-cli"
-        },
-        {
-            "Source": "hoilc_scoop-lemon",
-            "Version": "1.12.0",
-            "Updated": "2023-07-30T15:09:55.4169086+08:00",
-            "Info": "",
-            "Name": "whisper-desktop"
-        },
-        {
-            "Source": "main",
-            "Version": "3.10.9.0",
-            "Updated": "2023-03-14T22:30:59.5503128+08:00",
-            "Info": "",
-            "Name": "winpython"
-        },
-        {
-            "Source": "extras",
-            "Version": "4.14",
-            "Updated": "2023-07-15T23:10:27.8183529+08:00",
-            "Info": "",
-            "Name": "wiztree"
-        },
-        {
-            "Source": "extras",
-            "Version": "23.05.1740",
-            "Updated": "2023-07-15T23:05:07.816002+08:00",
-            "Info": "",
-            "Name": "xmind"
-        },
-        {
-            "Source": "main",
-            "Version": "0.10.1",
-            "Updated": "2023-05-14T01:21:26.5381696+08:00",
-            "Info": "",
-            "Name": "zig"
-        }
-    ]
+    }
 }
