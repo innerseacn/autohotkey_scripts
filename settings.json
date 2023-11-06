@@ -33,6 +33,12 @@
     "copyOnSelect": false,
     "defaultProfile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
     "launchMode": "maximized",
+    "newTabMenu": 
+    [
+        {
+            "type": "remainingProfiles"
+        }
+    ],
     "profiles": 
     {
         "defaults": 
@@ -69,7 +75,7 @@
                 "backgroundImage": "D:\\wsl\\ubuntu\\9DdOYPd.jpg",
                 "font": 
                 {
-                    "face": "JetBrainsMono NF"
+                    "face": "JetBrainsMono Nerd Font"
                 },
                 "guid": "{75def201-4efb-5e32-93a0-c5647120c025}",
                 "hidden": false,
@@ -83,7 +89,7 @@
                 "commandline": "C:\\Windows\\system32\\wsl.exe -d ubuntu-v2 -u innersea",
                 "font": 
                 {
-                    "face": "JetBrainsMono NF"
+                    "face": "JetBrainsMono Nerd Font"
                 },
                 "guid": "{dc77cd2b-9a7a-5d9d-9c55-3ef30e548c88}",
                 "hidden": false,
@@ -344,6 +350,50 @@
     ],
     "tabSwitcherMode": "inOrder",
     "tabWidthMode": "equal",
-    "themes": [],
+    "themes": 
+    [
+        {
+            "name": "legacyDark",
+            "tab": 
+            {
+                "background": null,
+                "showCloseButton": "always",
+                "unfocusedBackground": null
+            },
+            "window": 
+            {
+                "applicationTheme": "dark",
+                "useMica": false
+            }
+        },
+        {
+            "name": "legacyLight",
+            "tab": 
+            {
+                "background": null,
+                "showCloseButton": "always",
+                "unfocusedBackground": null
+            },
+            "window": 
+            {
+                "applicationTheme": "light",
+                "useMica": false
+            }
+        },
+        {
+            "name": "legacySystem",
+            "tab": 
+            {
+                "background": null,
+                "showCloseButton": "always",
+                "unfocusedBackground": null
+            },
+            "window": 
+            {
+                "applicationTheme": "system",
+                "useMica": false
+            }
+        }
+    ],
     "useAcrylicInTabRow": true
 }
