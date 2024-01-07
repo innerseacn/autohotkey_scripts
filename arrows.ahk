@@ -1,18 +1,23 @@
 ﻿; #NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases. Default now.
 ; #Warn  ; Enable warnings to assist with detecting common errors.
 ; SendMode Input  ; Recommended for new scripts due to its superior speed and reliability. Default now.
-End::CapsLock
+#HotIf GetKeyState("CapsLock", "P")
+n::Send "{Blind}{Down}"
+p::Send "{Blind}{Up}"
+h::Send "{Blind}{Left}"
+l::Send "{Blind}{Right}"
+,::Send "{Blind}{Home}"
+.::Send "{Blind}{End}"
+b::Send "{Blind}{PgUp}"
+f::Send "{Blind}{PgDn}"
+o::Send "{End}{Enter}"
+i::Send "{Home}{Enter}{Up}"
+<!u::^BS
+<!k::^Del
+j::!Tab
+#HotIf
 CapsLock::return
-CapsLock & n::Send "{Blind}{Down}"
-CapsLock & p::Send "{Blind}{Up}"
-CapsLock & h::Send "{Blind}{Left}"
-CapsLock & l::Send "{Blind}{Right}"
-CapsLock & ,::Send "{Blind}{Home}"
-CapsLock & .::Send "{Blind}{End}"
-CapsLock & b::Send "{Blind}{PgUp}"
-CapsLock & f::Send "{Blind}{PgDn}"
-CapsLock & o::Send "{End}{Enter}"
-CapsLock & i::Send "{Home}{Enter}{Up}"
+End::CapsLock
 RAlt::RCtrl
 RCtrl::RAlt
 ; #F2::run C:\Users\InnerSea\scoop\apps\wezterm\current\wezterm-gui.exe
