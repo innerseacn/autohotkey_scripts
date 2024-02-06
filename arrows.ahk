@@ -5,12 +5,16 @@
 *l::Send "{Blind}{Right}"
 *,::Send "{Blind}{Home}"
 *.::Send "{Blind}{End}"
-*b::Send "{Blind}{PgUp}"
-*f::Send "{Blind}{PgDn}"
+*!v::Send "{Blind}{PgUp}"
+*v::Send "{Blind}{PgDn}"
 o::Send "{End}{Enter}"
 +o::Send "{Home}{Enter}{Up}"
 *u::Send "{Blind}{BS}"
 *k::Send "{Blind}{Del}"
++u::Send "+{Home}{Del}"
++k::Send "+{End}{Del}"
+*b::Send "{Blind}^{Left}"
+*f::Send "{Blind}^{Right}"
 j::!Tab
 #HotIf
 *CapsLock::return
