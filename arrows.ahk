@@ -11,11 +11,13 @@ o::Send "{End}{Enter}"
 +o::Send "{Home}{Enter}{Up}"
 *u::Send "{Blind}{BS}"
 *k::Send "{Blind}{Del}"
-+u::Send "+{Home}{Del}"
-+k::Send "+{End}{Del}"
++u::Send "+{Home}{Del}{Shift}"
++k::Send "+{End}{Del}{Shift}"
 *b::Send "{Blind}^{Left}"
 *f::Send "{Blind}^{Right}"
+BS::Send "{Home}+{End}{Del}"
 j::!Tab
+m::^Tab
 #HotIf
 *CapsLock::return
 End::CapsLock
