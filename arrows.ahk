@@ -18,6 +18,7 @@ o::Send "{End}{Enter}"
 BS::Send "{Home}+{End}{Del}"
 j::!Tab
 m::^Tab
+'::AppsKey
 #HotIf
 *CapsLock::return
 End::CapsLock
