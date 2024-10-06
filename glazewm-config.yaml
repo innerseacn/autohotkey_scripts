@@ -79,7 +79,7 @@ window_rules:
   # Task Manager requires admin privileges to manage and should be ignored unless running
   # the WM as admin.
   - command: "ignore"
-    match_process_name: "/Taskmgr|ScreenClippingHost|TeraCopy/"
+    match_process_name: "/Taskmgr|ScreenClippingHost|TeraCopy|FastGithub/"
   # Launches system dialogs as floating by default (eg. File Explorer save/open dialog).
   - command: "set floating"
     match_class_name: "#32770"
