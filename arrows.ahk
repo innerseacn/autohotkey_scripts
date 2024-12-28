@@ -16,12 +16,17 @@ o::Send "{End}{Enter}"
 *b::Send "{Blind}^{Left}"
 *f::Send "{Blind}^{Right}"
 BS::Send "{Home}+{End}{Del}"
+w::!F4
+q::AppsKey
+=::WheelUp
+-::WheelDown
+\::CapsLock
 j::!Tab
 m::^Tab
 '::AppsKey
 #HotIf
-*CapsLock::return
-End::CapsLock
+*CapsLock::ESC
+;End::CapsLock
 RAlt::RCtrl
 RCtrl::RAlt
 ; #F2::run C:\Users\InnerSea\scoop\apps\wezterm\current\wezterm-gui.exe
