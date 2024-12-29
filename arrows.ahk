@@ -18,6 +18,7 @@ o::Send "{End}{Enter}"
 BS::Send "{Home}+{End}{Del}"
 w::!F4
 q::AppsKey
+g::ESC
 =::WheelUp
 -::WheelDown
 \::CapsLock
@@ -25,7 +26,7 @@ j::!Tab
 m::^Tab
 '::AppsKey
 #HotIf
-*CapsLock::ESC
+*CapsLock::return
 ;End::CapsLock
 RAlt::RCtrl
 RCtrl::RAlt
