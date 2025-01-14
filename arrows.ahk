@@ -24,7 +24,6 @@ g::ESC
 \::CapsLock
 j::!Tab
 m::^Tab
-'::AppsKey
 #HotIf
 *CapsLock::return
 ;End::CapsLock
