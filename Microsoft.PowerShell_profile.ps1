@@ -1,10 +1,30 @@
 Import-Module "$($(Get-Item $(Get-Command scoop.ps1).Path).Directory.Parent.FullName)\modules\scoop-completion"
-Set-PSReadLineOption -EditMode Emacs
-Set-PSReadLineOption -BellStyle None
-Set-PSReadLineOption -PredictionSource History
-invoke-Expression (&starship init powershell)
+# Import-Module PSCompletions
+
+Set-PSReadLineKeyHandler -Key 'Ctrl+z' -Function Undo
+Set-PSReadlineKeyHandler -Key Tab -Function MenuComplete
+
+$params = @{
+  HistoryNoDuplicates = $true
+  ShowToolTips = $true
+  BellStyle = 'None'
+  HistorySearchCursorMovesToEnd = $true
+  # EditMode = 'Emacs'
+  Colors = @{ "Selection" = "`e[7m" }
+}
+
+if ($PSEdition -eq 'Core') {
+  $params.Add('PredictionSource', 'HistoryAndPlugin')
+  $params.Add('PredictionViewStyle', 'ListView')
+}
+
+Set-PSReadLineOption @params
+
+carapace _carapace | Out-String | Invoke-Expression
+Invoke-Expression (&starship init powershell)
 Invoke-Expression (& { (zoxide init powershell | Out-String) })
 # Invoke-Expression (& { (lua D:\gitcodes\z.lua\z.lua --init powershell enhanced) -join "`n" })
+
 Set-Alias "vi" "nvim"
 Function vim($file) {nvim --clean $file}
 # Import-Module DockerCompletion
