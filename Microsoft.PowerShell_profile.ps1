@@ -9,7 +9,7 @@ $params = @{
   ShowToolTips = $true
   BellStyle = 'None'
   HistorySearchCursorMovesToEnd = $true
-  # EditMode = 'Emacs'
+  EditMode = 'Emacs'
   Colors = @{ "Selection" = "`e[7m" }
 }
 
