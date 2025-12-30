@@ -22,8 +22,8 @@ g::ESC
 =::WheelUp
 -::WheelDown
 \::CapsLock
-j::!Tab
-m::^Tab
+d::!Tab
+c::^Tab
 #HotIf
 *CapsLock::return
 ;End::CapsLock
