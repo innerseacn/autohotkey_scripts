@@ -1,4 +1,6 @@
+# if (Test-Path "$HOME\.x-cmd.root\local\data\pwsh\_index.ps1") { Set-ExecutionPolicy Bypass -Scope Process; . "$HOME\.x-cmd.root\local\data\pwsh\_index.ps1" };  # boot up x-cmd.
 Import-Module "$($(Get-Item $(Get-Command scoop.ps1).Path).Directory.Parent.FullName)\modules\scoop-completion"
+Import-Module CompletionPredictor
 # Import-Module PSCompletions
 
 Set-PSReadLineKeyHandler -Key 'Ctrl+z' -Function Undo
@@ -20,7 +22,7 @@ if ($PSEdition -eq 'Core') {
 
 Set-PSReadLineOption @params
 
-carapace _carapace | Out-String | Invoke-Expression
+# carapace _carapace | Out-String | Invoke-Expression
 Invoke-Expression (&starship init powershell)
 Invoke-Expression (& { (zoxide init powershell | Out-String) })
 # Invoke-Expression (& { (lua D:\gitcodes\z.lua\z.lua --init powershell enhanced) -join "`n" })
