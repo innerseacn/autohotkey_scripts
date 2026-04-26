@@ -144,6 +144,7 @@ def main():
 Examples:
     python kedou_subtitle.py "https://www.bilibili.com/video/BV1xx411c7mD"
     python kedou_subtitle.py "https://www.bilibili.com/video/BV1xxx" -o subtitle.txt
+    python kedou_subtitle.py "https://www.bilibili.com/video/BV1xxx" -O ./subtitles/
     python kedou_subtitle.py -o output.txt av123456
 """,
     )
@@ -151,6 +152,9 @@ Examples:
     parser.add_argument("url", nargs="?", help="Bilibili video URL (BV, AV, or b23.tv)")
     parser.add_argument(
         "-o", "--output", dest="output_file", help="Output file path (default: stdout)"
+    )
+    parser.add_argument(
+        "-O", "--output-auto", dest="output_dir", help="Output to a file named after the video title by given directory (e.g. -O ./subtitles/)"
     )
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="Show verbose debug output"
@@ -182,6 +186,14 @@ Examples:
         with open(args.output_file, "w", encoding="utf-8") as f:
             f.write(srt + "\n")
         print(f"Subtitles saved to {args.output_file}")
+    elif args.output_dir:
+        import os
+        os.makedirs(args.output_dir, exist_ok=True)
+        safe_title = re.sub(r'[\\/*?:"<>|]', "_", title)  # Replace invalid filename chars
+        output_path = os.path.join(args.output_dir, f"{safe_title}.txt")
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(srt + "\n")
+        print(f"Subtitles saved to {output_path}")
     else:
         print(srt)
 
