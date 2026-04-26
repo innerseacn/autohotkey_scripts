@@ -1,3 +1,4 @@
-
+ai-scripts/.sisyphus/*
+ai-scripts/__pycache__/*
 *.el~
 *.json~

@@ -48,6 +48,7 @@
         "defaults": 
         {
             "antialiasingMode": "cleartype",
+            "bellStyle": "window",
             "colorScheme": "Tango Dark",
             "cursorShape": "filledBox",
             "font": 
@@ -101,6 +102,21 @@
                 "icon": "D:\\wsl\\ubuntu-v2\\76011-icons-material-computer-operating-systems-ubuntu-icon.png",
                 "name": "ubuntu-v2",
                 "source": "Windows.Terminal.Wsl"
+            },
+            {
+                "adjustIndistinguishableColors": "always",
+                "backgroundImage": "D:\\wsl\\ubuntu\\9DdOYPd.jpg",
+                "backgroundImageOpacity": 1,
+                "colorScheme": "One Half Dark",
+                "font": 
+                {
+                    "face": "JetBrainsMono Nerd Font"
+                },
+                "guid": "{1e83e124-d5c3-5028-a5c3-a0371ee38ceb}",
+                "hidden": false,
+                "intenseTextStyle": "bold",
+                "name": "Ubuntu-24.04\uff08\u9ed8\u8ba4\uff09",
+                "source": "Microsoft.WSL"
             },
             {
                 "commandline": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
