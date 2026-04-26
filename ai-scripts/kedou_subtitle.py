@@ -71,6 +71,7 @@ def fetch_subtitles(video_id: str, verbose: bool = False) -> (str, str):
             page.screenshot(path=f"png/{msg}.png")
         else:
             print(msg, file=sys.stderr)
+            page.screenshot()
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -99,16 +100,14 @@ def fetch_subtitles(video_id: str, verbose: bool = False) -> (str, str):
             page.click("button.el-button.el-button--primary")
             log("4. 点击提取按钮...")
 
-            page.screenshot()
             page.wait_for_selector("div.mt-3.mb-16", timeout=120000)
             log("5. 等待字幕结果...")
             subtitle_box = page.locator("div.mt-3.mb-16")
 
             subtitle_title = (
                 subtitle_box.locator("div.flex.pb-3.text-lg.border-b.border-solid")
-                .nth(1)
-                .inner_text()
-            )
+                .first.inner_text()
+            ).replace("\n","")
             log(f"6. 发现视频名称：{subtitle_title}")
 
             subtitle_zh = subtitle_box.get_by_text("语言：中文").locator("../..")
@@ -173,7 +172,8 @@ Examples:
         return 1
 
     try:
-        title, srt = fetch_subtitles(video_id, verbose=args.verbose)
+        title, srt_clean = fetch_subtitles(video_id, verbose=args.verbose)
+        srt = f"# 题目：{title}\n\n{srt_clean}"
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
