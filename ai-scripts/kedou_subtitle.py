@@ -5,6 +5,7 @@ Download Bilibili video subtitles from kedou.life using Playwright browser autom
 Usage:
     python kedou_subtitle.py "https://www.bilibili.com/video/BV1xx411c7mD"
     python kedou_subtitle.py "https://www.bilibili.com/video/BV1xxx" -o subtitle.txt
+    python kedou_subtitle.py "https://www.bilibili.com/video/BV1xxx" -O ./subtitle/
     python kedou_subtitle.py --help
 """
 
